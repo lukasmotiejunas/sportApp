@@ -1,0 +1,258 @@
+import { useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import {
+  CalendarCheck2,
+  ClipboardList,
+  CreditCard,
+  Mail,
+  MessageSquareText,
+  Phone,
+  ShieldAlert,
+  Trophy,
+} from 'lucide-react';
+import { useStore } from '../../store/useStore';
+import { PageTitle } from '../../components/layout/PageTitle';
+import { Avatar } from '../../components/ui/Avatar';
+import { StatusBadge } from '../../components/ui/StatusBadge';
+import { formatDateShort, todayIso } from '../../utils/dates';
+import { formatCurrency, formatResult } from '../../utils/format';
+import { TextareaField } from '../../components/ui/FormField';
+import type { PaymentStatus } from '../../types';
+
+const paymentTone = {
+  paid: 'success',
+  due_soon: 'warning',
+  overdue: 'danger',
+  processing: 'info',
+} as const;
+
+const paymentActions: PaymentStatus[] = ['paid', 'due_soon', 'overdue', 'processing'];
+
+export default function CoachMemberDetail() {
+  const { id = '' } = useParams();
+  const member = useStore((s) => s.members.find((m) => m.id === id));
+  const trainings = useStore((s) => s.trainingSessions);
+  const plans = useStore((s) => s.trainingPlans);
+  const results = useStore((s) => s.leaderboardResults);
+  const categories = useStore((s) => s.leaderboardCategories);
+  const membershipPlans = useStore((s) => s.membershipPlans);
+  const setPaymentStatus = useStore((s) => s.setPaymentStatus);
+  const addCoachNote = useStore((s) => s.addCoachNote);
+  const push = useStore((s) => s.pushToast);
+
+  const [note, setNote] = useState(member?.coachNotes ?? '');
+
+  if (!member) {
+    return (
+      <div>
+        <PageTitle title="Member not found" backTo="/coach/members" />
+      </div>
+    );
+  }
+
+  const plan = membershipPlans.find((p) => p.id === member.membershipPlanId);
+  const upcoming = trainings.filter(
+    (t) => t.date >= todayIso() && t.registrations.some((r) => r.memberId === member.id),
+  );
+  const past = trainings.filter(
+    (t) => t.date < todayIso() && t.registrations.some((r) => r.memberId === member.id),
+  );
+  const myPlans = plans.filter((p) => p.memberId === member.id);
+  const bests = categories
+    .map((c) => {
+      const my = results
+        .filter((r) => r.categoryId === c.id && r.memberId === member.id)
+        .sort((a, b) => (c.lowerIsBetter ? a.value - b.value : b.value - a.value))[0];
+      return my ? { c, my } : null;
+    })
+    .filter(Boolean) as { c: (typeof categories)[number]; my: (typeof results)[number] }[];
+
+  return (
+    <div>
+      <PageTitle title={member.name} eyebrow="Member profile" backTo="/coach/members" />
+
+      <section className="surface mb-4 p-4">
+        <div className="flex flex-wrap items-center gap-4">
+          <Avatar name={member.name} color={member.avatarColor} size="xl" />
+          <div className="min-w-0 flex-1">
+            <p className="font-display text-lg font-bold">{member.name}</p>
+            <p className="text-sm text-ink-500">{plan?.name} · {member.preferredDistance} · {member.ageGroup}</p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              <StatusBadge tone={paymentTone[member.paymentStatus]} dot>
+                {member.paymentStatus.replace('_', ' ')}
+              </StatusBadge>
+              <StatusBadge tone="neutral">Member since {formatDateShort(member.memberSince)}</StatusBadge>
+              <StatusBadge tone="info">{formatCurrency(plan?.monthlyFee ?? 0)} / month</StatusBadge>
+            </div>
+          </div>
+          <div className="flex flex-col items-stretch gap-1 sm:w-64">
+            <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">Change payment status</p>
+            <div className="flex flex-wrap gap-1">
+              {paymentActions.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => {
+                    setPaymentStatus(member.id, s);
+                    push({ kind: 'success', message: `Payment status changed to ${s.replace('_', ' ')}.` });
+                  }}
+                  className={
+                    'chip transition-colors ' +
+                    (member.paymentStatus === s
+                      ? 'bg-ink-900 text-white dark:bg-lime-400 dark:text-ink-950'
+                      : 'bg-ink-100 text-ink-700 hover:bg-ink-200 dark:bg-ink-800 dark:text-ink-200 dark:hover:bg-ink-700')
+                  }
+                >
+                  {s.replace('_', ' ')}
+                </button>
+              ))}
+            </div>
+            {member.paymentStatus === 'overdue' && (
+              <p className="mt-2 flex items-start gap-1 text-[11px] text-red-600">
+                <ShieldAlert className="mt-0.5 h-3 w-3" />
+                Registration disabled for this member.
+              </p>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <section className="surface p-4">
+          <h2 className="mb-3 flex items-center gap-2 font-display text-base font-bold">
+            <Mail className="h-4 w-4 text-ink-500" /> Contact
+          </h2>
+          <ul className="space-y-2 text-sm">
+            <li className="flex items-center gap-2 text-ink-700 dark:text-ink-200">
+              <Mail className="h-3.5 w-3.5 text-ink-400" /> {member.email}
+            </li>
+            <li className="flex items-center gap-2 text-ink-700 dark:text-ink-200">
+              <Phone className="h-3.5 w-3.5 text-ink-400" /> {member.phone}
+            </li>
+            <li className="text-ink-600 dark:text-ink-300">
+              Emergency: {member.emergencyContact}
+            </li>
+          </ul>
+        </section>
+
+        <section className="surface p-4">
+          <h2 className="mb-3 flex items-center gap-2 font-display text-base font-bold">
+            <Trophy className="h-4 w-4 text-ink-500" /> Personal bests
+          </h2>
+          {bests.length === 0 ? (
+            <p className="text-sm text-ink-500">No official results recorded yet.</p>
+          ) : (
+            <ul className="grid gap-2 sm:grid-cols-2">
+              {bests.slice(0, 6).map(({ c, my }) => (
+                <li key={c.id} className="rounded-xl bg-ink-50 p-2.5 dark:bg-ink-800/60">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">{c.event}</p>
+                  <p className="font-display text-base font-bold tabular-nums">{formatResult(my.value, c)}</p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section className="surface p-4">
+          <h2 className="mb-3 flex items-center gap-2 font-display text-base font-bold">
+            <CalendarCheck2 className="h-4 w-4 text-ink-500" /> Upcoming registrations
+          </h2>
+          {upcoming.length === 0 ? (
+            <p className="text-sm text-ink-500">Nothing scheduled — invite this member to a session.</p>
+          ) : (
+            <ul className="space-y-2">
+              {upcoming.map((t) => (
+                <li key={t.id} className="flex items-center justify-between rounded-xl border border-ink-100 p-2.5 dark:border-ink-800">
+                  <div>
+                    <p className="text-sm font-semibold">{t.title}</p>
+                    <p className="text-xs text-ink-500">{formatDateShort(t.date)} · {t.startTime}</p>
+                  </div>
+                  <Link to={`/coach/trainings/${t.id}`} className="btn-ghost h-8 px-2 text-xs">Open</Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section className="surface p-4">
+          <h2 className="mb-3 flex items-center gap-2 font-display text-base font-bold">
+            <ClipboardList className="h-4 w-4 text-ink-500" /> Training plans
+          </h2>
+          {myPlans.length === 0 ? (
+            <p className="text-sm text-ink-500">No plans yet — assign one from a training session.</p>
+          ) : (
+            <ul className="space-y-2">
+              {myPlans.map((p) => {
+                const t = trainings.find((x) => x.id === p.trainingSessionId);
+                return (
+                  <li key={p.id} className="flex items-center justify-between rounded-xl border border-ink-100 p-2.5 dark:border-ink-800">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold">{p.title}</p>
+                      <p className="text-xs text-ink-500">{t?.title ?? 'Session'} · {t ? formatDateShort(t.date) : ''}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <StatusBadge tone={p.status === 'published' ? 'accent' : 'warning'} dot>
+                        {p.status}
+                      </StatusBadge>
+                      {t && (
+                        <Link to={`/coach/plans/${t.id}/${p.memberId}`} className="btn-ghost h-8 px-2 text-xs">
+                          Open
+                        </Link>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+
+        <section className="surface p-4 lg:col-span-2">
+          <h2 className="mb-3 flex items-center gap-2 font-display text-base font-bold">
+            <MessageSquareText className="h-4 w-4 text-ink-500" /> Coach notes
+          </h2>
+          <TextareaField
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            onBlur={() => {
+              addCoachNote(member.id, note);
+              push({ kind: 'success', message: 'Coach note saved.' });
+            }}
+            placeholder="Private notes visible only to the coaching team."
+          />
+        </section>
+
+        <section className="surface p-4 lg:col-span-2">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="flex items-center gap-2 font-display text-base font-bold">
+              <CreditCard className="h-4 w-4 text-ink-500" /> Recent attendance
+            </h2>
+            <span className="text-xs text-ink-500">{past.length} past sessions</span>
+          </div>
+          {past.length === 0 ? (
+            <p className="text-sm text-ink-500">No past sessions yet.</p>
+          ) : (
+            <ul className="grid gap-2 sm:grid-cols-2">
+              {past.slice(0, 6).map((t) => {
+                const reg = t.registrations.find((r) => r.memberId === member.id);
+                return (
+                  <li key={t.id} className="rounded-xl border border-ink-100 p-2.5 dark:border-ink-800">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-semibold">{t.title}</p>
+                        <p className="text-xs text-ink-500">{formatDateShort(t.date)}</p>
+                      </div>
+                      <StatusBadge tone={reg?.attendance === 'present' ? 'success' : reg?.attendance === 'absent' ? 'danger' : 'neutral'}>
+                        {reg?.attendance ?? 'unmarked'}
+                      </StatusBadge>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+}
