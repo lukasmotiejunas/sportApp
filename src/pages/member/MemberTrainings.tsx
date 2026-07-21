@@ -2,20 +2,9 @@ import { useMemo, useState } from 'react';
 import { CalendarX } from 'lucide-react';
 import { useStore, useCurrentMember } from '../../store/useStore';
 import { TrainingCard } from '../../components/trainings/TrainingCard';
-import { FilterChip } from '../../components/ui/FilterChip';
 import { PageTitle } from '../../components/layout/PageTitle';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { addDays, DAY_NAMES, formatDateLong, todayIso } from '../../utils/dates';
-import type { TrainingCategory } from '../../types';
-
-const categories: (TrainingCategory | 'All')[] = [
-  'All',
-  'Sprint',
-  'Endurance',
-  'Technique',
-  'Recovery',
-  'Strength',
-];
 
 export default function MemberTrainings() {
   const member = useCurrentMember();
@@ -24,14 +13,12 @@ export default function MemberTrainings() {
   const members = useStore((s) => s.members);
 
   const today = todayIso();
-  const [category, setCategory] = useState<TrainingCategory | 'All'>('All');
   const [selectedDate, setSelectedDate] = useState<string>(today);
 
   const dateStrip = useMemo(() => Array.from({ length: 10 }, (_, i) => addDays(today, i)), [today]);
 
   const filtered = trainings
     .filter((t) => t.date === selectedDate)
-    .filter((t) => (category === 'All' ? true : t.category === category))
     .sort((a, b) => a.startTime.localeCompare(b.startTime));
 
   return (
@@ -72,20 +59,11 @@ export default function MemberTrainings() {
         })}
       </div>
 
-      {/* Category filters */}
-      <div className="mb-4 -mx-4 flex gap-2 overflow-x-auto px-4 no-scrollbar">
-        {categories.map((c) => (
-          <FilterChip key={c} active={category === c} onClick={() => setCategory(c)}>
-            {c}
-          </FilterChip>
-        ))}
-      </div>
-
       {filtered.length === 0 ? (
         <EmptyState
           icon={CalendarX}
           title="No sessions on this day"
-          description="Try another date or clear the category filter."
+          description="Try another date."
         />
       ) : (
         <div className="space-y-3">

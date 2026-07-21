@@ -24,7 +24,6 @@ export default function CoachLeaderboards() {
     unit: 's',
     lowerIsBetter: true,
     genderCategory: 'all',
-    ageCategory: 'All',
     archived: false,
   });
 
@@ -43,7 +42,6 @@ export default function CoachLeaderboards() {
       unit: 's',
       lowerIsBetter: true,
       genderCategory: 'all',
-      ageCategory: 'All',
       archived: false,
     });
   };
@@ -53,7 +51,7 @@ export default function CoachLeaderboards() {
       <PageTitle
         eyebrow="Coach"
         title="Leaderboards"
-        description="Create categories and manage official results."
+        description="Create categories and manage results."
         action={
           <button className="btn-primary" onClick={() => setOpen(true)}>
             <Plus className="h-4 w-4" /> New leaderboard
@@ -85,7 +83,6 @@ export default function CoachLeaderboards() {
               </div>
               <div className="mt-3 flex flex-wrap gap-1.5">
                 <StatusBadge tone="neutral">{c.genderCategory === 'all' ? 'All members' : c.genderCategory}</StatusBadge>
-                <StatusBadge tone="neutral">{c.ageCategory}</StatusBadge>
                 <StatusBadge tone="info">{c.lowerIsBetter ? 'Lower is better' : 'Higher is better'}</StatusBadge>
               </div>
               <button
@@ -125,7 +122,7 @@ export default function CoachLeaderboards() {
         open={open}
         onClose={() => setOpen(false)}
         title="Create leaderboard category"
-        description="Categories can be tied to events, gender, and age groups."
+        description="Categories can be tied to events and gender."
         footer={
           <>
             <button className="btn-ghost" onClick={() => setOpen(false)}>Cancel</button>
@@ -142,14 +139,13 @@ export default function CoachLeaderboards() {
               v === 'seconds' ? 's' :
               v === 'ms' ? 'ms' :
               v === 'distance_km' ? 'km' :
-              v === 'points' ? 'pts' : 'sessions';
+              'pts';
             setDraft({ ...draft, measurementType: v, unit, lowerIsBetter: v === 'seconds' || v === 'ms' });
           }}>
             <option value="seconds">Seconds</option>
             <option value="ms">Milliseconds</option>
             <option value="distance_km">Distance (km)</option>
             <option value="points">Points</option>
-            <option value="attendance">Attendance count</option>
           </SelectField>
           <SelectField label="Direction" value={draft.lowerIsBetter ? 'lower' : 'higher'} onChange={(e) => setDraft({ ...draft, lowerIsBetter: e.target.value === 'lower' })}>
             <option value="lower">Lower is better</option>
@@ -160,7 +156,6 @@ export default function CoachLeaderboards() {
             <option value="male">Men</option>
             <option value="female">Women</option>
           </SelectField>
-          <FormField label="Age category" value={draft.ageCategory} onChange={(e) => setDraft({ ...draft, ageCategory: e.target.value })} />
         </div>
       </Modal>
     </div>

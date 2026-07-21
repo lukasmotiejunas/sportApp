@@ -4,8 +4,6 @@ import {
   BarChart3,
   CreditCard,
   LayoutDashboard,
-  Moon,
-  Sun,
   Trophy,
   Users2,
   Menu,
@@ -13,7 +11,6 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { DemoSwitcher } from "../ui/DemoSwitcher";
-import { useStore } from "../../store/useStore";
 import { ToastContainer } from "../ui/ToastContainer";
 
 const items = [
@@ -25,8 +22,6 @@ const items = [
 ];
 
 export function CoachLayout() {
-  const darkMode = useStore((s) => s.darkMode);
-  const toggleDarkMode = useStore((s) => s.toggleDarkMode);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   return (
@@ -45,18 +40,6 @@ export function CoachLayout() {
           </div>
           <SidebarNav />
           <div className="mt-auto space-y-2">
-            <button
-              type="button"
-              onClick={toggleDarkMode}
-              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-ink-700 hover:bg-ink-100 dark:text-ink-200 dark:hover:bg-ink-800"
-            >
-              {darkMode ? (
-                <Sun className="h-4 w-4" />
-              ) : (
-                <Moon className="h-4 w-4" />
-              )}
-              {darkMode ? "Light theme" : "Dark theme"}
-            </button>
             <DemoSwitcher variant="full" />
           </div>
         </aside>
@@ -83,18 +66,6 @@ export function CoachLayout() {
                 </span>
               </div>
               <div className="ml-auto flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={toggleDarkMode}
-                  className="grid h-9 w-9 place-items-center rounded-full border border-ink-200 dark:border-ink-700"
-                  aria-label="Toggle dark mode"
-                >
-                  {darkMode ? (
-                    <Sun className="h-4 w-4" />
-                  ) : (
-                    <Moon className="h-4 w-4" />
-                  )}
-                </button>
                 <DemoSwitcher />
               </div>
             </div>

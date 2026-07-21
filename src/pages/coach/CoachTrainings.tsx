@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarPlus, Copy, Filter, Pencil, Plus, Trash2 } from 'lucide-react';
+import { CalendarPlus, Copy, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import { PageTitle } from '../../components/layout/PageTitle';
 import { StatusBadge } from '../../components/ui/StatusBadge';
@@ -9,7 +9,6 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { formatDateShort, todayIso, relativeDay } from '../../utils/dates';
 
-const categories = ['All', 'Sprint', 'Endurance', 'Technique', 'Recovery', 'Strength'] as const;
 const timeFilters = [
   { id: 'upcoming', label: 'Upcoming' },
   { id: 'today', label: 'Today' },
@@ -23,14 +22,12 @@ export default function CoachTrainings() {
   const duplicate = useStore((s) => s.duplicateTraining);
   const remove = useStore((s) => s.deleteTraining);
   const push = useStore((s) => s.pushToast);
-  const [category, setCategory] = useState<(typeof categories)[number]>('All');
   const [time, setTime] = useState<(typeof timeFilters)[number]['id']>('upcoming');
   const [toDelete, setToDelete] = useState<string | null>(null);
   const today = todayIso();
 
   const filtered = useMemo(() => {
     return trainings
-      .filter((t) => (category === 'All' ? true : t.category === category))
       .filter((t) => {
         if (time === 'all') return true;
         if (time === 'past') return t.date < today;
@@ -38,7 +35,7 @@ export default function CoachTrainings() {
         return t.date >= today;
       })
       .sort((a, b) => (a.date + a.startTime).localeCompare(b.date + b.startTime));
-  }, [trainings, category, time, today]);
+  }, [trainings, time, today]);
 
   return (
     <div>
@@ -53,22 +50,10 @@ export default function CoachTrainings() {
         }
       />
 
-      <div className="mb-3 flex flex-wrap gap-2">
+      <div className="mb-4 flex flex-wrap gap-2">
         {timeFilters.map((tf) => (
           <FilterChip key={tf.id} active={time === tf.id} onClick={() => setTime(tf.id)}>
             {tf.label}
-          </FilterChip>
-        ))}
-      </div>
-      <div className="mb-4 -mx-4 flex gap-2 overflow-x-auto px-4 no-scrollbar">
-        {categories.map((c) => (
-          <FilterChip
-            key={c}
-            active={category === c}
-            onClick={() => setCategory(c)}
-            icon={c === 'All' ? <Filter className="h-3.5 w-3.5" /> : null}
-          >
-            {c}
           </FilterChip>
         ))}
       </div>
@@ -77,7 +62,7 @@ export default function CoachTrainings() {
         <EmptyState
           icon={CalendarPlus}
           title="No sessions match these filters"
-          description="Try widening the timeframe or clearing the category filter."
+          description="Try widening the timeframe."
           action={
             <Link to="/coach/trainings/new" className="btn-primary">
               <Plus className="h-4 w-4" /> Create training
@@ -105,7 +90,7 @@ export default function CoachTrainings() {
                   <tr key={t.id} className="bg-white hover:bg-ink-50 dark:bg-ink-900 dark:hover:bg-ink-800/60">
                     <td className="px-4 py-3">
                       <p className="font-semibold text-ink-900 dark:text-ink-50">{t.title}</p>
-                      <p className="text-xs text-ink-500">{t.category} · {t.difficulty}</p>
+                      <p className="text-xs text-ink-500">{t.difficulty}</p>
                     </td>
                     <td className="px-4 py-3 text-ink-600 dark:text-ink-300">{coach?.name.replace('Coach ', '') ?? 'TBA'}</td>
                     <td className="px-4 py-3 text-ink-600 dark:text-ink-300">
@@ -172,7 +157,7 @@ export default function CoachTrainings() {
                       </p>
                       <p className="truncate font-semibold">{t.title}</p>
                       <p className="text-xs text-ink-500">
-                        {t.category} · {coach?.name.replace('Coach ', '') ?? 'TBA'}
+                        {coach?.name.replace('Coach ', '') ?? 'TBA'}
                       </p>
                     </div>
                     <StatusBadge tone={pct >= 100 ? 'danger' : pct >= 90 ? 'warning' : 'success'}>

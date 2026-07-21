@@ -1,60 +1,72 @@
-import { Link } from 'react-router-dom';
+import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import clsx from "clsx";
 import {
-  Activity,
   ArrowRight,
   CalendarCheck2,
-  Flame,
+  CalendarDays,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  CreditCard,
   Target,
   Trophy,
   Zap,
-} from 'lucide-react';
-import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { useStore, useCurrentMember } from '../../store/useStore';
-import { PaymentStatusBanner } from '../../components/payments/PaymentStatusBanner';
-import { StatusBadge } from '../../components/ui/StatusBadge';
-import { formatCurrency, formatResult } from '../../utils/format';
-import { relativeDay, todayIso, formatDateShort } from '../../utils/dates';
-import { Avatar } from '../../components/ui/Avatar';
+} from "lucide-react";
+import { useStore, useCurrentMember } from "../../store/useStore";
+import { PaymentStatusBanner } from "../../components/payments/PaymentStatusBanner";
+import { StatusBadge } from "../../components/ui/StatusBadge";
+import { Modal } from "../../components/ui/Modal";
+import { formatCurrency } from "../../utils/format";
+import {
+  addDays,
+  isoDate,
+  relativeDay,
+  todayIso,
+  formatDateShort,
+} from "../../utils/dates";
+import { Avatar } from "../../components/ui/Avatar";
+import type { TrainingSession } from "../../types";
 
 export default function MemberHome() {
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const member = useCurrentMember();
   const trainings = useStore((s) => s.trainingSessions);
-  const plans = useStore((s) => s.trainingPlans);
   const categories = useStore((s) => s.leaderboardCategories);
-  const results = useStore((s) => s.leaderboardResults);
   const membershipPlans = useStore((s) => s.membershipPlans);
   const plan = membershipPlans.find((p) => p.id === member.membershipPlanId);
 
   const today = todayIso();
   const upcoming = trainings
-    .filter((t) => t.date >= today && t.status !== 'cancelled')
+    .filter((t) => t.date >= today && t.status !== "cancelled")
     .sort((a, b) => (a.date + a.startTime).localeCompare(b.date + b.startTime));
-  const next = upcoming.find((t) => t.registrations.some((r) => r.memberId === member.id)) ?? upcoming[0];
+  const next =
+    upcoming.find((t) =>
+      t.registrations.some((r) => r.memberId === member.id),
+    ) ?? upcoming[0];
 
-  const publishedPlan = plans.find(
-    (p) => p.memberId === member.id && p.status === 'published' && p.trainingSessionId === next?.id,
-  );
-
-  const cat100 = categories.find((c) => c.id === 'lb-100');
-  const my100 = cat100
-    ? results
-        .filter((r) => r.categoryId === cat100.id)
-        .sort((a, b) => (cat100.lowerIsBetter ? a.value - b.value : b.value - a.value))
-    : [];
-  const myBestIndex = my100.findIndex((r) => r.memberId === member.id);
-  const myBest = myBestIndex >= 0 ? my100[myBestIndex] : undefined;
-
-  const weeklyData = [
-    { day: 'Mon', km: 4.2 },
-    { day: 'Tue', km: 6.1 },
-    { day: 'Wed', km: 0 },
-    { day: 'Thu', km: 5.0 },
-    { day: 'Fri', km: 3.1 },
-    { day: 'Sat', km: 0 },
-    { day: 'Sun', km: 0 },
-  ];
-  const weeklyKm = weeklyData.reduce((s, d) => s + d.km, 0);
-  const weeklySessions = 3;
+  const dayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const todayDate = new Date(today + "T00:00:00");
+  const daysFromMon = (todayDate.getDay() + 6) % 7;
+  const mondayIso = addDays(today, -daysFromMon);
+  const weeklyData = dayLabels.map((label, i) => {
+    const iso = addDays(mondayIso, i);
+    const sessionsOnDay = trainings.filter((t) => t.date === iso);
+    const registered = sessionsOnDay.some((t) =>
+      t.registrations.some((r) => r.memberId === member.id),
+    );
+    const isFuture = iso > today;
+    const attended = registered && !isFuture;
+    return {
+      label,
+      iso,
+      attended,
+      hadSession: sessionsOnDay.length > 0,
+      isFuture,
+      isToday: iso === today,
+    };
+  });
+  const weeklySessions = weeklyData.filter((d) => d.attended).length;
 
   return (
     <div className="space-y-4">
@@ -64,53 +76,84 @@ export default function MemberHome() {
           <Avatar name={member.name} color={member.avatarColor} size="lg" />
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold uppercase tracking-widest text-lime-300">
-              Hello, {member.name.split(' ')[0]}
+              Hello, {member.name.split(" ")[0]}
             </p>
             <h1 className="font-display text-2xl font-bold tracking-tight">
               Ready to move today?
             </h1>
             <p className="mt-1 text-sm text-white/70">
-              {plan?.name ?? 'Running Club'} · {formatCurrency(plan?.monthlyFee ?? 49)}/month
+              {plan?.name ?? "Running Club"} ·{" "}
+              {formatCurrency(plan?.monthlyFee ?? 49)}/month
             </p>
           </div>
         </div>
 
-        <div className="mt-5 grid grid-cols-3 gap-3">
-          <div className="rounded-2xl bg-white/10 p-3">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-white/70">Distance this week</p>
-            <p className="mt-1 font-display text-xl font-bold tabular-nums">{weeklyKm.toFixed(1)}<span className="text-sm font-medium text-white/70"> km</span></p>
+        <div className="mt-5">
+          <div className="mb-2 flex items-center justify-between px-1 text-[11px]">
+            <span className="font-semibold uppercase tracking-widest text-lime-300">
+              This week
+            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-white/70">
+                <span className="font-semibold text-white">
+                  {weeklySessions}
+                </span>
+                <span className="text-white/50"> / 7 trained</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setCalendarOpen(true)}
+                className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/[0.06] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-lime-200 transition-colors hover:border-lime-400/40 hover:bg-white/[0.1]"
+                aria-label="Open monthly training calendar"
+              >
+                <CalendarDays className="h-3 w-3" />
+                Month
+              </button>
+            </div>
           </div>
-          <div className="rounded-2xl bg-white/10 p-3">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-white/70">Sessions</p>
-            <p className="mt-1 font-display text-xl font-bold tabular-nums">{weeklySessions}<span className="text-sm font-medium text-white/70"> / 5</span></p>
+          <div className="grid grid-cols-7 gap-1.5">
+            {weeklyData.map((d) => (
+              <div
+                key={d.iso}
+                className="flex flex-col items-center gap-1.5"
+                title={
+                  d.attended
+                    ? "Trained"
+                    : d.hadSession
+                      ? d.isFuture
+                        ? "Session ahead"
+                        : "Missed"
+                      : "Rest day"
+                }
+              >
+                <div
+                  className={clsx(
+                    "grid h-10 w-full place-items-center rounded-xl border transition-colors",
+                    d.attended
+                      ? "border-lime-400/70 bg-lime-400/20 text-lime-200 shadow-[0_0_0_1px_rgba(154,232,25,0.2)]"
+                      : d.hadSession && !d.isFuture
+                        ? "border-white/15 bg-white/[0.04] text-white/45"
+                        : "border-dashed border-white/10 bg-white/[0.02] text-white/25",
+                    d.isToday && "ring-2 ring-lime-400/60 ring-offset-0",
+                  )}
+                >
+                  {d.attended ? (
+                    <Check className="h-4 w-4" strokeWidth={3} />
+                  ) : (
+                    <span className="h-1 w-3 rounded-full bg-current" />
+                  )}
+                </div>
+                <span
+                  className={clsx(
+                    "text-[10px] font-semibold uppercase tracking-wide",
+                    d.isToday ? "text-lime-300" : "text-white/60",
+                  )}
+                >
+                  {d.label}
+                </span>
+              </div>
+            ))}
           </div>
-          <div className="rounded-2xl bg-white/10 p-3">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-white/70">100 m rank</p>
-            <p className="mt-1 font-display text-xl font-bold tabular-nums">
-              {myBestIndex >= 0 ? `#${myBestIndex + 1}` : '—'}
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-4 h-24 -mx-1">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={weeklyData} margin={{ left: 0, right: 0, top: 0, bottom: 0 }}>
-              <XAxis dataKey="day" tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis hide />
-              <Tooltip
-                cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                contentStyle={{
-                  background: '#0b0e18',
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  borderRadius: 12,
-                  fontSize: 12,
-                  color: '#fff',
-                }}
-                formatter={(v: number) => [`${v.toFixed(1)} km`, 'Distance']}
-              />
-              <Bar dataKey="km" radius={[6, 6, 2, 2]} fill="#9ae819" />
-            </BarChart>
-          </ResponsiveContainer>
         </div>
       </section>
 
@@ -119,8 +162,12 @@ export default function MemberHome() {
         status={member.paymentStatus}
         amount={formatCurrency(plan?.monthlyFee ?? 49)}
         dueDate={formatDateShort(member.paymentDueDate)}
-        actionLabel={member.paymentStatus === 'overdue' ? 'Pay now — prototype' : 'View payments'}
-        onAction={() => (window.location.href = '/member/payments')}
+        actionLabel={
+          member.paymentStatus === "overdue"
+            ? "Pay now — prototype"
+            : "View payments"
+        }
+        onAction={() => (window.location.href = "/member/payments")}
       />
 
       {/* Next training */}
@@ -131,12 +178,18 @@ export default function MemberHome() {
               <span className="grid h-8 w-8 place-items-center rounded-xl bg-ink-100 text-ink-800 dark:bg-ink-800 dark:text-ink-100">
                 <CalendarCheck2 className="h-4 w-4" />
               </span>
-              <h2 className="font-display text-base font-bold">Next training</h2>
+              <h2 className="font-display text-base font-bold">
+                Next training
+              </h2>
             </div>
             {next.registrations.some((r) => r.memberId === member.id) ? (
-              <StatusBadge tone="accent" dot>Registered</StatusBadge>
+              <StatusBadge tone="accent" dot>
+                Registered
+              </StatusBadge>
             ) : (
-              <StatusBadge tone="warning" dot>Not registered</StatusBadge>
+              <StatusBadge tone="warning" dot>
+                Not registered
+              </StatusBadge>
             )}
           </div>
           <Link
@@ -150,7 +203,9 @@ export default function MemberHome() {
               <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">
                 {relativeDay(next.date)} · {next.startTime}–{next.endTime}
               </p>
-              <p className="text-base font-semibold text-ink-900 dark:text-ink-50">{next.title}</p>
+              <p className="text-base font-semibold text-ink-900 dark:text-ink-50">
+                {next.title}
+              </p>
               <p className="text-xs text-ink-500">{next.location}</p>
             </div>
             <ArrowRight className="mt-3 h-4 w-4 text-ink-400" />
@@ -158,64 +213,12 @@ export default function MemberHome() {
         </section>
       )}
 
-      {/* Today's plan preview */}
-      {publishedPlan && (
-        <section className="surface p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="grid h-8 w-8 place-items-center rounded-xl bg-ink-100 text-ink-800 dark:bg-ink-800 dark:text-ink-100">
-                <Target className="h-4 w-4" />
-              </span>
-              <h2 className="font-display text-base font-bold">Today&apos;s plan</h2>
-            </div>
-            <Link to="/member/plan" className="text-xs font-semibold text-ink-600 hover:text-ink-900 dark:text-ink-300">
-              Open plan →
-            </Link>
-          </div>
-          <p className="mb-2 text-sm font-semibold">{publishedPlan.title}</p>
-          <ul className="space-y-1.5">
-            {publishedPlan.exercises.slice(0, 3).map((ex) => (
-              <li key={ex.id} className="flex items-start gap-2 text-sm text-ink-600 dark:text-ink-300">
-                <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-lime-500" />
-                <span>
-                  <span className="font-semibold text-ink-900 dark:text-ink-50">{ex.title} — </span>
-                  {ex.detail}
-                </span>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-3 rounded-xl bg-ink-50 p-3 text-sm italic text-ink-700 dark:bg-ink-800/60 dark:text-ink-200">
-            “{publishedPlan.coachNote}”
-          </p>
-        </section>
-      )}
-
-      {/* Personal best */}
-      {myBest && cat100 && (
-        <section className="surface p-4">
-          <div className="flex items-center gap-3">
-            <div className="grid h-11 w-11 place-items-center rounded-2xl bg-lime-100 text-lime-800 dark:bg-lime-400/15 dark:text-lime-200">
-              <Flame className="h-5 w-5" />
-            </div>
-            <div className="flex-1">
-              <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">Personal best · 100 m</p>
-              <p className="font-display text-2xl font-bold tabular-nums text-ink-900 dark:text-ink-50">
-                {formatResult(myBest.value, cat100)}
-              </p>
-            </div>
-            <Link
-              to={`/member/leaderboards/${cat100.id}`}
-              className="btn-ghost h-9 px-3 text-xs"
-            >
-              View leaderboard <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-        </section>
-      )}
-
       {/* Quick actions */}
       <section className="grid grid-cols-2 gap-3">
-        <Link to="/member/trainings" className="surface flex items-center gap-3 p-4 hover:shadow-card">
+        <Link
+          to="/member/trainings"
+          className="surface flex items-center gap-3 p-4 hover:shadow-card"
+        >
           <span className="grid h-9 w-9 place-items-center rounded-xl bg-ink-100 text-ink-800 dark:bg-ink-800 dark:text-ink-100">
             <CalendarCheck2 className="h-4 w-4" />
           </span>
@@ -224,7 +227,10 @@ export default function MemberHome() {
             <p className="text-xs text-ink-500">{upcoming.length} upcoming</p>
           </div>
         </Link>
-        <Link to="/member/leaderboards" className="surface flex items-center gap-3 p-4 hover:shadow-card">
+        <Link
+          to="/member/leaderboards"
+          className="surface flex items-center gap-3 p-4 hover:shadow-card"
+        >
           <span className="grid h-9 w-9 place-items-center rounded-xl bg-ink-100 text-ink-800 dark:bg-ink-800 dark:text-ink-100">
             <Trophy className="h-4 w-4" />
           </span>
@@ -233,16 +239,24 @@ export default function MemberHome() {
             <p className="text-xs text-ink-500">{categories.length} events</p>
           </div>
         </Link>
-        <Link to="/member/plan" className="surface flex items-center gap-3 p-4 hover:shadow-card">
+        <Link
+          to="/member/payments"
+          className="surface flex items-center gap-3 p-4 hover:shadow-card"
+        >
           <span className="grid h-9 w-9 place-items-center rounded-xl bg-ink-100 text-ink-800 dark:bg-ink-800 dark:text-ink-100">
-            <Activity className="h-4 w-4" />
+            <CreditCard className="h-4 w-4" />
           </span>
           <div>
-            <p className="text-sm font-semibold">My plan</p>
-            <p className="text-xs text-ink-500">Coach guided</p>
+            <p className="text-sm font-semibold">Payments</p>
+            <p className="text-xs text-ink-500">
+              {plan?.name ?? "Membership"}
+            </p>
           </div>
         </Link>
-        <Link to="/member/profile" className="surface flex items-center gap-3 p-4 hover:shadow-card">
+        <Link
+          to="/member/profile"
+          className="surface flex items-center gap-3 p-4 hover:shadow-card"
+        >
           <span className="grid h-9 w-9 place-items-center rounded-xl bg-ink-100 text-ink-800 dark:bg-ink-800 dark:text-ink-100">
             <Target className="h-4 w-4" />
           </span>
@@ -252,6 +266,223 @@ export default function MemberHome() {
           </div>
         </Link>
       </section>
+
+      <TrainingCalendar
+        open={calendarOpen}
+        onClose={() => setCalendarOpen(false)}
+        memberId={member.id}
+        trainings={trainings}
+      />
     </div>
+  );
+}
+
+function TrainingCalendar({
+  open,
+  onClose,
+  memberId,
+  trainings,
+}: {
+  open: boolean;
+  onClose: () => void;
+  memberId: string;
+  trainings: TrainingSession[];
+}) {
+  const today = todayIso();
+  const now = new Date(today + "T00:00:00");
+  const [viewYear, setViewYear] = useState(now.getFullYear());
+  const [viewMonth, setViewMonth] = useState(now.getMonth());
+
+  const cells = useMemo(() => {
+    const first = new Date(viewYear, viewMonth, 1);
+    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+    const leading = (first.getDay() + 6) % 7;
+    const total = Math.ceil((leading + daysInMonth) / 7) * 7;
+    return Array.from({ length: total }, (_, i) => {
+      const dayNum = i - leading + 1;
+      if (dayNum < 1 || dayNum > daysInMonth) return null;
+      const iso = isoDate(new Date(viewYear, viewMonth, dayNum));
+      const sessionsOnDay = trainings.filter(
+        (t) => t.date === iso && t.status !== "cancelled",
+      );
+      const registered = sessionsOnDay.some((t) =>
+        t.registrations.some((r) => r.memberId === memberId),
+      );
+      const isPast = iso < today;
+      const attended = registered && !(iso > today);
+      return {
+        dayNum,
+        iso,
+        attended,
+        hadSession: sessionsOnDay.length > 0,
+        sessions: sessionsOnDay,
+        isToday: iso === today,
+        isPast,
+        isFuture: iso > today,
+      };
+    });
+  }, [viewYear, viewMonth, trainings, memberId, today]);
+
+  const attendedCount = cells.filter((c) => c?.attended).length;
+  const missedCount = cells.filter(
+    (c) => c && !c.attended && c.hadSession && c.isPast,
+  ).length;
+  const monthLabel = new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    year: "numeric",
+  }).format(new Date(viewYear, viewMonth, 1));
+
+  const goPrev = () => {
+    if (viewMonth === 0) {
+      setViewYear((y) => y - 1);
+      setViewMonth(11);
+    } else {
+      setViewMonth((m) => m - 1);
+    }
+  };
+  const isCurrentMonth =
+    viewYear === now.getFullYear() && viewMonth === now.getMonth();
+  const goNext = () => {
+    if (isCurrentMonth) return;
+    if (viewMonth === 11) {
+      setViewYear((y) => y + 1);
+      setViewMonth(0);
+    } else {
+      setViewMonth((m) => m + 1);
+    }
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      size="md"
+      title={
+        <span className="flex items-center gap-2">
+          <span className="grid h-8 w-8 place-items-center rounded-xl bg-lime-400/15 text-lime-300 dark:bg-lime-400/15 dark:text-lime-200">
+            <CalendarDays className="h-4 w-4" />
+          </span>
+          Training sessions
+        </span>
+      }
+      description={
+        <span>
+          <span className="font-semibold text-ink-900 dark:text-ink-50">
+            {attendedCount}
+          </span>{" "}
+          {attendedCount === 1 ? "session" : "sessions"} attended
+          {missedCount > 0 && (
+            <>
+              {" · "}
+              <span className="text-ink-500 dark:text-ink-400">
+                {missedCount} missed
+              </span>
+            </>
+          )}
+        </span>
+      }
+    >
+      <div className="mb-4 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={goPrev}
+          className="grid h-9 w-9 place-items-center rounded-full border border-ink-200 text-ink-600 transition-colors hover:bg-ink-100 dark:border-ink-700 dark:text-ink-300 dark:hover:bg-ink-800"
+          aria-label="Previous month"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+        <p className="font-display text-base font-bold tracking-tight text-ink-900 dark:text-ink-50">
+          {monthLabel}
+        </p>
+        <button
+          type="button"
+          onClick={goNext}
+          disabled={isCurrentMonth}
+          className="grid h-9 w-9 place-items-center rounded-full border border-ink-200 text-ink-600 transition-colors hover:bg-ink-100 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent dark:border-ink-700 dark:text-ink-300 dark:hover:bg-ink-800 dark:disabled:hover:bg-transparent"
+          aria-label="Next month"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+
+      <div className="mb-2 grid grid-cols-7 gap-1.5 text-center">
+        {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
+          <span
+            key={i}
+            className="text-[10px] font-semibold uppercase tracking-widest text-ink-400 dark:text-ink-500"
+          >
+            {d}
+          </span>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-7 gap-1.5">
+        {cells.map((c, i) => {
+          if (!c) return <span key={i} className="aspect-square" />;
+          const label = c.attended
+            ? `Trained: ${c.sessions.map((s) => s.title).join(", ")}`
+            : c.hadSession && c.isPast
+              ? `Missed: ${c.sessions.map((s) => s.title).join(", ")}`
+              : c.hadSession
+                ? `Upcoming: ${c.sessions.map((s) => s.title).join(", ")}`
+                : "Rest day";
+          return (
+            <div
+              key={i}
+              title={label}
+              className={clsx(
+                "relative flex aspect-square flex-col items-center justify-center gap-0.5 rounded-xl border text-xs font-semibold tabular-nums transition-colors",
+                c.attended
+                  ? "border-lime-400/70 bg-lime-400/15 text-lime-700 dark:text-lime-100"
+                  : c.hadSession && c.isPast
+                    ? "border-ink-200 bg-ink-100/60 text-ink-500 dark:border-ink-700 dark:bg-ink-800/60 dark:text-ink-400"
+                    : c.hadSession
+                      ? "border-lime-400/30 bg-transparent text-ink-600 dark:text-ink-300"
+                      : "border-dashed border-ink-100 bg-transparent text-ink-400 dark:border-ink-800 dark:text-ink-500",
+                c.isToday && "ring-2 ring-lime-400/70 ring-offset-0",
+              )}
+            >
+              <span>{c.dayNum}</span>
+              {c.attended ? (
+                <Check
+                  className="h-3 w-3 text-lime-600 dark:text-lime-300"
+                  strokeWidth={3}
+                />
+              ) : c.hadSession && c.isPast ? (
+                <span className="h-1 w-2 rounded-full bg-current opacity-40" />
+              ) : c.hadSession ? (
+                <span className="h-1 w-1 rounded-full bg-lime-400/60" />
+              ) : (
+                <span className="h-1 w-1" />
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-ink-100 pt-4 text-[11px] text-ink-500 dark:border-ink-800 dark:text-ink-400">
+        <span className="flex items-center gap-1.5">
+          <span className="grid h-4 w-4 place-items-center rounded-md border border-lime-400/70 bg-lime-400/15">
+            <Check
+              className="h-2.5 w-2.5 text-lime-600 dark:text-lime-300"
+              strokeWidth={3}
+            />
+          </span>
+          Trained
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-4 w-4 rounded-md border border-ink-200 bg-ink-100/60 dark:border-ink-700 dark:bg-ink-800/60" />
+          Missed
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-4 w-4 rounded-md border border-lime-400/30" />
+          Upcoming
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-4 w-4 rounded-md border border-dashed border-ink-200 dark:border-ink-800" />
+          Rest
+        </span>
+      </div>
+    </Modal>
   );
 }

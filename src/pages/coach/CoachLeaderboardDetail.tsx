@@ -1,10 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Pencil, Plus, Star, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import { PageTitle } from '../../components/layout/PageTitle';
 import { Avatar } from '../../components/ui/Avatar';
-import { StatusBadge } from '../../components/ui/StatusBadge';
 import { LeaderboardRow } from '../../components/leaderboard/LeaderboardRow';
 import { Modal } from '../../components/ui/Modal';
 import { FormField, SelectField, TextareaField } from '../../components/ui/FormField';
@@ -32,8 +31,6 @@ export default function CoachLeaderboardDetail() {
     valueRaw: '',
     date: todayIso(),
     note: '',
-    official: true,
-    personalBest: false,
   });
 
   const ranked = useMemo(() => {
@@ -79,12 +76,10 @@ export default function CoachLeaderboardDetail() {
       value: v,
       date: draft.date,
       note: draft.note || undefined,
-      official: draft.official,
-      personalBest: draft.personalBest,
     });
     push({ kind: 'success', message: 'Result added — ranking updated.' });
     setAddOpen(false);
-    setDraft({ ...draft, valueRaw: '', note: '', personalBest: false });
+    setDraft({ ...draft, valueRaw: '', note: '' });
   };
 
   return (
@@ -110,7 +105,6 @@ export default function CoachLeaderboardDetail() {
                 <th className="px-4 py-2">Member</th>
                 <th className="px-4 py-2">Result</th>
                 <th className="px-4 py-2">Date</th>
-                <th className="px-4 py-2">Flags</th>
                 <th className="px-4 py-2 text-right">Actions</th>
               </tr>
             </thead>
@@ -132,12 +126,6 @@ export default function CoachLeaderboardDetail() {
                       {formatResult(r.value, category)}
                     </td>
                     <td className="px-4 py-3 text-ink-600 dark:text-ink-300">{formatDateShort(r.date)}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-1">
-                        {r.personalBest && <StatusBadge tone="accent" dot><Star className="mr-0.5 h-3 w-3" /> PB</StatusBadge>}
-                        {r.official ? <StatusBadge tone="info">Official</StatusBadge> : <StatusBadge tone="neutral">Unofficial</StatusBadge>}
-                      </div>
-                    </td>
                     <td className="px-4 py-3 text-right">
                       <button className="btn-ghost h-8 px-2 text-xs" onClick={() => setEditing(r)} aria-label="Edit result">
                         <Pencil className="h-3.5 w-3.5" />
@@ -193,14 +181,6 @@ export default function CoachLeaderboardDetail() {
             className="sm:col-span-2"
           />
           <TextareaField label="Note (optional)" value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} className="sm:col-span-2" />
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" className="h-4 w-4 accent-ink-900 dark:accent-lime-400" checked={draft.official} onChange={(e) => setDraft({ ...draft, official: e.target.checked })} />
-            Mark as official
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" className="h-4 w-4 accent-ink-900 dark:accent-lime-400" checked={draft.personalBest} onChange={(e) => setDraft({ ...draft, personalBest: e.target.checked })} />
-            Personal best
-          </label>
         </div>
       </Modal>
 
@@ -237,15 +217,6 @@ export default function CoachLeaderboardDetail() {
               className="sm:col-span-2"
             />
             <FormField label="Date" type="date" value={editing.date} onChange={(e) => setEditing({ ...editing, date: e.target.value })} />
-            <label className="mt-6 flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                className="h-4 w-4 accent-ink-900 dark:accent-lime-400"
-                checked={editing.personalBest}
-                onChange={(e) => setEditing({ ...editing, personalBest: e.target.checked })}
-              />
-              Personal best
-            </label>
           </div>
         )}
       </Modal>

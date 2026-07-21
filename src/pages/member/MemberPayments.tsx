@@ -10,16 +10,12 @@ import { formatDateShort, addDays } from '../../utils/dates';
 
 const paymentTone = {
   paid: 'success',
-  due_soon: 'warning',
   overdue: 'danger',
-  processing: 'info',
 } as const;
 
 const paymentLabel = {
   paid: 'Paid',
-  due_soon: 'Due soon',
   overdue: 'Overdue',
-  processing: 'Processing',
 } as const;
 
 export default function MemberPayments() {

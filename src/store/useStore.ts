@@ -11,7 +11,6 @@ import {
   trainingSessions,
 } from '../data/mockData';
 import type {
-  AttendanceStatus,
   CoachStaff,
   LeaderboardCategory,
   LeaderboardResult,
@@ -19,7 +18,6 @@ import type {
   MembershipPlan,
   Payment,
   PaymentStatus,
-  PlanExercise,
   Role,
   ToastRecord,
   TrainingPlan,
@@ -33,7 +31,6 @@ type State = {
   role: Role | null;
   currentMemberId: string;
   currentCoachId: string;
-  darkMode: boolean;
 
   members: Member[];
   membershipPlans: MembershipPlan[];
@@ -51,13 +48,10 @@ type State = {
   setRole: (role: Role | null) => void;
   setCurrentMemberId: (id: string) => void;
   setCurrentCoachId: (id: string) => void;
-  toggleDarkMode: () => void;
 
   // Member actions
   registerForTraining: (trainingId: string, memberId: string) => { ok: boolean; error?: string };
   cancelRegistration: (trainingId: string, memberId: string) => void;
-  toggleExerciseComplete: (planId: string, exerciseId: string) => void;
-  setMemberNote: (planId: string, note: string) => void;
   updateMember: (id: string, patch: Partial<Member>) => void;
   simulatePayment: (memberId: string) => void;
 
@@ -67,7 +61,6 @@ type State = {
   duplicateTraining: (id: string) => void;
   deleteTraining: (id: string) => void;
   setTrainingStatus: (id: string, status: TrainingSession['status']) => void;
-  markAttendance: (trainingId: string, memberId: string, attendance: AttendanceStatus) => void;
 
   upsertPlan: (plan: TrainingPlan) => void;
   publishPlan: (planId: string) => void;
@@ -93,7 +86,6 @@ export const useStore = create<State>()(
       role: null,
       currentMemberId: 'm-alex',
       currentCoachId: 'coach-1',
-      darkMode: true,
 
       members,
       membershipPlans,
@@ -118,13 +110,6 @@ export const useStore = create<State>()(
       setRole: (role) => set({ role }),
       setCurrentMemberId: (id) => set({ currentMemberId: id }),
       setCurrentCoachId: (id) => set({ currentCoachId: id }),
-      toggleDarkMode: () => {
-        const next = !get().darkMode;
-        set({ darkMode: next });
-        if (typeof document !== 'undefined') {
-          document.documentElement.classList.toggle('dark', next);
-        }
-      },
 
       registerForTraining: (trainingId, memberId) => {
         const state = get();
@@ -148,7 +133,7 @@ export const useStore = create<State>()(
                   ...x,
                   registrations: [
                     ...x.registrations,
-                    { memberId, registeredAt: new Date().toISOString(), attendance: 'unmarked' },
+                    { memberId, registeredAt: new Date().toISOString() },
                   ],
                 }
               : x,
@@ -163,31 +148,6 @@ export const useStore = create<State>()(
             t.id === trainingId
               ? { ...t, registrations: t.registrations.filter((r) => r.memberId !== memberId) }
               : t,
-          ),
-        });
-      },
-
-      toggleExerciseComplete: (planId, exerciseId) => {
-        set({
-          trainingPlans: get().trainingPlans.map((p) =>
-            p.id === planId
-              ? {
-                  ...p,
-                  exercises: p.exercises.map((ex) =>
-                    ex.id === exerciseId
-                      ? { ...ex, completedByMember: !ex.completedByMember }
-                      : ex,
-                  ),
-                }
-              : p,
-          ),
-        });
-      },
-
-      setMemberNote: (planId, note) => {
-        set({
-          trainingPlans: get().trainingPlans.map((p) =>
-            p.id === planId ? { ...p, memberNote: note } : p,
           ),
         });
       },
@@ -254,21 +214,6 @@ export const useStore = create<State>()(
         set({
           trainingSessions: get().trainingSessions.map((t) =>
             t.id === id ? { ...t, status } : t,
-          ),
-        });
-      },
-
-      markAttendance: (trainingId, memberId, attendance) => {
-        set({
-          trainingSessions: get().trainingSessions.map((t) =>
-            t.id === trainingId
-              ? {
-                  ...t,
-                  registrations: t.registrations.map((r) =>
-                    r.memberId === memberId ? { ...r, attendance } : r,
-                  ),
-                }
-              : t,
           ),
         });
       },
@@ -372,12 +317,11 @@ export const useStore = create<State>()(
     }),
     {
       name: 'paceclub-prototype-v2',
-      version: 2,
+      version: 9,
       partialize: (s) => ({
         role: s.role,
         currentMemberId: s.currentMemberId,
         currentCoachId: s.currentCoachId,
-        darkMode: s.darkMode,
         members: s.members,
         trainingSessions: s.trainingSessions,
         trainingPlans: s.trainingPlans,

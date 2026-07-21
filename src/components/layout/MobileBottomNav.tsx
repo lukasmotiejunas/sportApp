@@ -1,12 +1,12 @@
 import { NavLink } from 'react-router-dom';
 import clsx from 'clsx';
-import { CalendarCheck2, Home, ListChecks, Trophy, User } from 'lucide-react';
+import { CalendarCheck2, CreditCard, Home, Trophy, User } from 'lucide-react';
 
 const items = [
   { to: '/member', label: 'Home', icon: Home, end: true },
   { to: '/member/trainings', label: 'Trainings', icon: CalendarCheck2 },
-  { to: '/member/plan', label: 'My Plan', icon: ListChecks },
   { to: '/member/leaderboards', label: 'Ranks', icon: Trophy },
+  { to: '/member/payments', label: 'Payments', icon: CreditCard },
   { to: '/member/profile', label: 'Profile', icon: User },
 ];
 

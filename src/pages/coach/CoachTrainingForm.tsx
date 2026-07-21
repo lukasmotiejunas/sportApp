@@ -4,12 +4,11 @@ import { CalendarPlus, PlusCircle, Save, Trash2 } from 'lucide-react';
 import { PageTitle } from '../../components/layout/PageTitle';
 import { FormField, SelectField, TextareaField } from '../../components/ui/FormField';
 import { useStore } from '../../store/useStore';
-import type { TrainingCategory, TrainingDifficulty } from '../../types';
+import type { TrainingDifficulty } from '../../types';
 import { todayIso } from '../../utils/dates';
 
 type Props = { mode: 'create' | 'edit' };
 
-const categories: TrainingCategory[] = ['Sprint', 'Endurance', 'Technique', 'Recovery', 'Strength'];
 const difficulties: TrainingDifficulty[] = ['Beginner', 'Intermediate', 'Advanced'];
 
 export default function CoachTrainingForm({ mode }: Props) {
@@ -32,7 +31,6 @@ export default function CoachTrainingForm({ mode }: Props) {
       endTime: existing?.endTime ?? '19:45',
       location: existing?.location ?? '',
       coachId: existing?.coachId ?? defaultCoachId,
-      category: existing?.category ?? ('Sprint' as TrainingCategory),
       difficulty: existing?.difficulty ?? ('Intermediate' as TrainingDifficulty),
       capacity: existing?.capacity ?? 24,
       registrationDeadline: existing?.registrationDeadline ?? existing?.date ?? todayIso(),
@@ -112,9 +110,6 @@ export default function CoachTrainingForm({ mode }: Props) {
               error={errors.description}
               className="sm:col-span-2"
             />
-            <SelectField label="Category" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value as TrainingCategory })}>
-              {categories.map((c) => <option key={c} value={c}>{c}</option>)}
-            </SelectField>
             <SelectField label="Difficulty" value={form.difficulty} onChange={(e) => setForm({ ...form, difficulty: e.target.value as TrainingDifficulty })}>
               {difficulties.map((d) => <option key={d} value={d}>{d}</option>)}
             </SelectField>

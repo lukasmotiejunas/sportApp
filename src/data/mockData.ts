@@ -40,15 +40,15 @@ const memberSeeds: Array<Partial<Member> & { id: string; name: string; gender: M
   { id: 'm-alex', name: 'Alex Morgan', gender: 'female', ageGroup: 'Open', preferredDistance: '100 m Sprint', paymentStatus: 'paid' },
   { id: 'm-jamie', name: 'Jamie Chen', gender: 'male', ageGroup: 'Open', preferredDistance: '5 km', paymentStatus: 'paid' },
   { id: 'm-sam', name: 'Samira Okafor', gender: 'female', ageGroup: 'Open', preferredDistance: '400 m', paymentStatus: 'paid' },
-  { id: 'm-lucas', name: 'Lucas Bernard', gender: 'male', ageGroup: 'Masters 40+', preferredDistance: '10 km', paymentStatus: 'due_soon' },
+  { id: 'm-lucas', name: 'Lucas Bernard', gender: 'male', ageGroup: 'Masters 40+', preferredDistance: '10 km', paymentStatus: 'paid' },
   { id: 'm-mia', name: 'Mia Johansson', gender: 'female', ageGroup: 'Open', preferredDistance: '200 m', paymentStatus: 'paid' },
   { id: 'm-david', name: 'David Park', gender: 'male', ageGroup: 'Open', preferredDistance: '5 km', paymentStatus: 'overdue' },
   { id: 'm-nora', name: 'Nora Fischer', gender: 'female', ageGroup: 'Open', preferredDistance: '1 km', paymentStatus: 'paid' },
   { id: 'm-jonas', name: 'Jonas Weber', gender: 'male', ageGroup: 'Open', preferredDistance: '100 m Sprint', paymentStatus: 'paid' },
-  { id: 'm-priya', name: 'Priya Kapoor', gender: 'female', ageGroup: 'Open', preferredDistance: '10 km', paymentStatus: 'processing' },
+  { id: 'm-priya', name: 'Priya Kapoor', gender: 'female', ageGroup: 'Open', preferredDistance: '10 km', paymentStatus: 'paid' },
   { id: 'm-tomas', name: 'Tomas Lindqvist', gender: 'male', ageGroup: 'Masters 40+', preferredDistance: '5 km', paymentStatus: 'paid' },
   { id: 'm-yuki', name: 'Yuki Tanaka', gender: 'female', ageGroup: 'Open', preferredDistance: '60 m', paymentStatus: 'paid' },
-  { id: 'm-omar', name: 'Omar Haddad', gender: 'male', ageGroup: 'Open', preferredDistance: '400 m', paymentStatus: 'due_soon' },
+  { id: 'm-omar', name: 'Omar Haddad', gender: 'male', ageGroup: 'Open', preferredDistance: '400 m', paymentStatus: 'paid' },
   { id: 'm-clara', name: 'Clara Rossi', gender: 'female', ageGroup: 'Junior', preferredDistance: '100 m Sprint', paymentStatus: 'paid' },
   { id: 'm-noah', name: 'Noah Larsen', gender: 'male', ageGroup: 'Open', preferredDistance: '5 km', paymentStatus: 'paid' },
   { id: 'm-isla', name: 'Isla Murphy', gender: 'female', ageGroup: 'Open', preferredDistance: '1 km', paymentStatus: 'overdue' },
@@ -82,14 +82,9 @@ export const members: Member[] = memberSeeds.map((seed, i) => {
     membershipPlanId: i % 5 === 0 ? 'plan-lite' : 'plan-unlimited',
     paymentStatus: seed.paymentStatus ?? 'paid',
     paymentDueDate:
-      seed.paymentStatus === 'overdue'
-        ? addDays(today, -6)
-        : seed.paymentStatus === 'due_soon'
-          ? addDays(today, 3)
-          : addDays(today, 14),
+      seed.paymentStatus === 'overdue' ? addDays(today, -6) : addDays(today, 14),
     lastPaymentDate: seed.paymentStatus === 'paid' ? addDays(today, -12) : addDays(today, -42),
     notificationPreferences: { email: true, sms: false, push: true },
-    darkMode: false,
     coachNotes: i % 4 === 0 ? 'Focus on relaxed shoulders and controlled acceleration.' : undefined,
   };
 });
@@ -109,7 +104,6 @@ function buildTraining(
     endTime: overrides.endTime ?? '19:45',
     location: overrides.location ?? 'Central Athletics Track — Field A',
     coachId: overrides.coachId ?? 'coach-1',
-    category: overrides.category ?? 'Sprint',
     difficulty: overrides.difficulty ?? 'Intermediate',
     capacity: overrides.capacity ?? 30,
     registrationDeadline: overrides.registrationDeadline ?? overrides.date,
@@ -124,11 +118,46 @@ function buildTraining(
     registrations: registeredMemberIds.map((id, i) => ({
       memberId: id,
       registeredAt: addDays(today, -1 - i),
-      attendance: 'unmarked',
     })),
     status: overrides.status ?? 'open',
   };
 }
+
+const alexHistorySeeds: Array<{
+  offset: number;
+  title: string;
+  coachId: string;
+  extras: string[];
+}> = [
+  { offset: -2, title: 'Recovery Run', coachId: 'coach-2', extras: ['m-mia', 'm-hana', 'm-nora'] },
+  { offset: -4, title: 'Sprint Drills', coachId: 'coach-1', extras: ['m-jonas', 'm-erik', 'm-clara'] },
+  { offset: -5, title: 'Interval Repeats', coachId: 'coach-1', extras: ['m-jonas', 'm-yuki', 'm-clara', 'm-mia'] },
+  { offset: -8, title: 'Strength for Runners', coachId: 'coach-3', extras: ['m-mia', 'm-clara', 'm-hana'] },
+  { offset: -10, title: 'Sprint Technique', coachId: 'coach-1', extras: ['m-jonas', 'm-erik', 'm-yuki'] },
+  { offset: -12, title: 'Speed Endurance', coachId: 'coach-1', extras: ['m-jonas', 'm-diego', 'm-sam'] },
+  { offset: -15, title: 'Strength for Runners', coachId: 'coach-3', extras: ['m-clara', 'm-mia', 'm-erik'] },
+  { offset: -17, title: 'Sprint Technique', coachId: 'coach-1', extras: ['m-yuki', 'm-jonas', 'm-clara'] },
+  { offset: -22, title: 'Strength for Runners', coachId: 'coach-3', extras: ['m-mia', 'm-erik'] },
+  { offset: -24, title: 'Sprint Technique', coachId: 'coach-1', extras: ['m-jonas', 'm-yuki'] },
+  { offset: -29, title: 'Sprint Drills', coachId: 'coach-1', extras: ['m-clara', 'm-erik'] },
+  { offset: -31, title: 'Strength for Runners', coachId: 'coach-3', extras: ['m-mia', 'm-clara'] },
+  { offset: -36, title: 'Sprint Technique', coachId: 'coach-1', extras: ['m-jonas', 'm-yuki'] },
+];
+
+const alexHistorySessions: TrainingSession[] = alexHistorySeeds.map((s, i) =>
+  buildTraining(
+    {
+      id: `t-alex-history-${i}`,
+      title: s.title,
+      date: addDays(today, s.offset),
+      startTime: '18:30',
+      endTime: '19:45',
+      difficulty: 'Intermediate',
+      coachId: s.coachId,
+    },
+    ['m-alex', ...s.extras],
+  ),
+);
 
 export const trainingSessions: TrainingSession[] = [
   buildTraining(
@@ -138,7 +167,6 @@ export const trainingSessions: TrainingSession[] = [
       date: today,
       startTime: '18:30',
       endTime: '19:45',
-      category: 'Sprint',
       difficulty: 'Intermediate',
       coachId: 'coach-1',
       location: 'Central Athletics Track — Field A',
@@ -158,7 +186,6 @@ export const trainingSessions: TrainingSession[] = [
       date: addDays(today, 1),
       startTime: '07:00',
       endTime: '08:00',
-      category: 'Recovery',
       difficulty: 'Beginner',
       coachId: 'coach-2',
       location: 'Riverside Loop — Meeting Point East',
@@ -175,7 +202,6 @@ export const trainingSessions: TrainingSession[] = [
       date: addDays(today, 1),
       startTime: '18:00',
       endTime: '19:15',
-      category: 'Endurance',
       difficulty: 'Advanced',
       coachId: 'coach-2',
       location: 'Central Athletics Track — Field B',
@@ -191,7 +217,6 @@ export const trainingSessions: TrainingSession[] = [
       date: addDays(today, (6 - new Date().getDay() + 7) % 7 || 5), // Saturday-ish
       startTime: '10:00',
       endTime: '11:00',
-      category: 'Strength',
       difficulty: 'Intermediate',
       coachId: 'coach-3',
       location: 'Club Gym — Studio 2',
@@ -208,7 +233,6 @@ export const trainingSessions: TrainingSession[] = [
       date: addDays(today, (7 - new Date().getDay()) % 7 || 6), // Sunday-ish
       startTime: '09:00',
       endTime: '11:00',
-      category: 'Endurance',
       difficulty: 'Advanced',
       coachId: 'coach-2',
       location: 'Old Town Trailhead',
@@ -224,7 +248,6 @@ export const trainingSessions: TrainingSession[] = [
       date: addDays(today, 2),
       startTime: '18:30',
       endTime: '19:45',
-      category: 'Sprint',
       difficulty: 'Advanced',
       coachId: 'coach-1',
       location: 'Central Athletics Track — Field A',
@@ -240,7 +263,6 @@ export const trainingSessions: TrainingSession[] = [
       date: addDays(today, 3),
       startTime: '17:30',
       endTime: '18:45',
-      category: 'Technique',
       difficulty: 'Advanced',
       coachId: 'coach-1',
       location: 'Indoor Straight — Lane 1-4',
@@ -256,7 +278,6 @@ export const trainingSessions: TrainingSession[] = [
       date: addDays(today, 4),
       startTime: '07:30',
       endTime: '08:15',
-      category: 'Recovery',
       difficulty: 'Beginner',
       coachId: 'coach-3',
       location: 'Club Gym — Studio 1',
@@ -274,7 +295,6 @@ export const trainingSessions: TrainingSession[] = [
       date: addDays(today, -3),
       startTime: '18:30',
       endTime: '19:45',
-      category: 'Sprint',
       difficulty: 'Intermediate',
       coachId: 'coach-1',
     },
@@ -287,7 +307,6 @@ export const trainingSessions: TrainingSession[] = [
       date: addDays(today, -5),
       startTime: '09:00',
       endTime: '11:00',
-      category: 'Endurance',
       difficulty: 'Advanced',
       coachId: 'coach-2',
     },
@@ -300,7 +319,6 @@ export const trainingSessions: TrainingSession[] = [
       date: addDays(today, -7),
       startTime: '10:00',
       endTime: '11:00',
-      category: 'Strength',
       difficulty: 'Intermediate',
       coachId: 'coach-3',
     },
@@ -313,7 +331,6 @@ export const trainingSessions: TrainingSession[] = [
       date: addDays(today, -10),
       startTime: '18:00',
       endTime: '19:15',
-      category: 'Endurance',
       difficulty: 'Advanced',
       coachId: 'coach-2',
     },
@@ -326,24 +343,23 @@ export const trainingSessions: TrainingSession[] = [
       date: addDays(today, -12),
       startTime: '07:00',
       endTime: '08:00',
-      category: 'Recovery',
       difficulty: 'Beginner',
       coachId: 'coach-2',
       status: 'cancelled',
     },
     ['m-hana', 'm-lucas'],
   ),
+  ...alexHistorySessions,
 ];
 
 export const leaderboardCategories: LeaderboardCategory[] = [
-  { id: 'lb-60', name: '60m Sprint', event: '60 m', measurementType: 'seconds', unit: 's', lowerIsBetter: true, genderCategory: 'all', ageCategory: 'All', archived: false },
-  { id: 'lb-100', name: '100m Sprint', event: '100 m', measurementType: 'seconds', unit: 's', lowerIsBetter: true, genderCategory: 'all', ageCategory: 'All', archived: false },
-  { id: 'lb-200', name: '200m', event: '200 m', measurementType: 'seconds', unit: 's', lowerIsBetter: true, genderCategory: 'all', ageCategory: 'All', archived: false },
-  { id: 'lb-400', name: '400m', event: '400 m', measurementType: 'seconds', unit: 's', lowerIsBetter: true, genderCategory: 'all', ageCategory: 'All', archived: false },
-  { id: 'lb-1k', name: '1 km', event: '1 km', measurementType: 'seconds', unit: 's', lowerIsBetter: true, genderCategory: 'all', ageCategory: 'All', archived: false },
-  { id: 'lb-5k', name: '5 km', event: '5 km', measurementType: 'seconds', unit: 's', lowerIsBetter: true, genderCategory: 'all', ageCategory: 'All', archived: false },
-  { id: 'lb-attendance', name: 'Club Attendance', event: 'Sessions attended', measurementType: 'attendance', unit: 'sessions', lowerIsBetter: false, genderCategory: 'all', ageCategory: 'All', archived: false },
-  { id: 'lb-monthly-km', name: 'Monthly Distance', event: 'Kilometres this month', measurementType: 'distance_km', unit: 'km', lowerIsBetter: false, genderCategory: 'all', ageCategory: 'All', archived: false },
+  { id: 'lb-60', name: '60m Sprint', event: '60 m', measurementType: 'seconds', unit: 's', lowerIsBetter: true, genderCategory: 'all', archived: false },
+  { id: 'lb-100', name: '100m Sprint', event: '100 m', measurementType: 'seconds', unit: 's', lowerIsBetter: true, genderCategory: 'all', archived: false },
+  { id: 'lb-200', name: '200m', event: '200 m', measurementType: 'seconds', unit: 's', lowerIsBetter: true, genderCategory: 'all', archived: false },
+  { id: 'lb-400', name: '400m', event: '400 m', measurementType: 'seconds', unit: 's', lowerIsBetter: true, genderCategory: 'all', archived: false },
+  { id: 'lb-1k', name: '1 km', event: '1 km', measurementType: 'seconds', unit: 's', lowerIsBetter: true, genderCategory: 'all', archived: false },
+  { id: 'lb-5k', name: '5 km', event: '5 km', measurementType: 'seconds', unit: 's', lowerIsBetter: true, genderCategory: 'all', archived: false },
+  { id: 'lb-monthly-km', name: 'Monthly Distance', event: 'Kilometres this month', measurementType: 'distance_km', unit: 'km', lowerIsBetter: false, genderCategory: 'all', archived: false },
 ];
 
 function makeResult(
@@ -352,8 +368,6 @@ function makeResult(
   memberId: string,
   value: number,
   dayOffset: number,
-  personalBest = true,
-  official = true,
 ): LeaderboardResult {
   return {
     id,
@@ -361,8 +375,6 @@ function makeResult(
     memberId,
     value,
     date: addDays(today, dayOffset),
-    official,
-    personalBest,
   };
 }
 
@@ -416,21 +428,14 @@ export const leaderboardResults: LeaderboardResult[] = [
   makeResult('r-5k-6', 'lb-5k', 'm-hana', 22 * 60 + 5, -25),
   makeResult('r-5k-7', 'lb-5k', 'm-omar', 19 * 60 + 38, -10),
   makeResult('r-5k-8', 'lb-5k', 'm-david', 21 * 60 + 15, -20),
-  // attendance
-  makeResult('r-att-1', 'lb-attendance', 'm-jamie', 22, -1, false),
-  makeResult('r-att-2', 'lb-attendance', 'm-alex', 20, -1, false),
-  makeResult('r-att-3', 'lb-attendance', 'm-mia', 19, -1, false),
-  makeResult('r-att-4', 'lb-attendance', 'm-hana', 17, -1, false),
-  makeResult('r-att-5', 'lb-attendance', 'm-tomas', 16, -1, false),
-  makeResult('r-att-6', 'lb-attendance', 'm-noah', 15, -1, false),
   // monthly km
-  makeResult('r-km-1', 'lb-monthly-km', 'm-jamie', 124.6, -1, false),
-  makeResult('r-km-2', 'lb-monthly-km', 'm-tomas', 118.2, -1, false),
-  makeResult('r-km-3', 'lb-monthly-km', 'm-noah', 112.8, -1, false),
-  makeResult('r-km-4', 'lb-monthly-km', 'm-hana', 96.4, -1, false),
-  makeResult('r-km-5', 'lb-monthly-km', 'm-priya', 88.5, -1, false),
-  makeResult('r-km-6', 'lb-monthly-km', 'm-alex', 42.5, -1, false),
-  makeResult('r-km-7', 'lb-monthly-km', 'm-lucas', 74.1, -1, false),
+  makeResult('r-km-1', 'lb-monthly-km', 'm-jamie', 124.6, -1),
+  makeResult('r-km-2', 'lb-monthly-km', 'm-tomas', 118.2, -1),
+  makeResult('r-km-3', 'lb-monthly-km', 'm-noah', 112.8, -1),
+  makeResult('r-km-4', 'lb-monthly-km', 'm-hana', 96.4, -1),
+  makeResult('r-km-5', 'lb-monthly-km', 'm-priya', 88.5, -1),
+  makeResult('r-km-6', 'lb-monthly-km', 'm-alex', 42.5, -1),
+  makeResult('r-km-7', 'lb-monthly-km', 'm-lucas', 74.1, -1),
 ];
 
 export const payments: Payment[] = members.map((m, i) => ({
@@ -451,50 +456,56 @@ export const trainingPlans: TrainingPlan[] = [
     memberId: 'm-alex',
     trainingSessionId: 't-sprint-tech',
     title: 'Sprint Technique — Alex',
-    intensity: 'Hard',
-    estimatedDuration: 75,
+    duration: 75,
     coachNote: 'Focus on relaxed shoulders and a controlled first 30 metres. Trust the drive phase.',
+    plan: `Warm-up (18 min)
+- 10 min easy jog
+- Dynamic mobility: hip openers, ankle circles, leg swings (8 min)
+
+Main set (35 min)
+- 4 × 60 m acceleration runs, 2 min walk-back
+- 3 × 100 m at 85% effort, 4 min recovery
+
+Technique (12 min)
+- 3 × 20 m A-skips, focus on knee drive
+- 3 × 20 m high knees with quick turnover
+
+Cool-down (10 min)
+- 8 min easy jog + static stretching`,
     status: 'published',
     updatedAt: addDays(today, -1),
-    exercises: [
-      { id: 'ex1', section: 'warmup', title: 'Easy jogging', detail: '10 minutes of easy jogging', time: '10 min' },
-      { id: 'ex2', section: 'warmup', title: 'Dynamic mobility', detail: 'Hip openers, ankle circles, leg swings', time: '8 min' },
-      { id: 'ex3', section: 'main', title: 'Acceleration runs', detail: '4 × 60 m acceleration runs', repetitions: '4×', distance: '60 m', rest: '2 min walk-back' },
-      { id: 'ex4', section: 'main', title: '100m at 85% effort', detail: '3 × 100 m at 85% effort', repetitions: '3×', distance: '100 m', rest: '4 min recovery' },
-      { id: 'ex5', section: 'technique', title: 'A-skips', detail: '3 × 20 m focus on knee drive', repetitions: '3×', distance: '20 m' },
-      { id: 'ex6', section: 'technique', title: 'High knees', detail: '3 × 20 m with quick turnover', repetitions: '3×', distance: '20 m' },
-      { id: 'ex7', section: 'cooldown', title: 'Easy jog', detail: '8 minutes of easy jogging', time: '8 min' },
-    ],
   },
   {
     id: 'plan-jamie-tempo',
     memberId: 'm-jamie',
     trainingSessionId: 't-5k-tempo',
     title: '5K Tempo — Jamie',
-    intensity: 'Hard',
-    estimatedDuration: 70,
+    duration: 70,
     coachNote: 'Even splits. Stay controlled through kilometre 3 — you tend to surge.',
+    plan: `Warm-up (15 min)
+- Easy jog building to threshold effort
+
+Main set
+- 5 km tempo at 4:00/km target pace
+
+Cool-down (10 min)
+- Easy jog and mobility`,
     status: 'published',
     updatedAt: addDays(today, -1),
-    exercises: [
-      { id: 'jt-1', section: 'warmup', title: 'Easy jog', detail: '15 min easy warm up', time: '15 min' },
-      { id: 'jt-2', section: 'main', title: '5 km tempo', detail: '5 km at 4:00/km target', distance: '5 km', pace: '4:00/km' },
-      { id: 'jt-3', section: 'cooldown', title: 'Cool-down jog', detail: '10 min easy', time: '10 min' },
-    ],
   },
   {
     id: 'plan-mia-sprint',
     memberId: 'm-mia',
     trainingSessionId: 't-sprint-tech',
     title: 'Sprint Technique — Mia',
-    intensity: 'Moderate',
-    estimatedDuration: 70,
+    duration: 70,
     coachNote: 'Prioritise clean mechanics before speed.',
+    plan: `Warm-up (10 min)
+- Easy jog + mobility
+
+Main set
+- 4 × fly 30 m, 3 min recovery between reps`,
     status: 'draft',
     updatedAt: addDays(today, -2),
-    exercises: [
-      { id: 'mm-1', section: 'warmup', title: 'Easy jog', detail: '10 min easy', time: '10 min' },
-      { id: 'mm-2', section: 'main', title: 'Fly 30s', detail: '4 × fly 30 m', repetitions: '4×', distance: '30 m fly', rest: '3 min' },
-    ],
   },
 ];

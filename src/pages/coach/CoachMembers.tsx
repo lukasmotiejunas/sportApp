@@ -10,9 +10,7 @@ import { SelectField } from '../../components/ui/FormField';
 const paymentFilters = [
   { id: 'all', label: 'All' },
   { id: 'paid', label: 'Paid' },
-  { id: 'due_soon', label: 'Due soon' },
   { id: 'overdue', label: 'Overdue' },
-  { id: 'processing', label: 'Processing' },
 ] as const;
 
 export default function CoachMembers() {
@@ -23,7 +21,7 @@ export default function CoachMembers() {
   const plans = useStore((s) => s.membershipPlans);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<(typeof paymentFilters)[number]['id']>('all');
-  const [sort, setSort] = useState<'name' | 'attendance' | 'recent'>('name');
+  const [sort, setSort] = useState<'name' | 'upcoming' | 'recent'>('name');
 
   const enriched = useMemo(() => {
     return members.map((m) => {
@@ -49,7 +47,7 @@ export default function CoachMembers() {
     )
     .sort((a, b) => {
       if (sort === 'name') return a.m.name.localeCompare(b.m.name);
-      if (sort === 'attendance') return b.upcoming - a.upcoming;
+      if (sort === 'upcoming') return b.upcoming - a.upcoming;
       return (b.lastAttended?.date ?? '').localeCompare(a.lastAttended?.date ?? '');
     });
 
@@ -75,8 +73,8 @@ export default function CoachMembers() {
         </div>
         <SelectField value={sort} onChange={(e) => setSort(e.target.value as any)} aria-label="Sort" className="w-40 shrink-0">
           <option value="name">Sort by name</option>
-          <option value="attendance">Upcoming registrations</option>
-          <option value="recent">Recent attendance</option>
+          <option value="upcoming">Upcoming registrations</option>
+          <option value="recent">Recent sessions</option>
         </SelectField>
       </div>
 
@@ -92,21 +90,11 @@ export default function CoachMembers() {
         <EmptyState icon={Users2} title="No members match this search" description="Try clearing filters or a different name." />
       ) : (
         <div className="grid gap-2 sm:grid-cols-2">
-          {filtered.map(({ m, upcoming, lastAttended, plan }) => (
+          {filtered.map(({ m }) => (
             <MemberCard
               key={m.id}
               member={m}
-              planName={plan?.name}
               to={`/coach/members/${m.id}`}
-              extra={
-                <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-ink-500">
-                  <span>{upcoming} upcoming</span>
-                  <span>·</span>
-                  <span>
-                    {lastAttended ? `Last: ${lastAttended.title}` : 'No past attendance'}
-                  </span>
-                </div>
-              }
             />
           ))}
         </div>

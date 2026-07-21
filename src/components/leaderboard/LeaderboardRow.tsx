@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { ArrowDown, ArrowUp, Minus, Star } from 'lucide-react';
+import { ArrowDown, ArrowUp, Minus } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
 import type { LeaderboardCategory, LeaderboardResult, Member } from '../../types';
 import { formatResult } from '../../utils/format';
@@ -29,14 +29,7 @@ export function LeaderboardRow({ rank, result, member, category, movement, highl
       </div>
       <Avatar name={member.name} color={member.avatarColor} size="sm" />
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5">
-          <p className="truncate text-sm font-semibold text-ink-900 dark:text-ink-50">{member.name}</p>
-          {result.personalBest && (
-            <span className="inline-flex items-center gap-0.5 rounded-full bg-lime-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-lime-900 dark:bg-lime-400/20 dark:text-lime-200">
-              <Star className="h-2.5 w-2.5" /> PB
-            </span>
-          )}
-        </div>
+        <p className="truncate text-sm font-semibold text-ink-900 dark:text-ink-50">{member.name}</p>
         <p className="text-xs text-ink-500">
           {formatDateShort(result.date)} · {member.ageGroup}
         </p>

@@ -103,7 +103,7 @@ export default function MemberLeaderboardDetail() {
       )}
 
       {ranked.length === 0 ? (
-        <EmptyState icon={Filter} title="No ranked results yet" description="Ask your coach to add official results." />
+        <EmptyState icon={Filter} title="No ranked results yet" description="Ask your coach to add results." />
       ) : (
         <div className="space-y-2">
           {ranked.map((row) => (

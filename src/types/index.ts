@@ -1,6 +1,6 @@
 export type Role = 'member' | 'coach';
 
-export type PaymentStatus = 'paid' | 'due_soon' | 'overdue' | 'processing';
+export type PaymentStatus = 'paid' | 'overdue';
 
 export type MembershipPlan = {
   id: string;
@@ -34,7 +34,6 @@ export type Member = {
     sms: boolean;
     push: boolean;
   };
-  darkMode: boolean;
   coachNotes?: string;
 };
 
@@ -46,21 +45,11 @@ export type CoachStaff = {
   specialty: string;
 };
 
-export type TrainingCategory =
-  | 'Sprint'
-  | 'Endurance'
-  | 'Technique'
-  | 'Recovery'
-  | 'Strength';
-
 export type TrainingDifficulty = 'Beginner' | 'Intermediate' | 'Advanced';
-
-export type AttendanceStatus = 'present' | 'late' | 'absent' | 'excused' | 'unmarked';
 
 export type TrainingRegistration = {
   memberId: string;
   registeredAt: string;
-  attendance: AttendanceStatus;
 };
 
 export type TrainingSession = {
@@ -72,7 +61,6 @@ export type TrainingSession = {
   endTime: string; // HH:MM
   location: string;
   coachId: string;
-  category: TrainingCategory;
   difficulty: TrainingDifficulty;
   capacity: number;
   registrationDeadline: string;
@@ -82,29 +70,14 @@ export type TrainingSession = {
   status: 'open' | 'closed' | 'cancelled';
 };
 
-export type PlanExercise = {
-  id: string;
-  section: 'warmup' | 'main' | 'technique' | 'cooldown';
-  title: string;
-  detail: string;
-  repetitions?: string;
-  distance?: string;
-  time?: string;
-  pace?: string;
-  rest?: string;
-  completedByMember?: boolean;
-};
-
 export type TrainingPlan = {
   id: string;
   memberId: string;
   trainingSessionId: string;
   title: string;
-  intensity: 'Easy' | 'Moderate' | 'Hard' | 'Race pace';
-  estimatedDuration: number; // minutes
+  duration: number; // minutes
   coachNote: string;
-  memberNote?: string;
-  exercises: PlanExercise[];
+  plan: string;
   status: 'draft' | 'published';
   updatedAt: string;
 };
@@ -113,11 +86,10 @@ export type LeaderboardCategory = {
   id: string;
   name: string;
   event: string; // e.g. "100m"
-  measurementType: 'seconds' | 'ms' | 'distance_km' | 'points' | 'attendance';
+  measurementType: 'seconds' | 'ms' | 'distance_km' | 'points';
   unit: string;
   lowerIsBetter: boolean;
   genderCategory: Gender | 'all';
-  ageCategory: string;
   archived: boolean;
 };
 
@@ -128,8 +100,6 @@ export type LeaderboardResult = {
   value: number; // for seconds/ms use raw seconds; distance km; etc.
   date: string;
   note?: string;
-  official: boolean;
-  personalBest: boolean;
 };
 
 export type Payment = {

@@ -7,23 +7,11 @@ import { StatusBadge } from '../../components/ui/StatusBadge';
 import { CapacityProgress } from '../../components/trainings/CapacityProgress';
 import { Avatar } from '../../components/ui/Avatar';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
-import { SelectField } from '../../components/ui/FormField';
 import { formatDateLong } from '../../utils/dates';
-import type { AttendanceStatus } from '../../types';
-
-const attendanceLabels: Record<AttendanceStatus, string> = {
-  present: 'Present',
-  late: 'Late',
-  absent: 'Absent',
-  excused: 'Excused',
-  unmarked: 'Unmarked',
-};
 
 const paymentTone = {
   paid: 'success',
-  due_soon: 'warning',
   overdue: 'danger',
-  processing: 'info',
 } as const;
 
 export default function CoachTrainingDetail() {
@@ -34,7 +22,6 @@ export default function CoachTrainingDetail() {
   const coaches = useStore((s) => s.coaches);
   const plans = useStore((s) => s.trainingPlans);
   const setStatus = useStore((s) => s.setTrainingStatus);
-  const setAttendance = useStore((s) => s.markAttendance);
   const duplicate = useStore((s) => s.duplicateTraining);
   const remove = useStore((s) => s.deleteTraining);
   const push = useStore((s) => s.pushToast);
@@ -68,7 +55,7 @@ export default function CoachTrainingDetail() {
   return (
     <div>
       <PageTitle
-        eyebrow={`${training.category} · ${training.difficulty}`}
+        eyebrow={training.difficulty}
         title={training.title}
         description={`${formatDateLong(training.date)} · ${training.startTime}–${training.endTime}`}
         backTo="/coach/trainings"
@@ -161,7 +148,7 @@ export default function CoachTrainingDetail() {
           <div>
             <h2 className="font-display text-lg font-bold">Participants</h2>
             <p className="text-xs text-ink-500">
-              {training.registrations.length} of {training.capacity} · attendance can be marked live.
+              {training.registrations.length} of {training.capacity} registered.
             </p>
           </div>
           <div className="relative">
@@ -190,7 +177,7 @@ export default function CoachTrainingDetail() {
                     <div className="flex items-center gap-2">
                       <p className="truncate text-sm font-semibold">{row.m.name}</p>
                       <StatusBadge tone={paymentTone[row.m.paymentStatus]} dot>
-                        {row.m.paymentStatus.replace('_', ' ')}
+                        {row.m.paymentStatus}
                       </StatusBadge>
                     </div>
                     <p className="text-xs text-ink-500">
@@ -198,17 +185,7 @@ export default function CoachTrainingDetail() {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 sm:w-72 sm:shrink-0">
-                  <SelectField
-                    aria-label={`Attendance for ${row.m.name}`}
-                    value={row.r.attendance}
-                    onChange={(e) => setAttendance(training.id, row.m.id, e.target.value as AttendanceStatus)}
-                    className="flex-1"
-                  >
-                    {(['unmarked', 'present', 'late', 'absent', 'excused'] as AttendanceStatus[]).map((a) => (
-                      <option key={a} value={a}>{attendanceLabels[a]}</option>
-                    ))}
-                  </SelectField>
+                <div className="flex items-center gap-2 sm:shrink-0">
                   {row.memberPlan?.status === 'published' ? (
                     <StatusBadge tone="accent" dot>Plan published</StatusBadge>
                   ) : row.memberPlan ? (
@@ -235,7 +212,7 @@ export default function CoachTrainingDetail() {
 
       <div className="mt-4 flex items-center gap-2 text-xs text-ink-500">
         <CheckCircle2 className="h-3.5 w-3.5 text-lime-500" />
-        Attendance and plan changes save automatically to prototype state.
+        Plan changes save automatically to prototype state.
       </div>
 
       <ConfirmDialog

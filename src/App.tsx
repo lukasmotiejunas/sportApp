@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useStore } from './store/useStore';
+
 import { MemberLayout } from './components/layout/MemberLayout';
 import { CoachLayout } from './components/layout/CoachLayout';
 import SelectRole from './pages/SelectRole';
@@ -8,7 +9,6 @@ import SelectRole from './pages/SelectRole';
 import MemberHome from './pages/member/MemberHome';
 import MemberTrainings from './pages/member/MemberTrainings';
 import MemberTrainingDetail from './pages/member/MemberTrainingDetail';
-import MemberPlan from './pages/member/MemberPlan';
 import MemberLeaderboards from './pages/member/MemberLeaderboards';
 import MemberLeaderboardDetail from './pages/member/MemberLeaderboardDetail';
 import MemberPayments from './pages/member/MemberPayments';
@@ -35,11 +35,6 @@ function ScrollToTop() {
 
 export default function App() {
   const role = useStore((s) => s.role);
-  const darkMode = useStore((s) => s.darkMode);
-
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', darkMode);
-  }, [darkMode]);
 
   return (
     <>
@@ -53,7 +48,6 @@ export default function App() {
           <Route index element={<MemberHome />} />
           <Route path="trainings" element={<MemberTrainings />} />
           <Route path="trainings/:id" element={<MemberTrainingDetail />} />
-          <Route path="plan" element={<MemberPlan />} />
           <Route path="leaderboards" element={<MemberLeaderboards />} />
           <Route path="leaderboards/:id" element={<MemberLeaderboardDetail />} />
           <Route path="payments" element={<MemberPayments />} />

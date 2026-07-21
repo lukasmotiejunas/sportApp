@@ -1,31 +1,25 @@
-import { Link } from 'react-router-dom';
-import { ChevronRight } from 'lucide-react';
-import type { Member } from '../../types';
-import { Avatar } from '../ui/Avatar';
-import { StatusBadge } from '../ui/StatusBadge';
+import { Link } from "react-router-dom";
+import { ChevronRight } from "lucide-react";
+import type { Member } from "../../types";
+import { Avatar } from "../ui/Avatar";
+import { StatusBadge } from "../ui/StatusBadge";
 
 type Props = {
   member: Member;
-  planName?: string;
-  extra?: React.ReactNode;
   to: string;
 };
 
 const paymentTone = {
-  paid: 'success',
-  due_soon: 'warning',
-  overdue: 'danger',
-  processing: 'info',
+  paid: "success",
+  overdue: "danger",
 } as const;
 
 const paymentLabel = {
-  paid: 'Paid',
-  due_soon: 'Due soon',
-  overdue: 'Overdue',
-  processing: 'Processing',
+  paid: "Paid",
+  overdue: "Overdue",
 } as const;
 
-export function MemberCard({ member, planName, extra, to }: Props) {
+export function MemberCard({ member, to }: Props) {
   return (
     <Link
       to={to}
@@ -33,13 +27,11 @@ export function MemberCard({ member, planName, extra, to }: Props) {
     >
       <Avatar name={member.name} color={member.avatarColor} size="md" />
       <div className="flex-1 min-w-0">
-        <p className="truncate text-sm font-semibold text-ink-900 dark:text-ink-50">{member.name}</p>
-        <p className="truncate text-xs text-ink-500">
-          {planName ?? 'Running Club'} · {member.preferredDistance}
+        <p className="truncate text-sm font-semibold text-ink-900 dark:text-ink-50">
+          {member.name}
         </p>
-        {extra && <div className="mt-1.5">{extra}</div>}
       </div>
-      <div className="flex flex-col items-end gap-1">
+      <div className="flex items-center gap-1">
         <StatusBadge tone={paymentTone[member.paymentStatus]} dot>
           {paymentLabel[member.paymentStatus]}
         </StatusBadge>

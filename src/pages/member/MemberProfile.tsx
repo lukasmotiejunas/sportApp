@@ -5,10 +5,8 @@ import {
   Calendar,
   LogOut,
   Mail,
-  Moon,
   Phone,
   ShieldAlert,
-  Sun,
   User,
 } from 'lucide-react';
 import { PageTitle } from '../../components/layout/PageTitle';
@@ -27,8 +25,6 @@ export default function MemberProfile() {
   const plans = useStore((s) => s.membershipPlans);
   const plan = plans.find((p) => p.id === member.membershipPlanId);
   const updateMember = useStore((s) => s.updateMember);
-  const darkMode = useStore((s) => s.darkMode);
-  const toggleDarkMode = useStore((s) => s.toggleDarkMode);
   const setRole = useStore((s) => s.setRole);
   const push = useStore((s) => s.pushToast);
   const navigate = useNavigate();
@@ -100,12 +96,9 @@ export default function MemberProfile() {
         ) : (
           <div className="grid gap-2 sm:grid-cols-2">
             {bests.map(({ c, my }) => (
-              <div key={c.id} className="flex items-center justify-between rounded-xl bg-ink-50 p-3 dark:bg-ink-800/60">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">{c.event}</p>
-                  <p className="font-display text-lg font-bold tabular-nums">{formatResult(my.value, c)}</p>
-                </div>
-                {my.personalBest && <StatusBadge tone="accent" dot>PB</StatusBadge>}
+              <div key={c.id} className="rounded-xl bg-ink-50 p-3 dark:bg-ink-800/60">
+                <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">{c.event}</p>
+                <p className="font-display text-lg font-bold tabular-nums">{formatResult(my.value, c)}</p>
               </div>
             ))}
           </div>
@@ -115,13 +108,6 @@ export default function MemberProfile() {
       <section className="surface mb-4 p-4">
         <h2 className="mb-3 font-display text-base font-bold">Preferences</h2>
         <div className="space-y-2">
-          <PrefRow
-            icon={darkMode ? Sun : Moon}
-            title="Dark mode"
-            description="Optimised for low-light training environments."
-            value={darkMode}
-            onChange={() => toggleDarkMode()}
-          />
           <PrefRow
             icon={Mail}
             title="Email notifications"
@@ -237,14 +223,14 @@ function Switch({ checked, onChange }: { checked: boolean; onChange: () => void 
       aria-checked={checked}
       onClick={onChange}
       className={
-        'relative h-6 w-11 rounded-full transition-colors ' +
+        'inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0 transition-colors ' +
         (checked ? 'bg-ink-900 dark:bg-lime-400' : 'bg-ink-200 dark:bg-ink-700')
       }
     >
       <span
         className={
-          'absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ' +
-          (checked ? 'translate-x-5' : 'translate-x-0.5')
+          'inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ' +
+          (checked ? 'translate-x-[22px]' : 'translate-x-0.5')
         }
       />
     </button>
