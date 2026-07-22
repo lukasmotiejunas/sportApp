@@ -18,7 +18,7 @@ export function ParticipantAvatarGroup({ members, max = 5, size = 'sm' }: Props)
         ))}
       </div>
       {overflow > 0 && (
-        <span className="ml-2 text-xs font-semibold text-ink-500">+{overflow} more</span>
+        <span className="ml-2 text-xs font-semibold text-ink-500">+dar {overflow}</span>
       )}
     </div>
   );

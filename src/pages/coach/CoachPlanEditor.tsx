@@ -29,7 +29,7 @@ export default function CoachPlanEditor() {
     id: 'plan-' + Math.random().toString(36).slice(2, 8),
     trainingSessionId: trainingId,
     memberId,
-    title: training ? `${training.title} — ${member?.name.split(' ')[0]}` : 'New plan',
+    title: training ? `${training.title} — ${member?.name.split(' ')[0]}` : 'Naujas planas',
     duration: 60,
     coachNote: '',
     plan: '',
@@ -40,7 +40,7 @@ export default function CoachPlanEditor() {
   if (!training || !member) {
     return (
       <div>
-        <PageTitle title="Plan not found" backTo="/coach/trainings" />
+        <PageTitle title="Planas nerastas" backTo="/coach/trainings" />
       </div>
     );
   }
@@ -49,7 +49,7 @@ export default function CoachPlanEditor() {
     const next = { ...plan, status: 'draft' as const, updatedAt: todayIso() };
     upsert(next);
     setPlan(next);
-    push({ kind: 'success', message: 'Draft saved.' });
+    push({ kind: 'success', message: 'Juodraštis išsaugotas.' });
   };
 
   const publishAndSave = () => {
@@ -57,13 +57,13 @@ export default function CoachPlanEditor() {
     upsert(next);
     publish(next.id);
     setPlan(next);
-    push({ kind: 'success', message: 'Training plan published to member.' });
+    push({ kind: 'success', message: 'Treniruočių planas publikuotas nariui.' });
   };
 
   const deleteThis = () => {
     if (existingPlan) {
       remove(existingPlan.id);
-      push({ kind: 'info', message: 'Plan removed.' });
+      push({ kind: 'info', message: 'Planas pašalintas.' });
     }
     navigate(`/coach/trainings/${training.id}`);
   };
@@ -71,8 +71,8 @@ export default function CoachPlanEditor() {
   return (
     <div>
       <PageTitle
-        eyebrow="Individual plan"
-        title={plan.title || 'New plan'}
+        eyebrow="Asmeninis planas"
+        title={plan.title || 'Naujas planas'}
         description={`${training.title} · ${formatDateShort(training.date)} · ${training.startTime}`}
         backTo={`/coach/trainings/${training.id}`}
       />
@@ -85,38 +85,38 @@ export default function CoachPlanEditor() {
             <p className="text-xs text-ink-500">{member.preferredDistance} · {member.ageGroup}</p>
           </div>
           <StatusBadge tone={plan.status === 'published' ? 'accent' : 'warning'} dot>
-            {plan.status}
+            {plan.status === 'published' ? 'Publikuota' : 'Juodraštis'}
           </StatusBadge>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-3">
           <FormField
-            label="Plan title"
+            label="Plano pavadinimas"
             value={plan.title}
             onChange={(e) => setPlan({ ...plan, title: e.target.value })}
             className="sm:col-span-2"
           />
           <FormField
-            label="Duration (min)"
+            label="Trukmė (min)"
             type="number"
             min={5}
             value={plan.duration}
             onChange={(e) => setPlan({ ...plan, duration: Number(e.target.value) })}
           />
           <TextareaField
-            label="Coach note to member"
+            label="Trenerio užrašas nariui"
             value={plan.coachNote}
             onChange={(e) => setPlan({ ...plan, coachNote: e.target.value })}
             className="sm:col-span-3"
-            placeholder="Focus on relaxed shoulders and a controlled first 30 metres…"
+            placeholder="Atsipalaidavę pečiai ir kontroliuojami pirmieji 30 metrų…"
           />
           <TextareaField
-            label="Plan"
+            label="Planas"
             value={plan.plan}
             onChange={(e) => setPlan({ ...plan, plan: e.target.value })}
             className="sm:col-span-3"
             rows={12}
-            placeholder="Write the full plan — warm-up, main set, cool-down, notes…"
+            placeholder="Aprašykite visą planą — apšilimą, pagrindinę dalį, atsipalaidavimą, pastabas…"
           />
         </div>
       </section>
@@ -125,19 +125,19 @@ export default function CoachPlanEditor() {
         <div>
           {existingPlan && (
             <button type="button" className="btn-danger" onClick={deleteThis}>
-              <Trash2 className="h-4 w-4" /> Delete plan
+              <Trash2 className="h-4 w-4" /> Ištrinti planą
             </button>
           )}
         </div>
         <div className="flex flex-wrap gap-2">
           <Link to={`/coach/trainings/${training.id}`} className="btn-ghost">
-            Return to session
+            Grįžti į treniruotę
           </Link>
           <button type="button" className="btn-outline" onClick={saveDraft}>
-            <Save className="h-4 w-4" /> Save draft
+            <Save className="h-4 w-4" /> Išsaugoti juodraštį
           </button>
           <button type="button" className="btn-accent" onClick={publishAndSave}>
-            <Send className="h-4 w-4" /> Publish to member
+            <Send className="h-4 w-4" /> Publikuoti nariui
           </button>
         </div>
       </div>

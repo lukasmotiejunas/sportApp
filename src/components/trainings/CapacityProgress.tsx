@@ -12,19 +12,19 @@ export function CapacityProgress({ registered, capacity, showLabel = true }: Pro
     pct >= 100 ? 'danger' : pct >= 90 ? 'warning' : 'accent';
   const spotsLeft = Math.max(capacity - registered, 0);
   const label = spotsLeft === 0
-    ? 'Full · session at capacity'
+    ? 'Užpildyta · treniruotė pilna'
     : spotsLeft === 1
-      ? '1 spot remaining'
+      ? 'Liko 1 vieta'
       : spotsLeft <= 3
-        ? `${spotsLeft} spots remaining · almost full`
-        : `${spotsLeft} spots remaining`;
+        ? `Liko ${spotsLeft} vietos · beveik pilna`
+        : `Liko ${spotsLeft} vietos`;
   return (
     <div>
       <ProgressBar value={pct} tone={tone} size="sm" />
       {showLabel && (
         <div className="mt-1.5 flex items-center justify-between text-xs">
           <span className="font-medium text-ink-600 dark:text-ink-400">
-            {registered} of {capacity} registered
+            Užsiregistravo {registered} iš {capacity}
           </span>
           <span
             className={

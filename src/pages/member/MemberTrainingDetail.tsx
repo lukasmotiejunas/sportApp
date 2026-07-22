@@ -52,7 +52,7 @@ export default function MemberTrainingDetail() {
   if (!training) {
     return (
       <div>
-        <PageTitle title="Training not found" backTo="/member/trainings" />
+        <PageTitle title="Treniruotė nerasta" backTo="/member/trainings" />
       </div>
     );
   }
@@ -73,10 +73,10 @@ export default function MemberTrainingDetail() {
     if (res.ok) {
       push({
         kind: "success",
-        message: "You’re in — training registration completed.",
+        message: "Puiku — registracija į treniruotę patvirtinta.",
       });
     } else {
-      push({ kind: "error", message: res.error ?? "Could not register." });
+      push({ kind: "error", message: res.error ?? "Nepavyko užsiregistruoti." });
     }
   };
 
@@ -84,7 +84,7 @@ export default function MemberTrainingDetail() {
     cancel(training.id, member.id);
     push({
       kind: "info",
-      message: "Registration cancelled — a spot has been released.",
+      message: "Registracija atšaukta — vieta atlaisvinta.",
     });
   };
 
@@ -95,20 +95,20 @@ export default function MemberTrainingDetail() {
           className="btn-danger flex-1"
           onClick={() => setConfirmCancel(true)}
         >
-          <XCircle className="h-4 w-4" /> Cancel my registration
+          <XCircle className="h-4 w-4" /> Atšaukti registraciją
         </button>
       );
     }
     if (isCancelled)
       return (
         <button className="btn-outline flex-1" disabled>
-          Session cancelled
+          Treniruotė atšaukta
         </button>
       );
     if (isClosed)
       return (
         <button className="btn-outline flex-1" disabled>
-          Registration closed
+          Registracija uždaryta
         </button>
       );
     if (isOverdue)
@@ -117,19 +117,19 @@ export default function MemberTrainingDetail() {
           className="btn-danger flex-1"
           onClick={() => navigate("/member/payments")}
         >
-          Pay to unlock registration
+          Apmokėti norint atrakinti registraciją
         </button>
       );
     if (isFull) {
       return (
         <button className="btn-outline flex-1" disabled>
-          Full · join waiting list (prototype)
+          Užpildyta · stoti į laukiančiųjų sąrašą (prototipas)
         </button>
       );
     }
     return (
       <button className="btn-accent flex-1" onClick={doRegister}>
-        Register for this session
+        Užsiregistruoti į šią treniruotę
       </button>
     );
   };
@@ -145,22 +145,19 @@ export default function MemberTrainingDetail() {
       <div className="grid gap-4 md:grid-cols-2">
         <section className="surface p-4">
           <div className="mb-3 flex flex-wrap items-center gap-2">
-            <span className="chip bg-ink-100 text-ink-800 dark:bg-ink-800 dark:text-ink-100">
-              {training.difficulty}
-            </span>
             {isRegistered && (
               <StatusBadge tone="accent" dot>
-                You&apos;re registered
+                Esate užsiregistravę
               </StatusBadge>
             )}
             {isCancelled && (
               <StatusBadge tone="danger" dot>
-                Cancelled
+                Atšaukta
               </StatusBadge>
             )}
             {isFull && !isRegistered && !isCancelled && (
               <StatusBadge tone="danger" dot>
-                Session full
+                Treniruotė užpildyta
               </StatusBadge>
             )}
           </div>
@@ -171,18 +168,18 @@ export default function MemberTrainingDetail() {
           <div className="mt-4 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
             <InfoRow
               icon={Clock}
-              label="Time"
+              label="Laikas"
               value={`${training.startTime}–${training.endTime}`}
             />
-            <InfoRow icon={MapPin} label="Location" value={training.location} />
+            <InfoRow icon={MapPin} label="Vieta" value={training.location} />
             <InfoRow
               icon={UserRound}
-              label="Coach"
-              value={coach?.name ?? "TBA"}
+              label="Treneris"
+              value={coach?.name ?? "Nenurodyta"}
             />
             <InfoRow
               icon={Info}
-              label="Date"
+              label="Data"
               value={formatDateLong(training.date)}
             />
           </div>
@@ -200,14 +197,14 @@ export default function MemberTrainingDetail() {
         <section className="surface p-4 md:col-span-2">
           <h3 className="mb-3 flex items-center gap-2 font-display text-base font-bold">
             <Sparkles className="h-4 w-4 text-lime-600" />
-            Registered participants
+            Užsiregistravę dalyviai
             <span className="text-xs font-medium text-ink-500">
-              · {registered.length} of {training.capacity}
+              · {registered.length} iš {training.capacity}
             </span>
           </h3>
           {registered.length === 0 ? (
             <p className="text-sm text-ink-500">
-              Be the first to register for this session.
+              Būkite pirmasis užsiregistravęs į šią treniruotę.
             </p>
           ) : (
             <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -245,10 +242,10 @@ export default function MemberTrainingDetail() {
         open={confirmCancel}
         onClose={() => setConfirmCancel(false)}
         onConfirm={doCancel}
-        title="Cancel this registration?"
-        message="Your spot will be released to another club member. You can register again later while spots are available."
-        confirmLabel="Cancel registration"
-        cancelLabel="Keep me in"
+        title="Atšaukti šią registraciją?"
+        message="Jūsų vieta bus atlaisvinta kitam klubo nariui. Galėsite užsiregistruoti vėliau, kol dar bus laisvų vietų."
+        confirmLabel="Atšaukti registraciją"
+        cancelLabel="Palikti registraciją"
         destructive
       />
     </div>
@@ -293,11 +290,11 @@ function PersonalPlanPanel({
           <ClipboardList className="h-5 w-5" />
         </span>
         <h3 className="font-display text-base font-bold text-ink-900 dark:text-ink-50">
-          Personal plan on the way
+          Asmeninis planas ruošiamas
         </h3>
         <p className="mt-1 max-w-xs text-sm text-ink-500">
-          Your coach will publish a personalised plan for this session soon.
-          Check back closer to the day.
+          Jūsų treneris netrukus paskelbs asmeninį planą šiai treniruotei.
+          Užsukite arčiau treniruotės dienos.
         </p>
       </section>
     );
@@ -308,7 +305,7 @@ function PersonalPlanPanel({
       <div className="mb-3 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[11px] font-semibold uppercase tracking-widest text-lime-600 dark:text-lime-300">
-            Personal plan
+            Asmeninis planas
           </p>
           <h3 className="mt-0.5 truncate font-display text-base font-bold text-ink-900 dark:text-ink-50">
             {plan.title}
@@ -325,7 +322,7 @@ function PersonalPlanPanel({
             <MessageSquareText className="mt-0.5 h-4 w-4 shrink-0 text-lime-600 dark:text-lime-300" />
             <div className="min-w-0">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-lime-700 dark:text-lime-300">
-                Coach note
+                Trenerio užrašas
               </p>
               <p className="mt-0.5 line-clamp-3 text-sm text-ink-700 dark:text-ink-100">
                 {plan.coachNote}
@@ -348,7 +345,7 @@ function PersonalPlanPanel({
         onClick={onExpand}
         className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-2xl border border-ink-100 bg-white px-3 py-2.5 text-sm font-semibold text-ink-800 shadow-sm transition-colors hover:border-lime-400/50 hover:bg-lime-50/50 dark:border-ink-700 dark:bg-ink-900 dark:text-ink-100 dark:hover:border-lime-400/40 dark:hover:bg-lime-400/[0.06]"
       >
-        View full plan
+        Peržiūrėti visą planą
       </button>
     </section>
   );
@@ -390,7 +387,7 @@ function FullPlanModal({
           <MessageSquareText className="mt-0.5 h-4 w-4 shrink-0 text-lime-600 dark:text-lime-300" />
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-widest text-lime-700 dark:text-lime-300">
-              Coach note
+              Trenerio užrašas
             </p>
             <p className="mt-1 text-sm text-ink-700 dark:text-ink-100">
               {plan.coachNote}
@@ -404,7 +401,7 @@ function FullPlanModal({
           {plan.plan}
         </pre>
       ) : (
-        <p className="text-sm text-ink-500">The coach hasn’t written the plan details yet.</p>
+        <p className="text-sm text-ink-500">Treneris dar neparuošė plano detalių.</p>
       )}
     </Modal>
   );

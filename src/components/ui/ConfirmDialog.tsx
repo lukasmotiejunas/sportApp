@@ -18,8 +18,8 @@ export function ConfirmDialog({
   onConfirm,
   title,
   message,
-  confirmLabel = 'Confirm',
-  cancelLabel = 'Cancel',
+  confirmLabel = 'Patvirtinti',
+  cancelLabel = 'Atšaukti',
   destructive = false,
 }: Props) {
   return (

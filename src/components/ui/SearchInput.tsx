@@ -6,7 +6,7 @@ type Props = {
   placeholder?: string;
 };
 
-export function SearchInput({ value, onChange, placeholder = 'Search' }: Props) {
+export function SearchInput({ value, onChange, placeholder = 'Ieškoti' }: Props) {
   return (
     <div className="relative">
       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ink-400" />
@@ -23,7 +23,7 @@ export function SearchInput({ value, onChange, placeholder = 'Search' }: Props) 
           type="button"
           className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-ink-400 hover:bg-ink-100 dark:hover:bg-ink-800"
           onClick={() => onChange('')}
-          aria-label="Clear search"
+          aria-label="Išvalyti paiešką"
         >
           <X className="h-3.5 w-3.5" />
         </button>

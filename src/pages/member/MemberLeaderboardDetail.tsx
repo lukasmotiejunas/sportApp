@@ -44,7 +44,7 @@ export default function MemberLeaderboardDetail() {
   if (!category) {
     return (
       <div>
-        <PageTitle title="Leaderboard not found" backTo="/member/leaderboards" />
+        <PageTitle title="Rezultatų lentelė nerasta" backTo="/member/leaderboards" />
       </div>
     );
   }
@@ -57,7 +57,7 @@ export default function MemberLeaderboardDetail() {
       <PageTitle
         title={category.name}
         eyebrow={category.event}
-        description={category.lowerIsBetter ? 'Fastest result wins.' : 'Highest value wins.'}
+        description={category.lowerIsBetter ? 'Laimi greičiausias rezultatas.' : 'Laimi didžiausia reikšmė.'}
         backTo="/member/leaderboards"
       />
 
@@ -72,25 +72,25 @@ export default function MemberLeaderboardDetail() {
 
       <div className="mb-4 -mx-4 flex gap-2 overflow-x-auto px-4 no-scrollbar">
         <FilterChip icon={<Filter className="h-3.5 w-3.5" />} active={gender === 'all'} onClick={() => setGender('all')}>
-          All members
+          Visi nariai
         </FilterChip>
         <FilterChip active={gender === 'male'} onClick={() => setGender('male')}>
-          Men
+          Vyrai
         </FilterChip>
         <FilterChip active={gender === 'female'} onClick={() => setGender('female')}>
-          Women
+          Moterys
         </FilterChip>
         <FilterChip active={range === 'all'} onClick={() => setRange('all')}>
-          All time
+          Visą laiką
         </FilterChip>
         <FilterChip active={range === 'month'} onClick={() => setRange('month')}>
-          This month
+          Šį mėnesį
         </FilterChip>
       </div>
 
       {myRow && (
         <section className="mb-4 rounded-2xl border border-lime-300 bg-lime-50 p-3 dark:border-lime-500/50 dark:bg-lime-500/10">
-          <p className="mb-2 text-xs font-bold uppercase tracking-wide text-lime-900 dark:text-lime-200">Your position</p>
+          <p className="mb-2 text-xs font-bold uppercase tracking-wide text-lime-900 dark:text-lime-200">Jūsų vieta</p>
           <LeaderboardRow
             rank={myRow.rank}
             result={myRow.result}
@@ -103,7 +103,7 @@ export default function MemberLeaderboardDetail() {
       )}
 
       {ranked.length === 0 ? (
-        <EmptyState icon={Filter} title="No ranked results yet" description="Ask your coach to add results." />
+        <EmptyState icon={Filter} title="Reitinguotų rezultatų dar nėra" description="Paprašykite trenerio įtraukti rezultatus." />
       ) : (
         <div className="space-y-2">
           {ranked.map((row) => (

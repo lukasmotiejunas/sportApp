@@ -8,9 +8,9 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { SelectField } from '../../components/ui/FormField';
 
 const paymentFilters = [
-  { id: 'all', label: 'All' },
-  { id: 'paid', label: 'Paid' },
-  { id: 'overdue', label: 'Overdue' },
+  { id: 'all', label: 'Visi' },
+  { id: 'paid', label: 'Apmokėta' },
+  { id: 'overdue', label: 'Vėluoja' },
 ] as const;
 
 export default function CoachMembers() {
@@ -54,9 +54,9 @@ export default function CoachMembers() {
   return (
     <div>
       <PageTitle
-        eyebrow="Coach"
-        title="Members"
-        description={`${members.length} club members total`}
+        eyebrow="Treneris"
+        title="Nariai"
+        description={`Iš viso klubo narių: ${members.length}`}
       />
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -65,16 +65,16 @@ export default function CoachMembers() {
           <input
             type="search"
             className="input pl-9"
-            placeholder="Search members"
+            placeholder="Ieškoti narių"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            aria-label="Search members"
+            aria-label="Ieškoti narių"
           />
         </div>
-        <SelectField value={sort} onChange={(e) => setSort(e.target.value as any)} aria-label="Sort" className="w-40 shrink-0">
-          <option value="name">Sort by name</option>
-          <option value="upcoming">Upcoming registrations</option>
-          <option value="recent">Recent sessions</option>
+        <SelectField value={sort} onChange={(e) => setSort(e.target.value as any)} aria-label="Rikiuoti" className="w-40 shrink-0">
+          <option value="name">Rikiuoti pagal vardą</option>
+          <option value="upcoming">Artėjančios registracijos</option>
+          <option value="recent">Ankstesnės treniruotės</option>
         </SelectField>
       </div>
 
@@ -87,7 +87,7 @@ export default function CoachMembers() {
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState icon={Users2} title="No members match this search" description="Try clearing filters or a different name." />
+        <EmptyState icon={Users2} title="Nė vienas narys neatitinka paieškos" description="Pabandykite išvalyti filtrus arba įvesti kitą vardą." />
       ) : (
         <div className="grid gap-2 sm:grid-cols-2">
           {filtered.map(({ m }) => (

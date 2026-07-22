@@ -14,8 +14,8 @@ const paymentTone = {
 } as const;
 
 const paymentLabel = {
-  paid: 'Paid',
-  overdue: 'Overdue',
+  paid: 'Apmokėta',
+  overdue: 'Vėluoja',
 } as const;
 
 export default function MemberPayments() {
@@ -29,28 +29,28 @@ export default function MemberPayments() {
   const [method, setMethod] = useState('visa');
 
   const history = [
-    { id: 'h1', month: 'This month', status: member.paymentStatus, date: member.lastPaymentDate, amount: plan.monthlyFee },
-    { id: 'h2', month: 'Previous month', status: 'paid' as const, date: addDays(member.lastPaymentDate, -30), amount: plan.monthlyFee },
-    { id: 'h3', month: '2 months ago', status: 'paid' as const, date: addDays(member.lastPaymentDate, -60), amount: plan.monthlyFee },
-    { id: 'h4', month: '3 months ago', status: 'paid' as const, date: addDays(member.lastPaymentDate, -90), amount: plan.monthlyFee },
+    { id: 'h1', month: 'Šį mėnesį', status: member.paymentStatus, date: member.lastPaymentDate, amount: plan.monthlyFee },
+    { id: 'h2', month: 'Praėjusį mėnesį', status: 'paid' as const, date: addDays(member.lastPaymentDate, -30), amount: plan.monthlyFee },
+    { id: 'h3', month: 'Prieš 2 mėnesius', status: 'paid' as const, date: addDays(member.lastPaymentDate, -60), amount: plan.monthlyFee },
+    { id: 'h4', month: 'Prieš 3 mėnesius', status: 'paid' as const, date: addDays(member.lastPaymentDate, -90), amount: plan.monthlyFee },
   ];
 
   const doPay = () => {
     simulatePayment(member.id);
     setPayOpen(false);
-    push({ kind: 'success', message: 'Prototype payment completed — membership renewed.' });
+    push({ kind: 'success', message: 'Prototipo mokėjimas atliktas — narystė pratęsta.' });
   };
 
   return (
     <div>
-      <PageTitle title="Payments" description="Your membership plan and payment history." eyebrow="Membership" />
+      <PageTitle title="Mokėjimai" description="Jūsų narystės planas ir mokėjimų istorija." eyebrow="Narystė" />
 
       <PaymentStatusBanner
         status={member.paymentStatus}
         amount={formatCurrency(plan.monthlyFee)}
         dueDate={formatDateShort(member.paymentDueDate)}
         actionLabel={
-          member.paymentStatus === 'paid' ? 'Renew early' : 'Pay now — prototype'
+          member.paymentStatus === 'paid' ? 'Pratęsti anksčiau' : 'Apmokėti dabar — prototipas'
         }
         onAction={() => setPayOpen(true)}
       />
@@ -58,33 +58,33 @@ export default function MemberPayments() {
       <section className="surface mt-4 p-4">
         <div className="mb-3 flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">Current plan</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">Dabartinis planas</p>
             <p className="font-display text-lg font-bold">{plan.name}</p>
-            <p className="text-sm text-ink-500">Due on day 1 of every month</p>
+            <p className="text-sm text-ink-500">Mokama kiekvieno mėnesio 1 dieną</p>
           </div>
           <div className="text-right">
             <p className="font-display text-2xl font-bold tabular-nums">{formatCurrency(plan.monthlyFee)}</p>
-            <p className="text-xs text-ink-500">per month</p>
+            <p className="text-xs text-ink-500">per mėnesį</p>
           </div>
         </div>
         <ul className="grid gap-2 sm:grid-cols-2">
           <li className="flex items-center gap-2 rounded-xl bg-ink-50 p-2.5 text-sm dark:bg-ink-800/60">
-            <ShieldCheck className="h-4 w-4 text-emerald-500" /> Unlimited training registrations
+            <ShieldCheck className="h-4 w-4 text-emerald-500" /> Neribotos registracijos į treniruotes
           </li>
           <li className="flex items-center gap-2 rounded-xl bg-ink-50 p-2.5 text-sm dark:bg-ink-800/60">
-            <ShieldCheck className="h-4 w-4 text-emerald-500" /> Personal coach-built plans
+            <ShieldCheck className="h-4 w-4 text-emerald-500" /> Asmeniniai trenerio parengti planai
           </li>
           <li className="flex items-center gap-2 rounded-xl bg-ink-50 p-2.5 text-sm dark:bg-ink-800/60">
-            <ShieldCheck className="h-4 w-4 text-emerald-500" /> Full leaderboard access
+            <ShieldCheck className="h-4 w-4 text-emerald-500" /> Visa prieiga prie rezultatų lentelių
           </li>
           <li className="flex items-center gap-2 rounded-xl bg-ink-50 p-2.5 text-sm dark:bg-ink-800/60">
-            <ShieldCheck className="h-4 w-4 text-emerald-500" /> Priority for club races
+            <ShieldCheck className="h-4 w-4 text-emerald-500" /> Pirmenybė klubo varžybose
           </li>
         </ul>
       </section>
 
       <section className="mt-4">
-        <h2 className="mb-2 font-display text-base font-bold">Payment history</h2>
+        <h2 className="mb-2 font-display text-base font-bold">Mokėjimų istorija</h2>
         <div className="surface divide-y divide-ink-100 dark:divide-ink-800">
           {history.map((h) => (
             <div key={h.id} className="flex items-center justify-between px-4 py-3">
@@ -110,28 +110,28 @@ export default function MemberPayments() {
         onClose={() => setPayOpen(false)}
         title={
           <span className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5 text-lime-600" /> Prototype payment
+            <CreditCard className="h-5 w-5 text-lime-600" /> Prototipo mokėjimas
           </span>
         }
-        description="No card will be charged. This is a simulated checkout — the label above stays visible on purpose."
+        description="Jokia kortelė nebus apmokestinta. Tai simuliuotas atsiskaitymas — pažyma virš išlieka matoma tikslingai."
         footer={
           <>
-            <button className="btn-ghost" onClick={() => setPayOpen(false)}>Cancel</button>
+            <button className="btn-ghost" onClick={() => setPayOpen(false)}>Atšaukti</button>
             <button className="btn-primary" onClick={doPay}>
-              Pay {formatCurrency(plan.monthlyFee)}
+              Apmokėti {formatCurrency(plan.monthlyFee)}
             </button>
           </>
         }
       >
         <div className="rounded-2xl border border-dashed border-amber-300 bg-amber-50 p-3 text-xs font-medium text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
           <Sparkles className="mr-1 inline h-3.5 w-3.5" />
-          Prototype simulation — no real card is processed and no funds are moved.
+          Prototipo simuliacija — jokia kortelė neapdorojama ir jokie pinigai nepervedami.
         </div>
         <div className="mt-4 space-y-2">
           {[
-            { id: 'visa', label: 'Visa · 4242', hint: 'Default card on file' },
-            { id: 'sepa', label: 'SEPA Direct Debit', hint: 'LT12 xxxx xxxx 4242' },
-            { id: 'apple', label: 'Apple Pay', hint: 'Simulated' },
+            { id: 'visa', label: 'Visa · 4242', hint: 'Numatytoji kortelė' },
+            { id: 'sepa', label: 'SEPA tiesioginis debetas', hint: 'LT12 xxxx xxxx 4242' },
+            { id: 'apple', label: 'Apple Pay', hint: 'Simuliuota' },
           ].map((m) => (
             <label
               key={m.id}

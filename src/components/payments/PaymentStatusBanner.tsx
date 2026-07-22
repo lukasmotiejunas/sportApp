@@ -14,14 +14,14 @@ const config = {
   paid: {
     icon: CheckCircle2,
     tone: 'from-emerald-500/10 to-emerald-500/5 border-emerald-200 text-emerald-800 dark:text-emerald-200 dark:border-emerald-500/30',
-    title: 'Membership is active',
-    description: 'Thanks — your payment for this month is settled. Enjoy every session.',
+    title: 'Narystė aktyvi',
+    description: 'Ačiū — šio mėnesio mokėjimas atliktas. Mėgaukitės kiekviena treniruote.',
   },
   overdue: {
     icon: AlertOctagon,
     tone: 'from-red-500/15 to-red-500/5 border-red-200 text-red-900 dark:text-red-200 dark:border-red-500/40',
-    title: 'Membership payment overdue',
-    description: 'Registration for trainings is paused until your payment is up to date.',
+    title: 'Narystės mokėjimas vėluoja',
+    description: 'Registracija į treniruotes sustabdyta, kol bus sumokėta.',
   },
 } as const;
 
@@ -42,7 +42,7 @@ export function PaymentStatusBanner({ status, amount, dueDate, onAction, actionL
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-xs font-semibold uppercase tracking-wide opacity-70">
-            {amount} · Due {dueDate}
+            {amount} · Iki {dueDate}
           </p>
           <h3 className="mt-0.5 font-display text-lg font-semibold">{c.title}</h3>
           <p className="mt-1 text-sm opacity-90">{c.description}</p>
@@ -55,7 +55,7 @@ export function PaymentStatusBanner({ status, amount, dueDate, onAction, actionL
             onClick={onAction}
             className="btn-accent h-9 px-4 text-sm"
           >
-            {actionLabel ?? 'Pay now'}
+            {actionLabel ?? 'Mokėti dabar'}
           </button>
         </div>
       )}

@@ -13,9 +13,9 @@ import type { PaymentStatus } from "../../types";
 import { FilterChip } from "../../components/ui/FilterChip";
 
 const filters: { id: "all" | PaymentStatus; label: string }[] = [
-  { id: "all", label: "All" },
-  { id: "paid", label: "Paid" },
-  { id: "overdue", label: "Overdue" },
+  { id: "all", label: "Visi" },
+  { id: "paid", label: "Apmokėta" },
+  { id: "overdue", label: "Vėluoja" },
 ];
 
 const paymentTone = {
@@ -24,8 +24,8 @@ const paymentTone = {
 } as const;
 
 const paymentLabel = {
-  paid: "Paid",
-  overdue: "Overdue",
+  paid: "Apmokėta",
+  overdue: "Vėluoja",
 } as const;
 
 export default function CoachPayments() {
@@ -65,28 +65,28 @@ export default function CoachPayments() {
   const completion = Math.round((monthlyRevenue / Math.max(expected, 1)) * 100);
 
   const pieData = [
-    { name: "Paid", value: counts.paid, color: "#10b981" },
-    { name: "Overdue", value: counts.overdue, color: "#ef4444" },
+    { name: "Apmokėta", value: counts.paid, color: "#10b981" },
+    { name: "Vėluoja", value: counts.overdue, color: "#ef4444" },
   ];
 
   return (
     <div>
       <PageTitle
-        eyebrow="Coach"
-        title="Payments"
-        description="Simulated payment operations — status changes propagate instantly into the member experience."
+        eyebrow="Treneris"
+        title="Mokėjimai"
+        description="Simuliuojamos mokėjimų operacijos — būsenų pakeitimai iš karto atsispindi nario patirtyje."
       />
 
       <div className="grid grid-cols-2 gap-3">
         <DashboardMetricCard
           icon={CircleDollarSign}
-          label="Paid"
+          label="Apmokėta"
           value={String(counts.paid)}
           tone="accent"
         />
         <DashboardMetricCard
           icon={CircleDollarSign}
-          label="Overdue"
+          label="Vėluoja"
           value={String(counts.overdue)}
           tone="danger"
         />
@@ -95,16 +95,16 @@ export default function CoachPayments() {
       <div className="mt-4 grid gap-3 lg:grid-cols-3">
         <section className="surface p-4 lg:col-span-1">
           <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">
-            Simulated monthly revenue
+            Simuliuojamos mėnesio pajamos
           </p>
           <p className="mt-1 font-display text-3xl font-bold tabular-nums">
             {formatCurrency(monthlyRevenue)}
           </p>
           <p className="text-sm text-ink-500">
-            of {formatCurrency(expected)} expected
+            iš {formatCurrency(expected)} tikėtinų
           </p>
           <p className="mt-2 text-sm font-semibold text-lime-700 dark:text-lime-300">
-            {completion}% completion
+            {completion}% užbaigtumas
           </p>
           <div className="mt-3 h-40">
             <ResponsiveContainer>
@@ -150,10 +150,10 @@ export default function CoachPayments() {
               <input
                 type="search"
                 className="input pl-9"
-                placeholder="Search member"
+                placeholder="Ieškoti nario"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                aria-label="Search member"
+                aria-label="Ieškoti nario"
               />
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -173,11 +173,11 @@ export default function CoachPayments() {
             <table className="w-full text-sm">
               <thead className="text-left text-xs uppercase tracking-wider text-ink-500">
                 <tr>
-                  <th className="py-2">Member</th>
-                  <th className="py-2">Plan</th>
-                  <th className="py-2">Amount</th>
-                  <th className="py-2">Status</th>
-                  <th className="py-2 text-right">Actions</th>
+                  <th className="py-2">Narys</th>
+                  <th className="py-2">Planas</th>
+                  <th className="py-2">Suma</th>
+                  <th className="py-2">Būsena</th>
+                  <th className="py-2 text-right">Veiksmai</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
@@ -217,7 +217,7 @@ export default function CoachPayments() {
                             to={`/coach/members/${m.id}`}
                             className="btn-ghost h-8 px-2 text-xs"
                           >
-                            Open
+                            Atidaryti
                           </Link>
                         </div>
                       </td>
@@ -242,7 +242,7 @@ export default function CoachPayments() {
                         {plan.name} · {formatCurrency(plan.monthlyFee)}
                       </p>
                       <p className="text-xs text-ink-500">
-                        Due {formatDateShort(m.paymentDueDate)}
+                        Iki {formatDateShort(m.paymentDueDate)}
                       </p>
                     </div>
                     <StatusBadge tone={paymentTone[m.paymentStatus]} dot>
@@ -256,12 +256,12 @@ export default function CoachPayments() {
                         setPaymentStatus(m.id, "paid");
                         push({
                           kind: "success",
-                          message: `${m.name} marked as paid.`,
+                          message: `${m.name} pažymėtas kaip apmokėjęs.`,
                         });
                       }}
                       disabled={m.paymentStatus === "paid"}
                     >
-                      Mark paid
+                      Pažymėti kaip apmokėtą
                     </button>
                     <button
                       className="btn-ghost h-8 px-2 text-xs text-red-600"
@@ -269,18 +269,18 @@ export default function CoachPayments() {
                         setPaymentStatus(m.id, "overdue");
                         push({
                           kind: "warning",
-                          message: `${m.name} marked as overdue.`,
+                          message: `${m.name} pažymėtas kaip vėluojantis.`,
                         });
                       }}
                       disabled={m.paymentStatus === "overdue"}
                     >
-                      Overdue
+                      Vėluoja
                     </button>
                     <Link
                       to={`/coach/members/${m.id}`}
                       className="btn-ghost h-8 px-2 text-xs"
                     >
-                      Open
+                      Atidaryti
                     </Link>
                   </div>
                 </li>

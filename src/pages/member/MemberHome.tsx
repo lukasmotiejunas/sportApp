@@ -45,7 +45,7 @@ export default function MemberHome() {
       t.registrations.some((r) => r.memberId === member.id),
     ) ?? upcoming[0];
 
-  const dayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const dayLabels = ["Pr", "An", "Tr", "Kt", "Pn", "Št", "Sk"];
   const todayDate = new Date(today + "T00:00:00");
   const daysFromMon = (todayDate.getDay() + 6) % 7;
   const mondayIso = addDays(today, -daysFromMon);
@@ -76,14 +76,14 @@ export default function MemberHome() {
           <Avatar name={member.name} color={member.avatarColor} size="lg" />
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold uppercase tracking-widest text-lime-300">
-              Hello, {member.name.split(" ")[0]}
+              Sveiki, {member.name.split(" ")[0]}
             </p>
             <h1 className="font-display text-2xl font-bold tracking-tight">
-              Ready to move today?
+              Pasiruošę judėti šiandien?
             </h1>
             <p className="mt-1 text-sm text-white/70">
-              {plan?.name ?? "Running Club"} ·{" "}
-              {formatCurrency(plan?.monthlyFee ?? 49)}/month
+              {plan?.name ?? "Bėgimo klubas"} ·{" "}
+              {formatCurrency(plan?.monthlyFee ?? 49)}/mėn.
             </p>
           </div>
         </div>
@@ -91,23 +91,23 @@ export default function MemberHome() {
         <div className="mt-5">
           <div className="mb-2 flex items-center justify-between px-1 text-[11px]">
             <span className="font-semibold uppercase tracking-widest text-lime-300">
-              This week
+              Šią savaitę
             </span>
             <div className="flex items-center gap-2">
               <span className="text-white/70">
                 <span className="font-semibold text-white">
                   {weeklySessions}
                 </span>
-                <span className="text-white/50"> / 7 trained</span>
+                <span className="text-white/50"> / 7 dalyvauta</span>
               </span>
               <button
                 type="button"
                 onClick={() => setCalendarOpen(true)}
                 className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/[0.06] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-lime-200 transition-colors hover:border-lime-400/40 hover:bg-white/[0.1]"
-                aria-label="Open monthly training calendar"
+                aria-label="Atidaryti mėnesio treniruočių kalendorių"
               >
                 <CalendarDays className="h-3 w-3" />
-                Month
+                Mėnuo
               </button>
             </div>
           </div>
@@ -118,12 +118,12 @@ export default function MemberHome() {
                 className="flex flex-col items-center gap-1.5"
                 title={
                   d.attended
-                    ? "Trained"
+                    ? "Dalyvauta"
                     : d.hadSession
                       ? d.isFuture
-                        ? "Session ahead"
-                        : "Missed"
-                      : "Rest day"
+                        ? "Būsima treniruotė"
+                        : "Praleista"
+                      : "Poilsio diena"
                 }
               >
                 <div
@@ -164,8 +164,8 @@ export default function MemberHome() {
         dueDate={formatDateShort(member.paymentDueDate)}
         actionLabel={
           member.paymentStatus === "overdue"
-            ? "Pay now — prototype"
-            : "View payments"
+            ? "Apmokėti dabar — prototipas"
+            : "Peržiūrėti mokėjimus"
         }
         onAction={() => (window.location.href = "/member/payments")}
       />
@@ -179,16 +179,16 @@ export default function MemberHome() {
                 <CalendarCheck2 className="h-4 w-4" />
               </span>
               <h2 className="font-display text-base font-bold">
-                Next training
+                Kita treniruotė
               </h2>
             </div>
             {next.registrations.some((r) => r.memberId === member.id) ? (
               <StatusBadge tone="accent" dot>
-                Registered
+                Užsiregistravęs
               </StatusBadge>
             ) : (
               <StatusBadge tone="warning" dot>
-                Not registered
+                Neužsiregistravęs
               </StatusBadge>
             )}
           </div>
@@ -223,8 +223,8 @@ export default function MemberHome() {
             <CalendarCheck2 className="h-4 w-4" />
           </span>
           <div>
-            <p className="text-sm font-semibold">Browse trainings</p>
-            <p className="text-xs text-ink-500">{upcoming.length} upcoming</p>
+            <p className="text-sm font-semibold">Naršyti treniruotes</p>
+            <p className="text-xs text-ink-500">{upcoming.length} artėjančios</p>
           </div>
         </Link>
         <Link
@@ -235,8 +235,8 @@ export default function MemberHome() {
             <Trophy className="h-4 w-4" />
           </span>
           <div>
-            <p className="text-sm font-semibold">Leaderboards</p>
-            <p className="text-xs text-ink-500">{categories.length} events</p>
+            <p className="text-sm font-semibold">Rezultatų lentelės</p>
+            <p className="text-xs text-ink-500">{categories.length} rungtys</p>
           </div>
         </Link>
         <Link
@@ -247,9 +247,9 @@ export default function MemberHome() {
             <CreditCard className="h-4 w-4" />
           </span>
           <div>
-            <p className="text-sm font-semibold">Payments</p>
+            <p className="text-sm font-semibold">Mokėjimai</p>
             <p className="text-xs text-ink-500">
-              {plan?.name ?? "Membership"}
+              {plan?.name ?? "Narystė"}
             </p>
           </div>
         </Link>
@@ -261,8 +261,8 @@ export default function MemberHome() {
             <Target className="h-4 w-4" />
           </span>
           <div>
-            <p className="text-sm font-semibold">Profile</p>
-            <p className="text-xs text-ink-500">Preferences</p>
+            <p className="text-sm font-semibold">Profilis</p>
+            <p className="text-xs text-ink-500">Nustatymai</p>
           </div>
         </Link>
       </section>
@@ -327,7 +327,7 @@ function TrainingCalendar({
   const missedCount = cells.filter(
     (c) => c && !c.attended && c.hadSession && c.isPast,
   ).length;
-  const monthLabel = new Intl.DateTimeFormat("en-US", {
+  const monthLabel = new Intl.DateTimeFormat("lt-LT", {
     month: "long",
     year: "numeric",
   }).format(new Date(viewYear, viewMonth, 1));
@@ -362,7 +362,7 @@ function TrainingCalendar({
           <span className="grid h-8 w-8 place-items-center rounded-xl bg-lime-400/15 text-lime-300 dark:bg-lime-400/15 dark:text-lime-200">
             <CalendarDays className="h-4 w-4" />
           </span>
-          Training sessions
+          Treniruočių sąrašas
         </span>
       }
       description={
@@ -370,12 +370,12 @@ function TrainingCalendar({
           <span className="font-semibold text-ink-900 dark:text-ink-50">
             {attendedCount}
           </span>{" "}
-          {attendedCount === 1 ? "session" : "sessions"} attended
+          {attendedCount === 1 ? "treniruotėje" : "treniruočių"} dalyvauta
           {missedCount > 0 && (
             <>
               {" · "}
               <span className="text-ink-500 dark:text-ink-400">
-                {missedCount} missed
+                {missedCount} praleista
               </span>
             </>
           )}
@@ -387,7 +387,7 @@ function TrainingCalendar({
           type="button"
           onClick={goPrev}
           className="grid h-9 w-9 place-items-center rounded-full border border-ink-200 text-ink-600 transition-colors hover:bg-ink-100 dark:border-ink-700 dark:text-ink-300 dark:hover:bg-ink-800"
-          aria-label="Previous month"
+          aria-label="Ankstesnis mėnuo"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -399,14 +399,14 @@ function TrainingCalendar({
           onClick={goNext}
           disabled={isCurrentMonth}
           className="grid h-9 w-9 place-items-center rounded-full border border-ink-200 text-ink-600 transition-colors hover:bg-ink-100 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent dark:border-ink-700 dark:text-ink-300 dark:hover:bg-ink-800 dark:disabled:hover:bg-transparent"
-          aria-label="Next month"
+          aria-label="Kitas mėnuo"
         >
           <ChevronRight className="h-4 w-4" />
         </button>
       </div>
 
       <div className="mb-2 grid grid-cols-7 gap-1.5 text-center">
-        {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
+        {["P", "A", "T", "K", "P", "Š", "S"].map((d, i) => (
           <span
             key={i}
             className="text-[10px] font-semibold uppercase tracking-widest text-ink-400 dark:text-ink-500"
@@ -420,12 +420,12 @@ function TrainingCalendar({
         {cells.map((c, i) => {
           if (!c) return <span key={i} className="aspect-square" />;
           const label = c.attended
-            ? `Trained: ${c.sessions.map((s) => s.title).join(", ")}`
+            ? `Dalyvauta: ${c.sessions.map((s) => s.title).join(", ")}`
             : c.hadSession && c.isPast
-              ? `Missed: ${c.sessions.map((s) => s.title).join(", ")}`
+              ? `Praleista: ${c.sessions.map((s) => s.title).join(", ")}`
               : c.hadSession
-                ? `Upcoming: ${c.sessions.map((s) => s.title).join(", ")}`
-                : "Rest day";
+                ? `Artėjanti: ${c.sessions.map((s) => s.title).join(", ")}`
+                : "Poilsio diena";
           return (
             <div
               key={i}
@@ -468,19 +468,19 @@ function TrainingCalendar({
               strokeWidth={3}
             />
           </span>
-          Trained
+          Dalyvauta
         </span>
         <span className="flex items-center gap-1.5">
           <span className="h-4 w-4 rounded-md border border-ink-200 bg-ink-100/60 dark:border-ink-700 dark:bg-ink-800/60" />
-          Missed
+          Praleista
         </span>
         <span className="flex items-center gap-1.5">
           <span className="h-4 w-4 rounded-md border border-lime-400/30" />
-          Upcoming
+          Artėjanti
         </span>
         <span className="flex items-center gap-1.5">
           <span className="h-4 w-4 rounded-md border border-dashed border-ink-200 dark:border-ink-800" />
-          Rest
+          Poilsis
         </span>
       </div>
     </Modal>

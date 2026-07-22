@@ -77,7 +77,7 @@ export function Modal({
               type="button"
               onClick={onClose}
               className="shrink-0 rounded-full p-2 text-ink-500 hover:bg-ink-100 dark:hover:bg-ink-800"
-              aria-label="Close dialog"
+              aria-label="Uždaryti langą"
             >
               <X className="h-4 w-4" />
             </button>

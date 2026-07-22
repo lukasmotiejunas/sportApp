@@ -45,8 +45,6 @@ export type CoachStaff = {
   specialty: string;
 };
 
-export type TrainingDifficulty = 'Beginner' | 'Intermediate' | 'Advanced';
-
 export type TrainingRegistration = {
   memberId: string;
   registeredAt: string;
@@ -61,7 +59,6 @@ export type TrainingSession = {
   endTime: string; // HH:MM
   location: string;
   coachId: string;
-  difficulty: TrainingDifficulty;
   capacity: number;
   registrationDeadline: string;
   goals: string[];

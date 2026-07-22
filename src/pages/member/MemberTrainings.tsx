@@ -24,9 +24,9 @@ export default function MemberTrainings() {
   return (
     <div>
       <PageTitle
-        title="Trainings"
+        title="Treniruotės"
         description={formatDateLong(selectedDate)}
-        eyebrow="Schedule"
+        eyebrow="Tvarkaraštis"
       />
 
       {/* Date strip */}
@@ -62,8 +62,8 @@ export default function MemberTrainings() {
       {filtered.length === 0 ? (
         <EmptyState
           icon={CalendarX}
-          title="No sessions on this day"
-          description="Try another date."
+          title="Šią dieną treniruočių nėra"
+          description="Pasirinkite kitą datą."
         />
       ) : (
         <div className="space-y-3">

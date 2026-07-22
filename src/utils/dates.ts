@@ -1,26 +1,26 @@
-export const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+export const DAY_NAMES = ['Sk', 'Pr', 'An', 'Tr', 'Kt', 'Pn', 'Št'];
 export const DAY_NAMES_LONG = [
-  'Sunday',
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday',
+  'Sekmadienis',
+  'Pirmadienis',
+  'Antradienis',
+  'Trečiadienis',
+  'Ketvirtadienis',
+  'Penktadienis',
+  'Šeštadienis',
 ];
 export const MONTH_NAMES = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
+  'Sausio',
+  'Vasario',
+  'Kovo',
+  'Balandžio',
+  'Gegužės',
+  'Birželio',
+  'Liepos',
+  'Rugpjūčio',
+  'Rugsėjo',
+  'Spalio',
+  'Lapkričio',
+  'Gruodžio',
 ];
 
 export function isoDate(d: Date): string {
@@ -52,9 +52,9 @@ export function todayIso(now = new Date()): string {
 
 export function relativeDay(iso: string, now = new Date()): string {
   const today = todayIso(now);
-  if (iso === today) return 'Today';
-  if (iso === addDays(today, 1)) return 'Tomorrow';
-  if (iso === addDays(today, -1)) return 'Yesterday';
+  if (iso === today) return 'Šiandien';
+  if (iso === addDays(today, 1)) return 'Rytoj';
+  if (iso === addDays(today, -1)) return 'Vakar';
   const d = new Date(iso + 'T00:00:00');
   const diff = Math.round(
     (d.getTime() - new Date(today + 'T00:00:00').getTime()) / 86400000,

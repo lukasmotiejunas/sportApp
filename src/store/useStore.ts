@@ -115,16 +115,16 @@ export const useStore = create<State>()(
         const state = get();
         const t = state.trainingSessions.find((x) => x.id === trainingId);
         const m = state.members.find((x) => x.id === memberId);
-        if (!t || !m) return { ok: false, error: 'Not found' };
-        if (t.status !== 'open') return { ok: false, error: 'Registration is closed for this session.' };
+        if (!t || !m) return { ok: false, error: 'Nerasta' };
+        if (t.status !== 'open') return { ok: false, error: 'Registracija į šią treniruotę uždaryta.' };
         if (m.paymentStatus === 'overdue') {
-          return { ok: false, error: 'Membership payment is overdue.' };
+          return { ok: false, error: 'Narystės mokėjimas vėluoja.' };
         }
         if (t.registrations.some((r) => r.memberId === memberId)) {
-          return { ok: false, error: 'Already registered.' };
+          return { ok: false, error: 'Jau užsiregistravote.' };
         }
         if (t.registrations.length >= t.capacity) {
-          return { ok: false, error: 'This session is full.' };
+          return { ok: false, error: 'Ši treniruotė užpildyta.' };
         }
         set({
           trainingSessions: state.trainingSessions.map((x) =>
@@ -199,7 +199,7 @@ export const useStore = create<State>()(
         const copy: TrainingSession = {
           ...src,
           id: 't-' + Math.random().toString(36).slice(2, 8),
-          title: src.title + ' (copy)',
+          title: src.title + ' (kopija)',
           registrations: [],
           status: 'open',
         };
@@ -317,7 +317,7 @@ export const useStore = create<State>()(
     }),
     {
       name: 'paceclub-prototype-v2',
-      version: 9,
+      version: 10,
       partialize: (s) => ({
         role: s.role,
         currentMemberId: s.currentMemberId,

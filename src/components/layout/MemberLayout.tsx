@@ -16,13 +16,6 @@ export function MemberLayout() {
             Volvere Club
           </div>
           <div className="ml-auto flex items-center gap-2">
-            <button
-              type="button"
-              className="grid h-9 w-9 place-items-center rounded-full border border-ink-200 hover:bg-ink-100 dark:border-ink-700 dark:hover:bg-ink-800"
-              aria-label="Notifications"
-            >
-              <Bell className="h-4 w-4" />
-            </button>
             <DemoSwitcher />
           </div>
         </div>

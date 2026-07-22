@@ -16,8 +16,6 @@ type Props = {
 };
 
 export function TrainingCard({ training, coach, members, isRegistered, linkTo, variant = 'member' }: Props) {
-  const spotsLeft = training.capacity - training.registrations.length;
-  const isFull = spotsLeft <= 0;
   const isCancelled = training.status === 'cancelled';
   const isClosed = training.status === 'closed';
 
@@ -35,9 +33,9 @@ export function TrainingCard({ training, coach, members, isRegistered, linkTo, v
             <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">
               {relativeDay(training.date)} · {training.startTime}
             </p>
-            {isCancelled && <StatusBadge tone="danger" dot>Cancelled</StatusBadge>}
-            {isClosed && !isCancelled && <StatusBadge tone="warning" dot>Closed</StatusBadge>}
-            {isRegistered && !isCancelled && <StatusBadge tone="accent" dot>You&apos;re in</StatusBadge>}
+            {isCancelled && <StatusBadge tone="danger" dot>Atšaukta</StatusBadge>}
+            {isClosed && !isCancelled && <StatusBadge tone="warning" dot>Uždaryta</StatusBadge>}
+            {isRegistered && !isCancelled && <StatusBadge tone="accent" dot>Užsiregistravote</StatusBadge>}
           </div>
           <h3 className="mt-0.5 text-base font-semibold text-ink-900 dark:text-ink-50 group-hover:text-ink-950">
             {training.title}
@@ -51,20 +49,13 @@ export function TrainingCard({ training, coach, members, isRegistered, linkTo, v
               <MapPin className="h-3.5 w-3.5" />
               {training.location}
             </span>
-            {coach && <span className="text-ink-500">with {coach.name.replace('Coach ', '')}</span>}
+            {coach && <span className="text-ink-500">su {coach.name.replace('Coach ', '')}</span>}
           </div>
         </div>
         <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-ink-400 group-hover:text-ink-600" />
       </div>
 
-      <div className="mt-3 grid grid-cols-[auto,1fr] items-center gap-3">
-        <span
-          className={`chip ${
-            isFull ? 'bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-300' : 'bg-ink-100 text-ink-700 dark:bg-ink-800 dark:text-ink-200'
-          }`}
-        >
-          {training.difficulty}
-        </span>
+      <div className="mt-3">
         <CapacityProgress
           registered={training.registrations.length}
           capacity={training.capacity}

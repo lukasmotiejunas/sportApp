@@ -18,7 +18,7 @@ export function PageTitle({ title, description, backTo, action, eyebrow }: Props
             to={backTo}
             className="mb-1.5 inline-flex items-center gap-1 text-xs font-semibold text-ink-500 hover:text-ink-900 dark:hover:text-ink-100"
           >
-            <ChevronLeft className="h-3.5 w-3.5" /> Back
+            <ChevronLeft className="h-3.5 w-3.5" /> Atgal
           </Link>
         )}
         {eyebrow && (

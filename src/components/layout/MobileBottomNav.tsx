@@ -3,18 +3,18 @@ import clsx from 'clsx';
 import { CalendarCheck2, CreditCard, Home, Trophy, User } from 'lucide-react';
 
 const items = [
-  { to: '/member', label: 'Home', icon: Home, end: true },
-  { to: '/member/trainings', label: 'Trainings', icon: CalendarCheck2 },
-  { to: '/member/leaderboards', label: 'Ranks', icon: Trophy },
-  { to: '/member/payments', label: 'Payments', icon: CreditCard },
-  { to: '/member/profile', label: 'Profile', icon: User },
+  { to: '/member', label: 'Pradžia', icon: Home, end: true },
+  { to: '/member/trainings', label: 'Treniruotės', icon: CalendarCheck2 },
+  { to: '/member/leaderboards', label: 'Rezultatai', icon: Trophy },
+  { to: '/member/payments', label: 'Mokėjimai', icon: CreditCard },
+  { to: '/member/profile', label: 'Profilis', icon: User },
 ];
 
 export function MobileBottomNav() {
   return (
     <nav
       className="fixed inset-x-0 bottom-0 z-30 border-t border-ink-100 bg-white/95 backdrop-blur dark:border-ink-800 dark:bg-ink-950/95 md:hidden"
-      aria-label="Primary"
+      aria-label="Pagrindinis"
     >
       <div className="grid grid-cols-5 safe-bottom">
         {items.map((it) => (

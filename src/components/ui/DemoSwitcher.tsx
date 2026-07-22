@@ -41,7 +41,7 @@ export function DemoSwitcher({ variant = "compact" }: Props) {
             : "flex w-full items-center gap-3 rounded-2xl border border-ink-200 bg-white p-3 hover:border-ink-400 dark:border-ink-800 dark:bg-ink-900"
         }
         style={{ paddingLeft: 0 }}
-        aria-label="Switch demo user"
+        aria-label="Perjungti demonstracinį vartotoją"
       >
         <Avatar
           name={activeName}
@@ -54,7 +54,7 @@ export function DemoSwitcher({ variant = "compact" }: Props) {
         />
         <div className="flex-1 min-w-0 text-left">
           <p className="text-xs uppercase tracking-wide text-ink-500">
-            Demo · {role ?? "guest"}
+            Demo · {role === "coach" ? "treneris" : role === "member" ? "narys" : "svečias"}
           </p>
           <p className="truncate text-sm font-semibold text-ink-900 dark:text-ink-50">
             {activeName}
@@ -66,14 +66,14 @@ export function DemoSwitcher({ variant = "compact" }: Props) {
       <Modal
         open={open}
         onClose={() => setOpen(false)}
-        title="Switch prototype user"
-        description="Prototype only — switch instantly between demo accounts to walk through the flows."
+        title="Perjungti prototipo vartotoją"
+        description="Tik prototipas — akimirksniu perjunkite tarp demonstracinių paskyrų, kad galėtumėte peržiūrėti visą eigą."
         size="lg"
       >
         <div className="space-y-5">
           <section>
             <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink-500">
-              <Users className="h-3.5 w-3.5" /> Members
+              <Users className="h-3.5 w-3.5" /> Nariai
             </div>
             <div className="grid gap-1.5 max-h-72 overflow-y-auto pr-1">
               {members.map((m) => {
@@ -109,7 +109,7 @@ export function DemoSwitcher({ variant = "compact" }: Props) {
                       tone={m.paymentStatus === "paid" ? "success" : "danger"}
                       dot
                     >
-                      {m.paymentStatus}
+                      {m.paymentStatus === "paid" ? "Apmokėta" : "Vėluoja"}
                     </StatusBadge>
                   </button>
                 );
@@ -119,7 +119,7 @@ export function DemoSwitcher({ variant = "compact" }: Props) {
 
           <section>
             <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink-500">
-              <User className="h-3.5 w-3.5" /> Coaches
+              <User className="h-3.5 w-3.5" /> Treneriai
             </div>
             <div className="grid gap-1.5">
               {coaches.map((c) => {

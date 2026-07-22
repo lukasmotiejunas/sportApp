@@ -15,8 +15,8 @@ const paymentTone = {
 } as const;
 
 const paymentLabel = {
-  paid: "Paid",
-  overdue: "Overdue",
+  paid: "Apmokėta",
+  overdue: "Vėluoja",
 } as const;
 
 export function MemberCard({ member, to }: Props) {

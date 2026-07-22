@@ -41,7 +41,7 @@ export function ToastContainer() {
             <button
               type="button"
               className="rounded-full p-1 hover:bg-black/5"
-              aria-label="Dismiss notification"
+              aria-label="Uždaryti pranešimą"
               onClick={() => dismiss(t.id)}
             >
               <X className="h-3.5 w-3.5" />

@@ -32,9 +32,9 @@ export default function MemberLeaderboards() {
   return (
     <div>
       <PageTitle
-        title="Leaderboards"
-        description="Every event tracked by the club. Tap a leaderboard to see the podium."
-        eyebrow="Rankings"
+        title="Rezultatų lentelės"
+        description="Visos klube fiksuojamos rungtys. Palieskite lentelę, kad pamatytumėte prizininkus."
+        eyebrow="Reitingai"
       />
 
       <div className="relative mb-4">
@@ -42,10 +42,10 @@ export default function MemberLeaderboards() {
         <input
           type="search"
           className="input pl-9"
-          placeholder="Search event"
+          placeholder="Ieškoti rungties"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          aria-label="Search event"
+          aria-label="Ieškoti rungties"
         />
       </div>
 
@@ -68,7 +68,7 @@ export default function MemberLeaderboards() {
                 <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">{c.event}</p>
                 <p className="font-display text-base font-bold">{c.name}</p>
                 <p className="mt-0.5 text-xs text-ink-500">
-                  Top: {top ? formatResult(top.value, c) : '—'}
+                  Geriausias: {top ? formatResult(top.value, c) : '—'}
                 </p>
               </div>
               <div className="flex flex-col items-end gap-1">
@@ -77,7 +77,7 @@ export default function MemberLeaderboards() {
                     #{my.rank} {formatResult(my.value, c)}
                   </StatusBadge>
                 ) : (
-                  <StatusBadge tone="neutral">Not ranked</StatusBadge>
+                  <StatusBadge tone="neutral">Nereitinguota</StatusBadge>
                 )}
                 <ArrowRight className="h-4 w-4 text-ink-400 group-hover:text-ink-600" />
               </div>

@@ -20,6 +20,8 @@ const paymentTone = {
   overdue: "danger",
 } as const;
 
+const paymentLabel = { paid: "Apmokėta", overdue: "Vėluoja" } as const;
+
 const paymentActions: PaymentStatus[] = ["paid", "overdue"];
 
 export default function CoachMemberDetail() {
@@ -35,7 +37,7 @@ export default function CoachMemberDetail() {
   if (!member) {
     return (
       <div>
-        <PageTitle title="Member not found" backTo="/coach/members" />
+        <PageTitle title="Narys nerastas" backTo="/coach/members" />
       </div>
     );
   }
@@ -69,7 +71,7 @@ export default function CoachMemberDetail() {
     <div>
       <PageTitle
         title={member.name}
-        eyebrow="Member profile"
+        eyebrow="Nario profilis"
         backTo="/coach/members"
       />
 
@@ -83,19 +85,19 @@ export default function CoachMemberDetail() {
             </p>
             <div className="mt-2 flex flex-wrap gap-1.5">
               <StatusBadge tone={paymentTone[member.paymentStatus]} dot>
-                {member.paymentStatus}
+                {paymentLabel[member.paymentStatus]}
               </StatusBadge>
               <StatusBadge tone="neutral">
-                Member since {formatDateShort(member.memberSince)}
+                Narys nuo {formatDateShort(member.memberSince)}
               </StatusBadge>
               <StatusBadge tone="info">
-                {formatCurrency(plan?.monthlyFee ?? 0)} / month
+                {formatCurrency(plan?.monthlyFee ?? 0)} / mėn.
               </StatusBadge>
             </div>
           </div>
           <div className="flex flex-col items-stretch gap-1 sm:w-64">
             <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">
-              Change payment status
+              Keisti mokėjimo būseną
             </p>
             <div className="flex flex-wrap gap-1">
               {paymentActions.map((s) => (
@@ -106,7 +108,7 @@ export default function CoachMemberDetail() {
                     setPaymentStatus(member.id, s);
                     push({
                       kind: "success",
-                      message: `Payment status changed to ${s}.`,
+                      message: `Mokėjimo būsena pakeista į „${paymentLabel[s]}“.`,
                     });
                   }}
                   className={
@@ -116,14 +118,14 @@ export default function CoachMemberDetail() {
                       : "bg-ink-100 text-ink-700 hover:bg-ink-200 dark:bg-ink-800 dark:text-ink-200 dark:hover:bg-ink-700")
                   }
                 >
-                  {s}
+                  {paymentLabel[s]}
                 </button>
               ))}
             </div>
             {member.paymentStatus === "overdue" && (
               <p className="mt-2 flex items-start gap-1 text-[11px] text-red-600">
                 <ShieldAlert className="mt-0.5 h-3 w-3" />
-                Registration disabled for this member.
+                Šiam nariui registracija išjungta.
               </p>
             )}
           </div>
@@ -133,7 +135,7 @@ export default function CoachMemberDetail() {
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="surface p-4">
           <h2 className="mb-3 flex items-center gap-2 font-display text-base font-bold">
-            <Mail className="h-4 w-4 text-ink-500" /> Contact
+            <Mail className="h-4 w-4 text-ink-500" /> Kontaktai
           </h2>
           <ul className="space-y-2 text-sm">
             <li className="flex items-center gap-2 text-ink-700 dark:text-ink-200">
@@ -143,18 +145,18 @@ export default function CoachMemberDetail() {
               <Phone className="h-3.5 w-3.5 text-ink-400" /> {member.phone}
             </li>
             <li className="text-ink-600 dark:text-ink-300">
-              Emergency: {member.emergencyContact}
+              Nelaimės atveju: {member.emergencyContact}
             </li>
           </ul>
         </section>
 
         <section className="surface p-4">
           <h2 className="mb-3 flex items-center gap-2 font-display text-base font-bold">
-            <Trophy className="h-4 w-4 text-ink-500" /> Personal bests
+            <Trophy className="h-4 w-4 text-ink-500" /> Asmeniniai rekordai
           </h2>
           {bests.length === 0 ? (
             <p className="text-sm text-ink-500">
-              No results recorded yet.
+              Rezultatų dar nėra.
             </p>
           ) : (
             <ul className="grid gap-2 sm:grid-cols-2">
@@ -177,12 +179,12 @@ export default function CoachMemberDetail() {
 
         <section className="surface p-4">
           <h2 className="mb-3 flex items-center gap-2 font-display text-base font-bold">
-            <CalendarCheck2 className="h-4 w-4 text-ink-500" /> Upcoming
-            registrations
+            <CalendarCheck2 className="h-4 w-4 text-ink-500" /> Artėjančios
+            registracijos
           </h2>
           {upcoming.length === 0 ? (
             <p className="text-sm text-ink-500">
-              Nothing scheduled — invite this member to a session.
+              Nieko nesuplanuota — pakvieskite šį narį į treniruotę.
             </p>
           ) : (
             <ul className="space-y-2">
@@ -201,7 +203,7 @@ export default function CoachMemberDetail() {
                     to={`/coach/trainings/${t.id}`}
                     className="btn-ghost h-8 px-2 text-xs"
                   >
-                    Open
+                    Atidaryti
                   </Link>
                 </li>
               ))}
@@ -211,10 +213,10 @@ export default function CoachMemberDetail() {
 
         <section className="surface p-4">
           <h2 className="mb-3 flex items-center gap-2 font-display text-base font-bold">
-            <CreditCard className="h-4 w-4 text-ink-500" /> Recent sessions
+            <CreditCard className="h-4 w-4 text-ink-500" /> Ankstesnės treniruotės
           </h2>
           {past.length === 0 ? (
-            <p className="text-sm text-ink-500">No past sessions yet.</p>
+            <p className="text-sm text-ink-500">Ankstesnių treniruočių dar nėra.</p>
           ) : (
             <ul className="space-y-2">
               {past.slice(0, 6).map((t) => (
@@ -232,7 +234,7 @@ export default function CoachMemberDetail() {
                     to={`/coach/trainings/${t.id}`}
                     className="btn-ghost h-8 px-2 text-xs"
                   >
-                    Open
+                    Atidaryti
                   </Link>
                 </li>
               ))}

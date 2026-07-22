@@ -28,7 +28,7 @@ export function formatResult(value: number, category: LeaderboardCategory): stri
     case 'distance_km':
       return `${value.toFixed(1)} km`;
     case 'points':
-      return `${value.toFixed(0)} pts`;
+      return `${value.toFixed(0)} t.`;
     default:
       return String(value);
   }

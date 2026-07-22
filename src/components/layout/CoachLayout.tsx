@@ -14,11 +14,11 @@ import { DemoSwitcher } from "../ui/DemoSwitcher";
 import { ToastContainer } from "../ui/ToastContainer";
 
 const items = [
-  { to: "/coach", label: "Dashboard", icon: LayoutDashboard, end: true },
-  { to: "/coach/trainings", label: "Trainings", icon: BarChart3 },
-  { to: "/coach/members", label: "Members", icon: Users2 },
-  { to: "/coach/leaderboards", label: "Leaderboards", icon: Trophy },
-  { to: "/coach/payments", label: "Payments", icon: CreditCard },
+  { to: "/coach", label: "Skydelis", icon: LayoutDashboard, end: true },
+  { to: "/coach/trainings", label: "Treniruotės", icon: BarChart3 },
+  { to: "/coach/members", label: "Nariai", icon: Users2 },
+  { to: "/coach/leaderboards", label: "Rezultatai", icon: Trophy },
+  { to: "/coach/payments", label: "Mokėjimai", icon: CreditCard },
 ];
 
 export function CoachLayout() {
@@ -35,7 +35,7 @@ export function CoachLayout() {
             </span>
             Volvere Club
             <span className="ml-1 rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-ink-600 dark:bg-ink-800 dark:text-ink-300">
-              Coach
+              Treneris
             </span>
           </div>
           <SidebarNav />
@@ -51,7 +51,7 @@ export function CoachLayout() {
                 type="button"
                 onClick={() => setMobileNavOpen((v) => !v)}
                 className="grid h-9 w-9 place-items-center rounded-full border border-ink-200 dark:border-ink-700"
-                aria-label="Toggle navigation"
+                aria-label="Perjungti naršymą"
               >
                 {mobileNavOpen ? (
                   <X className="h-4 w-4" />
@@ -62,7 +62,7 @@ export function CoachLayout() {
               <div className="flex items-center gap-2 font-display text-base font-bold text-ink-900 dark:text-lime-400">
                 Pace Club
                 <span className="rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-ink-600 dark:bg-ink-800 dark:text-ink-300">
-                  Coach
+                  Treneris
                 </span>
               </div>
               <div className="ml-auto flex items-center gap-2">

@@ -50,12 +50,12 @@ export default function MemberProfile() {
 
   const save = () => {
     updateMember(member.id, edit);
-    push({ kind: 'success', message: 'Profile updated.' });
+    push({ kind: 'success', message: 'Profilis atnaujintas.' });
   };
 
   return (
     <div>
-      <PageTitle title="Profile" description="Your details and preferences." eyebrow="Member" />
+      <PageTitle title="Profilis" description="Jūsų duomenys ir nustatymai." eyebrow="Narys" />
 
       <section className="surface mb-4 p-4">
         <div className="flex items-center gap-4">
@@ -64,35 +64,35 @@ export default function MemberProfile() {
             <p className="font-display text-lg font-bold">{member.name}</p>
             <p className="text-sm text-ink-500">{member.email}</p>
             <div className="mt-2 flex flex-wrap gap-1.5">
-              <StatusBadge tone="accent">{plan?.name ?? 'Club member'}</StatusBadge>
+              <StatusBadge tone="accent">{plan?.name ?? 'Klubo narys'}</StatusBadge>
               <StatusBadge tone="neutral">{member.preferredDistance}</StatusBadge>
-              <StatusBadge tone="info">Since {formatDateLong(member.memberSince).split(',')[1]?.trim()}</StatusBadge>
+              <StatusBadge tone="info">Nuo {formatDateLong(member.memberSince).split(',')[1]?.trim()}</StatusBadge>
             </div>
           </div>
         </div>
       </section>
 
       <section className="surface mb-4 p-4">
-        <h2 className="mb-3 font-display text-base font-bold">Personal information</h2>
+        <h2 className="mb-3 font-display text-base font-bold">Asmeninė informacija</h2>
         <div className="grid gap-3 sm:grid-cols-2">
-          <FormField label="Full name" value={edit.name} onChange={(e) => setEdit({ ...edit, name: e.target.value })} />
-          <FormField label="Email" type="email" value={edit.email} onChange={(e) => setEdit({ ...edit, email: e.target.value })} />
-          <FormField label="Phone" value={edit.phone} onChange={(e) => setEdit({ ...edit, phone: e.target.value })} />
-          <FormField label="Date of birth" value={member.dateOfBirth} disabled />
-          <FormField label="Emergency contact" value={edit.emergencyContact} onChange={(e) => setEdit({ ...edit, emergencyContact: e.target.value })} className="sm:col-span-2" />
-          <FormField label="Preferred running distance" value={edit.preferredDistance} onChange={(e) => setEdit({ ...edit, preferredDistance: e.target.value })} />
+          <FormField label="Vardas ir pavardė" value={edit.name} onChange={(e) => setEdit({ ...edit, name: e.target.value })} />
+          <FormField label="El. paštas" type="email" value={edit.email} onChange={(e) => setEdit({ ...edit, email: e.target.value })} />
+          <FormField label="Telefonas" value={edit.phone} onChange={(e) => setEdit({ ...edit, phone: e.target.value })} />
+          <FormField label="Gimimo data" value={member.dateOfBirth} disabled />
+          <FormField label="Kontaktas nelaimės atveju" value={edit.emergencyContact} onChange={(e) => setEdit({ ...edit, emergencyContact: e.target.value })} className="sm:col-span-2" />
+          <FormField label="Mėgstamiausias bėgimo atstumas" value={edit.preferredDistance} onChange={(e) => setEdit({ ...edit, preferredDistance: e.target.value })} />
         </div>
         <div className="mt-3 flex justify-end">
           <button className="btn-primary h-10 px-4 text-sm" onClick={save}>
-            Save changes
+            Išsaugoti pakeitimus
           </button>
         </div>
       </section>
 
       <section className="surface mb-4 p-4">
-        <h2 className="mb-3 font-display text-base font-bold">Personal bests</h2>
+        <h2 className="mb-3 font-display text-base font-bold">Asmeniniai rekordai</h2>
         {bests.length === 0 ? (
-          <p className="text-sm text-ink-500">No results recorded yet.</p>
+          <p className="text-sm text-ink-500">Rezultatų dar nėra.</p>
         ) : (
           <div className="grid gap-2 sm:grid-cols-2">
             {bests.map(({ c, my }) => (
@@ -106,12 +106,12 @@ export default function MemberProfile() {
       </section>
 
       <section className="surface mb-4 p-4">
-        <h2 className="mb-3 font-display text-base font-bold">Preferences</h2>
+        <h2 className="mb-3 font-display text-base font-bold">Nustatymai</h2>
         <div className="space-y-2">
           <PrefRow
             icon={Mail}
-            title="Email notifications"
-            description="Session reminders and payment updates."
+            title="El. pašto pranešimai"
+            description="Priminimai apie treniruotes ir mokėjimų naujienos."
             value={member.notificationPreferences.email}
             onChange={() => updateMember(member.id, {
               notificationPreferences: {
@@ -122,8 +122,8 @@ export default function MemberProfile() {
           />
           <PrefRow
             icon={Phone}
-            title="SMS reminders"
-            description="Text messages before your registered sessions."
+            title="SMS pranešimai"
+            description="Trumpieji pranešimai prieš jūsų treniruotes."
             value={member.notificationPreferences.sms}
             onChange={() => updateMember(member.id, {
               notificationPreferences: {
@@ -134,8 +134,8 @@ export default function MemberProfile() {
           />
           <PrefRow
             icon={Bell}
-            title="Push notifications"
-            description="Live updates and leaderboard changes."
+            title="Programėlės pranešimai"
+            description="Gyvi atnaujinimai ir rezultatų lentelės pokyčiai."
             value={member.notificationPreferences.push}
             onChange={() => updateMember(member.id, {
               notificationPreferences: {
@@ -148,19 +148,19 @@ export default function MemberProfile() {
       </section>
 
       <section className="surface p-4">
-        <h2 className="mb-3 font-display text-base font-bold">Account</h2>
+        <h2 className="mb-3 font-display text-base font-bold">Paskyra</h2>
         <div className="grid gap-2 sm:grid-cols-2">
           <div className="flex items-center gap-3 rounded-xl bg-ink-50 p-3 dark:bg-ink-800/60">
             <Calendar className="h-4 w-4 text-ink-500" />
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">Member since</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">Narys nuo</p>
               <p className="text-sm font-semibold">{formatDateLong(member.memberSince)}</p>
             </div>
           </div>
           <div className="flex items-center gap-3 rounded-xl bg-ink-50 p-3 dark:bg-ink-800/60">
             <User className="h-4 w-4 text-ink-500" />
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">Age group</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">Amžiaus grupė</p>
               <p className="text-sm font-semibold">{member.ageGroup}</p>
             </div>
           </div>
@@ -170,7 +170,7 @@ export default function MemberProfile() {
           className="btn-outline mt-4 w-full sm:w-auto"
           onClick={() => setConfirmLogout(true)}
         >
-          <LogOut className="h-4 w-4" /> Switch role / log out
+          <LogOut className="h-4 w-4" /> Keisti vaidmenį / atsijungti
         </button>
       </section>
 
@@ -181,10 +181,10 @@ export default function MemberProfile() {
           setRole(null);
           navigate('/select-role');
         }}
-        title="Switch role or log out?"
-        message="You will return to the role selection screen. Prototype data remains in this browser."
-        confirmLabel="Switch role"
-        cancelLabel="Stay"
+        title="Keisti vaidmenį ar atsijungti?"
+        message="Būsite grąžinti į vaidmens pasirinkimo langą. Prototipo duomenys išliks šioje naršyklėje."
+        confirmLabel="Keisti vaidmenį"
+        cancelLabel="Likti"
       />
     </div>
   );

@@ -71,30 +71,23 @@ export default function CoachDashboard() {
   return (
     <div>
       <PageTitle
-        eyebrow={`Welcome back, ${coach.name.replace("Coach ", "")}`}
-        title="Coach dashboard"
-        description="Everything the club needs from you at a glance."
+        eyebrow={`Sveiki sugrįžę, ${coach.name.replace("Coach ", "")}`}
+        title="Trenerio skydelis"
+        description="Viskas, ko klubui reikia iš jūsų, vienoje vietoje."
       />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <DashboardMetricCard
           icon={CalendarCheck2}
-          label="Trainings today"
+          label="Šiandienos treniruotės"
           value={String(todaysSessions.length)}
           tone="accent"
         />
         <DashboardMetricCard
           icon={Users}
-          label="Registrations today"
+          label="Šiandienos registracijos"
           value={String(todayRegistrations)}
           tone="info"
-        />
-        <DashboardMetricCard
-          icon={Flame}
-          label="Close to full"
-          value={String(closeToCapacity.length)}
-          tone="warning"
-          hint="Sessions ≥ 90% capacity"
         />
       </div>
 
@@ -104,14 +97,14 @@ export default function CoachDashboard() {
           <div className="mb-3 flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">
-                Weekly registrations
+                Savaitės registracijos
               </p>
               <h2 className="font-display text-lg font-bold">
-                Trend over the last 7 days
+                Paskutinių 7 dienų tendencija
               </h2>
             </div>
             <StatusBadge tone="accent" dot>
-              Live
+              Tiesiogiai
             </StatusBadge>
           </div>
           <div className="h-56">
@@ -159,17 +152,17 @@ export default function CoachDashboard() {
 
         <section className="surface p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">
-            Monthly revenue
+            Mėnesio pajamos
           </p>
           <p className="mt-1 font-display text-3xl font-bold tabular-nums">
             {formatCurrency(monthlyRevenue)}
           </p>
           <p className="text-sm text-ink-500">
-            of {formatCurrency(expectedRevenue)} expected
+            iš {formatCurrency(expectedRevenue)} tikėtinų
           </p>
           <div className="mt-3 rounded-2xl bg-lime-50 p-3 dark:bg-lime-400/10">
             <p className="text-xs font-semibold uppercase tracking-wide text-lime-800 dark:text-lime-300">
-              Completion
+              Užbaigtumas
             </p>
             <p className="font-display text-xl font-bold text-lime-900 dark:text-lime-200">
               {completion}%
@@ -177,18 +170,18 @@ export default function CoachDashboard() {
           </div>
           <div className="mt-3 space-y-1 text-sm">
             <div className="flex justify-between">
-              <span>Paid</span>
+              <span>Apmokėta</span>
               <span className="font-semibold">
                 {members.filter((m) => m.paymentStatus === "paid").length}
               </span>
             </div>
             <div className="flex justify-between text-red-600">
-              <span>Overdue</span>
+              <span>Vėluoja</span>
               <span className="font-semibold">{overdue.length}</span>
             </div>
           </div>
           <Link to="/coach/payments" className="btn-ghost mt-3 w-full">
-            <CreditCard className="h-4 w-4" /> Review payments
+            <CreditCard className="h-4 w-4" /> Peržiūrėti mokėjimus
           </Link>
         </section>
       </div>
@@ -198,18 +191,18 @@ export default function CoachDashboard() {
         <section className="surface p-4">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-display text-base font-bold">
-              Today&apos;s sessions
+              Šiandienos treniruotės
             </h2>
             <Link
               to="/coach/trainings"
               className="text-xs font-semibold text-ink-600 hover:text-ink-900 dark:text-ink-300"
             >
-              View all →
+              Peržiūrėti visas →
             </Link>
           </div>
           {todaysSessions.length === 0 ? (
             <p className="text-sm text-ink-500">
-              No sessions scheduled for today.
+              Šiandien treniruočių nesuplanuota.
             </p>
           ) : (
             <ul className="space-y-2">
@@ -243,7 +236,7 @@ export default function CoachDashboard() {
                       to={`/coach/trainings/${t.id}`}
                       className="btn-ghost h-8 px-2 text-xs"
                     >
-                      Open
+                      Atidaryti
                     </Link>
                   </div>
                 </li>
@@ -254,12 +247,10 @@ export default function CoachDashboard() {
 
         <section className="surface p-4">
           <h2 className="mb-3 font-display text-base font-bold">
-            Payment attention list
+            Reikia dėmesio dėl mokėjimų
           </h2>
           {overdue.length === 0 ? (
-            <p className="text-sm text-ink-500">
-              All members are up to date. 🎉
-            </p>
+            <p className="text-sm text-ink-500">Visi nariai atsiskaitę. 🎉</p>
           ) : (
             <ul className="space-y-2">
               {overdue.map((m) => (
@@ -271,14 +262,14 @@ export default function CoachDashboard() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold">{m.name}</p>
                     <p className="text-xs text-red-700 dark:text-red-300">
-                      Overdue since {formatDateShort(m.paymentDueDate)}
+                      Vėluoja nuo {formatDateShort(m.paymentDueDate)}
                     </p>
                   </div>
                   <Link
                     to={`/coach/members/${m.id}`}
                     className="btn-ghost h-8 px-2 text-xs"
                   >
-                    Open
+                    Atidaryti
                   </Link>
                 </li>
               ))}

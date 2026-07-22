@@ -44,44 +44,45 @@ export default function SelectRole() {
               </span>
               Volvere Club
               <span className="ml-2 rounded-full bg-white/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-white/80">
-                Prototype
+                Prototipas
               </span>
             </div>
 
             <div className="mt-14 max-w-md">
               <p className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-lime-300">
-                <Sparkles className="h-3 w-3" /> Runners &amp; coaches
+                <Sparkles className="h-3 w-3" /> Bėgikai ir treneriai
               </p>
               <h1 className="font-display text-4xl font-bold tracking-tight sm:text-5xl">
-                Run smarter. Train together. Track everything.
+                Bėkite išmaniau. Treniruokitės kartu. Sekite viską.
               </h1>
               <p className="mt-4 text-lg text-white/70">
-                A single app for members to book trainings, follow plans, and
-                climb leaderboards — and for coaches to run the club.
+                Viena programėlė nariams — registruotis į treniruotes, sekti
+                planus ir kilti rezultatų lentelėse — ir treneriams valdyti
+                klubą.
               </p>
             </div>
           </div>
           <ul className="mt-10 hidden gap-2 text-sm text-white/60 sm:grid">
             <li className="flex items-center gap-2">
-              <span className="h-1 w-1 rounded-full bg-lime-400" /> Realistic
-              mock data — no signup required.
+              <span className="h-1 w-1 rounded-full bg-lime-400" /> Realistiški
+              duomenys — registracija nereikalinga.
             </li>
             <li className="flex items-center gap-2">
-              <span className="h-1 w-1 rounded-full bg-lime-400" /> Switch
-              between multiple demo members and coaches at any time.
+              <span className="h-1 w-1 rounded-full bg-lime-400" /> Bet kada
+              perjunkite tarp kelių demonstracinių narių ir trenerių.
             </li>
             <li className="flex items-center gap-2">
-              <span className="h-1 w-1 rounded-full bg-lime-400" /> Prototype
-              payment flow — clearly labelled as simulated.
+              <span className="h-1 w-1 rounded-full bg-lime-400" /> Prototipo
+              mokėjimų srautas — aiškiai pažymėtas kaip simuliuotas.
             </li>
           </ul>
         </div>
 
         <div className="flex flex-col justify-center gap-4 rounded-t-3xl bg-white p-6 text-ink-900 shadow-pop sm:p-10 lg:rounded-none lg:rounded-l-3xl">
-          <h2 className="font-display text-xl font-bold">Continue as</h2>
+          <h2 className="font-display text-xl font-bold">Pasirinkite vaidmenį</h2>
           <p className="text-sm text-ink-500">
-            Choose a role to enter the prototype. You can change this at any
-            time.
+            Pasirinkite vaidmenį, kad pradėtumėte išbandyti prototipą. Vaidmenį
+            galite pakeisti bet kuriuo metu.
           </p>
 
           <button
@@ -93,9 +94,9 @@ export default function SelectRole() {
               <User2 className="h-5 w-5" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-ink-900">Continue as Member</p>
+              <p className="font-semibold text-ink-900">Tęsti kaip narys</p>
               <p className="text-sm text-ink-500">
-                Enter as Alex Morgan · 100m Sprint · Paid
+                Prisijungti kaip Alex Morgan · 100 m sprintas · Apmokėta
               </p>
             </div>
             <ArrowRight className="h-4 w-4 text-ink-400 group-hover:text-ink-900" />
@@ -111,10 +112,10 @@ export default function SelectRole() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-ink-900">
-                Continue as overdue member
+                Tęsti kaip narys su vėluojančiu mokėjimu
               </p>
               <p className="text-sm text-ink-500">
-                David Park · 5 km · Payment overdue
+                David Park · 5 km · Mokėjimas vėluoja
               </p>
             </div>
             <ArrowRight className="h-4 w-4 text-ink-400 group-hover:text-ink-900" />
@@ -129,18 +130,18 @@ export default function SelectRole() {
               <Users2 className="h-5 w-5" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold">Continue as Coach</p>
+              <p className="font-semibold">Tęsti kaip treneris</p>
               <p className="text-sm text-white/70">
-                Coach Elena Ruiz · Sprint &amp; Technique
+                Trenerė Elena Ruiz · Sprintas ir technika
               </p>
             </div>
             <ArrowRight className="h-4 w-4 text-white/70 group-hover:text-white" />
           </button>
 
           <div className="mt-4 rounded-2xl border border-dashed border-ink-200 bg-ink-50 p-3 text-xs text-ink-600">
-            <p className="font-semibold text-ink-800">Prototype demo</p>
-            No real authentication is used. Data is stored locally in your
-            browser and can be reset from the Profile screen.
+            <p className="font-semibold text-ink-800">Prototipo demonstracija</p>
+            Tikra autentifikacija nenaudojama. Duomenys saugomi lokaliai jūsų
+            naršyklėje ir gali būti atstatyti Profilio ekrane.
           </div>
         </div>
       </div>
