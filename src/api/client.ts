@@ -1,4 +1,9 @@
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
+// In production the API is served from the same origin under /api (Vercel
+// serverless function). Locally we default to the dev server on :4000.
+// VITE_API_URL can still override either default when set.
+const BASE_URL =
+  import.meta.env.VITE_API_URL ??
+  (import.meta.env.PROD ? '/api' : 'http://localhost:4000');
 
 export class ApiError extends Error {
   status: number;
