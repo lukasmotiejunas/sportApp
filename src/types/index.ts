@@ -1,6 +1,15 @@
-export type Role = 'member' | 'coach';
+export type Role = 'member' | 'coach' | 'admin';
 
-export type PaymentStatus = 'paid' | 'overdue';
+export type AuthUser = {
+  id: string;
+  email: string;
+  role: Role;
+  name?: string;
+  memberId?: string;
+  coachId?: string;
+};
+
+export type PaymentStatus = 'paid' | 'overdue' | 'pending';
 
 export type MembershipPlan = {
   id: string;
@@ -21,8 +30,6 @@ export type Member = {
   avatarColor: string;
   initials: string;
   photoUrl?: string;
-  emergencyContact: string;
-  preferredDistance: string;
   gender: Gender;
   ageGroup: string;
   membershipPlanId: string;

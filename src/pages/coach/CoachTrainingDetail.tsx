@@ -12,9 +12,10 @@ import { formatDateLong } from '../../utils/dates';
 const paymentTone = {
   paid: 'success',
   overdue: 'danger',
+  pending: 'warning',
 } as const;
 
-const paymentLabel = { paid: 'Apmokėta', overdue: 'Vėluoja' } as const;
+const paymentLabel = { paid: 'Apmokėta', overdue: 'Vėluoja', pending: 'Laukiama' } as const;
 
 const statusLabel = { open: 'Atvira', closed: 'Uždaryta', cancelled: 'Atšaukta' } as const;
 
@@ -184,7 +185,7 @@ export default function CoachTrainingDetail() {
                       </StatusBadge>
                     </div>
                     <p className="text-xs text-ink-500">
-                      Užsiregistravo {new Date(row.r.registeredAt).toLocaleDateString()} · {row.m.preferredDistance}
+                      Užsiregistravo {new Date(row.r.registeredAt).toLocaleDateString()}
                     </p>
                   </div>
                 </div>

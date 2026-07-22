@@ -12,11 +12,13 @@ type Props = {
 const paymentTone = {
   paid: "success",
   overdue: "danger",
+  pending: "warning",
 } as const;
 
 const paymentLabel = {
   paid: "Apmokėta",
   overdue: "Vėluoja",
+  pending: "Laukiama",
 } as const;
 
 export function MemberCard({ member, to }: Props) {

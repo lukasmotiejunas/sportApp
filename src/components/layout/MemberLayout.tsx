@@ -1,6 +1,5 @@
-import { Bell } from "lucide-react";
 import { Outlet } from "react-router-dom";
-import { DemoSwitcher } from "../ui/DemoSwitcher";
+import { UserMenu } from "../ui/UserMenu";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { ToastContainer } from "../ui/ToastContainer";
 
@@ -16,7 +15,7 @@ export function MemberLayout() {
             Volvere Club
           </div>
           <div className="ml-auto flex items-center gap-2">
-            <DemoSwitcher />
+            <UserMenu />
           </div>
         </div>
       </header>

@@ -11,11 +11,13 @@ import { formatDateShort, addDays } from '../../utils/dates';
 const paymentTone = {
   paid: 'success',
   overdue: 'danger',
+  pending: 'warning',
 } as const;
 
 const paymentLabel = {
   paid: 'Apmokėta',
   overdue: 'Vėluoja',
+  pending: 'Laukiama',
 } as const;
 
 export default function MemberPayments() {
@@ -23,10 +25,25 @@ export default function MemberPayments() {
   const plans = useStore((s) => s.membershipPlans);
   const simulatePayment = useStore((s) => s.simulatePayment);
   const push = useStore((s) => s.pushToast);
-  const plan = plans.find((p) => p.id === member.membershipPlanId)!;
+  const plan = plans.find((p) => p.id === member.membershipPlanId);
 
   const [payOpen, setPayOpen] = useState(false);
   const [method, setMethod] = useState('visa');
+
+  if (!plan) {
+    return (
+      <div>
+        <PageTitle title="Mokėjimai" description="Jūsų narystės planas ir mokėjimų istorija." eyebrow="Narystė" />
+        <section className="surface p-6 text-center">
+          <CreditCard className="mx-auto mb-3 h-8 w-8 text-ink-400" />
+          <p className="font-display text-lg font-bold">Narystės planas dar nepriskirtas</p>
+          <p className="mt-1 text-sm text-ink-500">
+            Kai administratorius priskirs jums narystės planą, čia matysite savo mokėjimus.
+          </p>
+        </section>
+      </div>
+    );
+  }
 
   const history = [
     { id: 'h1', month: 'Šį mėnesį', status: member.paymentStatus, date: member.lastPaymentDate, amount: plan.monthlyFee },

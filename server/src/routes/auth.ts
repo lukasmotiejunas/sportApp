@@ -1,0 +1,46 @@
+import { Router } from 'express';
+import { z } from 'zod';
+import { prisma } from '../prisma.js';
+import { asyncHandler, HttpError } from '../middleware/errorHandler.js';
+import { requireAuth } from '../middleware/auth.js';
+import { verifyPassword } from '../auth/password.js';
+import { signToken } from '../auth/jwt.js';
+import { serializeUser } from '../serialize.js';
+
+export const authRouter = Router();
+
+const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});
+
+authRouter.post(
+  '/login',
+  asyncHandler(async (req, res) => {
+    const { email, password } = loginSchema.parse(req.body);
+    const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+    if (!user) throw new HttpError(401, 'Neteisingas el. paštas arba slaptažodis.');
+
+    const ok = await verifyPassword(password, user.passwordHash);
+    if (!ok) throw new HttpError(401, 'Neteisingas el. paštas arba slaptažodis.');
+
+    const token = signToken({
+      userId: user.id,
+      role: user.role,
+      memberId: user.memberId,
+      coachId: user.coachId,
+    });
+
+    res.json({ token, user: serializeUser(user) });
+  }),
+);
+
+authRouter.get(
+  '/me',
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
+    if (!user) throw new HttpError(404, 'Vartotojas nerastas.');
+    res.json(serializeUser(user));
+  }),
+);

@@ -25,7 +25,7 @@ export default function MemberProfile() {
   const plans = useStore((s) => s.membershipPlans);
   const plan = plans.find((p) => p.id === member.membershipPlanId);
   const updateMember = useStore((s) => s.updateMember);
-  const setRole = useStore((s) => s.setRole);
+  const logout = useStore((s) => s.logout);
   const push = useStore((s) => s.pushToast);
   const navigate = useNavigate();
   const [confirmLogout, setConfirmLogout] = useState(false);
@@ -34,8 +34,6 @@ export default function MemberProfile() {
     name: member.name,
     email: member.email,
     phone: member.phone,
-    emergencyContact: member.emergencyContact,
-    preferredDistance: member.preferredDistance,
   });
 
   const bests = categories
@@ -65,7 +63,6 @@ export default function MemberProfile() {
             <p className="text-sm text-ink-500">{member.email}</p>
             <div className="mt-2 flex flex-wrap gap-1.5">
               <StatusBadge tone="accent">{plan?.name ?? 'Klubo narys'}</StatusBadge>
-              <StatusBadge tone="neutral">{member.preferredDistance}</StatusBadge>
               <StatusBadge tone="info">Nuo {formatDateLong(member.memberSince).split(',')[1]?.trim()}</StatusBadge>
             </div>
           </div>
@@ -79,8 +76,6 @@ export default function MemberProfile() {
           <FormField label="El. paštas" type="email" value={edit.email} onChange={(e) => setEdit({ ...edit, email: e.target.value })} />
           <FormField label="Telefonas" value={edit.phone} onChange={(e) => setEdit({ ...edit, phone: e.target.value })} />
           <FormField label="Gimimo data" value={member.dateOfBirth} disabled />
-          <FormField label="Kontaktas nelaimės atveju" value={edit.emergencyContact} onChange={(e) => setEdit({ ...edit, emergencyContact: e.target.value })} className="sm:col-span-2" />
-          <FormField label="Mėgstamiausias bėgimo atstumas" value={edit.preferredDistance} onChange={(e) => setEdit({ ...edit, preferredDistance: e.target.value })} />
         </div>
         <div className="mt-3 flex justify-end">
           <button className="btn-primary h-10 px-4 text-sm" onClick={save}>
@@ -178,12 +173,12 @@ export default function MemberProfile() {
         open={confirmLogout}
         onClose={() => setConfirmLogout(false)}
         onConfirm={() => {
-          setRole(null);
-          navigate('/select-role');
+          logout();
+          navigate('/login');
         }}
-        title="Keisti vaidmenį ar atsijungti?"
-        message="Būsite grąžinti į vaidmens pasirinkimo langą. Prototipo duomenys išliks šioje naršyklėje."
-        confirmLabel="Keisti vaidmenį"
+        title="Atsijungti?"
+        message="Būsite grąžinti į prisijungimo langą."
+        confirmLabel="Atsijungti"
         cancelLabel="Likti"
       />
     </div>

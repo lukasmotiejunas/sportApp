@@ -82,7 +82,7 @@ export default function CoachPlanEditor() {
           <Avatar name={member.name} color={member.avatarColor} size="md" />
           <div className="flex-1 min-w-0">
             <p className="font-display text-base font-bold">{member.name}</p>
-            <p className="text-xs text-ink-500">{member.preferredDistance} · {member.ageGroup}</p>
+            <p className="text-xs text-ink-500">{member.ageGroup}</p>
           </div>
           <StatusBadge tone={plan.status === 'published' ? 'accent' : 'warning'} dot>
             {plan.status === 'published' ? 'Publikuota' : 'Juodraštis'}

@@ -18,11 +18,12 @@ import type { PaymentStatus } from "../../types";
 const paymentTone = {
   paid: "success",
   overdue: "danger",
+  pending: "warning",
 } as const;
 
-const paymentLabel = { paid: "Apmokėta", overdue: "Vėluoja" } as const;
+const paymentLabel = { paid: "Apmokėta", overdue: "Vėluoja", pending: "Laukiama" } as const;
 
-const paymentActions: PaymentStatus[] = ["paid", "overdue"];
+const paymentActions: PaymentStatus[] = ["paid", "overdue", "pending"];
 
 export default function CoachMemberDetail() {
   const { id = "" } = useParams();
@@ -81,7 +82,7 @@ export default function CoachMemberDetail() {
           <div className="min-w-0 flex-1">
             <p className="font-display text-lg font-bold">{member.name}</p>
             <p className="text-sm text-ink-500">
-              {plan?.name} · {member.preferredDistance} · {member.ageGroup}
+              {plan?.name} · {member.ageGroup}
             </p>
             <div className="mt-2 flex flex-wrap gap-1.5">
               <StatusBadge tone={paymentTone[member.paymentStatus]} dot>
@@ -143,9 +144,6 @@ export default function CoachMemberDetail() {
             </li>
             <li className="flex items-center gap-2 text-ink-700 dark:text-ink-200">
               <Phone className="h-3.5 w-3.5 text-ink-400" /> {member.phone}
-            </li>
-            <li className="text-ink-600 dark:text-ink-300">
-              Nelaimės atveju: {member.emergencyContact}
             </li>
           </ul>
         </section>

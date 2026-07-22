@@ -10,7 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
-import { DemoSwitcher } from "../ui/DemoSwitcher";
+import { UserMenu } from "../ui/UserMenu";
 import { ToastContainer } from "../ui/ToastContainer";
 
 const items = [
@@ -40,7 +40,7 @@ export function CoachLayout() {
           </div>
           <SidebarNav />
           <div className="mt-auto space-y-2">
-            <DemoSwitcher variant="full" />
+            <UserMenu variant="full" />
           </div>
         </aside>
 
@@ -66,7 +66,7 @@ export function CoachLayout() {
                 </span>
               </div>
               <div className="ml-auto flex items-center gap-2">
-                <DemoSwitcher />
+                <UserMenu />
               </div>
             </div>
             {mobileNavOpen && (

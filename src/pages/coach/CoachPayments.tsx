@@ -16,16 +16,19 @@ const filters: { id: "all" | PaymentStatus; label: string }[] = [
   { id: "all", label: "Visi" },
   { id: "paid", label: "Apmokėta" },
   { id: "overdue", label: "Vėluoja" },
+  { id: "pending", label: "Laukiama" },
 ];
 
 const paymentTone = {
   paid: "success",
   overdue: "danger",
+  pending: "warning",
 } as const;
 
 const paymentLabel = {
   paid: "Apmokėta",
   overdue: "Vėluoja",
+  pending: "Laukiama",
 } as const;
 
 export default function CoachPayments() {
@@ -46,7 +49,7 @@ export default function CoachPayments() {
         acc[m.paymentStatus] += 1;
         return acc;
       },
-      { paid: 0, overdue: 0 } as Record<PaymentStatus, number>,
+      { paid: 0, overdue: 0, pending: 0 } as Record<PaymentStatus, number>,
     );
   }, [members]);
 
@@ -67,6 +70,7 @@ export default function CoachPayments() {
   const pieData = [
     { name: "Apmokėta", value: counts.paid, color: "#10b981" },
     { name: "Vėluoja", value: counts.overdue, color: "#ef4444" },
+    { name: "Laukiama", value: counts.pending, color: "#f59e0b" },
   ];
 
   return (
@@ -182,7 +186,7 @@ export default function CoachPayments() {
               </thead>
               <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
                 {rows.map((m) => {
-                  const plan = plans.find((p) => p.id === m.membershipPlanId)!;
+                  const plan = plans.find((p) => p.id === m.membershipPlanId);
                   return (
                     <tr key={m.id}>
                       <td className="py-3">
@@ -201,10 +205,10 @@ export default function CoachPayments() {
                         </div>
                       </td>
                       <td className="py-3 text-ink-600 dark:text-ink-300">
-                        {plan.name}
+                        {plan?.name ?? "—"}
                       </td>
                       <td className="py-3 font-semibold tabular-nums">
-                        {formatCurrency(plan.monthlyFee)}
+                        {plan ? formatCurrency(plan.monthlyFee) : "—"}
                       </td>
                       <td className="py-3">
                         <StatusBadge tone={paymentTone[m.paymentStatus]} dot>
@@ -231,7 +235,7 @@ export default function CoachPayments() {
           {/* Mobile */}
           <ul className="divide-y divide-ink-100 md:hidden dark:divide-ink-800">
             {rows.map((m) => {
-              const plan = plans.find((p) => p.id === m.membershipPlanId)!;
+              const plan = plans.find((p) => p.id === m.membershipPlanId);
               return (
                 <li key={m.id} className="py-3">
                   <div className="flex items-start gap-3">
@@ -239,7 +243,7 @@ export default function CoachPayments() {
                     <div className="flex-1 min-w-0">
                       <p className="truncate text-sm font-semibold">{m.name}</p>
                       <p className="text-xs text-ink-500">
-                        {plan.name} · {formatCurrency(plan.monthlyFee)}
+                        {plan ? `${plan.name} · ${formatCurrency(plan.monthlyFee)}` : "Be plano"}
                       </p>
                       <p className="text-xs text-ink-500">
                         Iki {formatDateShort(m.paymentDueDate)}

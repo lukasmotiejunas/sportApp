@@ -1,4 +1,4 @@
-import { AlertOctagon, CheckCircle2 } from 'lucide-react';
+import { AlertOctagon, CheckCircle2, Clock } from 'lucide-react';
 import type { PaymentStatus } from '../../types';
 import clsx from 'clsx';
 
@@ -22,6 +22,12 @@ const config = {
     tone: 'from-red-500/15 to-red-500/5 border-red-200 text-red-900 dark:text-red-200 dark:border-red-500/40',
     title: 'Narystės mokėjimas vėluoja',
     description: 'Registracija į treniruotes sustabdyta, kol bus sumokėta.',
+  },
+  pending: {
+    icon: Clock,
+    tone: 'from-amber-500/10 to-amber-500/5 border-amber-200 text-amber-900 dark:text-amber-200 dark:border-amber-500/30',
+    title: 'Laukiama mokėjimo',
+    description: 'Užbaikite narystės mokėjimą, kad galėtumėte registruotis į treniruotes.',
   },
 } as const;
 

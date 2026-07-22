@@ -4,7 +4,9 @@ import { useStore } from './store/useStore';
 
 import { MemberLayout } from './components/layout/MemberLayout';
 import { CoachLayout } from './components/layout/CoachLayout';
-import SelectRole from './pages/SelectRole';
+import { AdminLayout } from './components/layout/AdminLayout';
+import { RequireRole } from './components/auth/RequireRole';
+import Login from './pages/Login';
 
 import MemberHome from './pages/member/MemberHome';
 import MemberTrainings from './pages/member/MemberTrainings';
@@ -25,6 +27,11 @@ import CoachLeaderboards from './pages/coach/CoachLeaderboards';
 import CoachLeaderboardDetail from './pages/coach/CoachLeaderboardDetail';
 import CoachPayments from './pages/coach/CoachPayments';
 
+import AdminUsers from './pages/admin/AdminUsers';
+import AdminPlans from './pages/admin/AdminPlans';
+import AdminAddCoach from './pages/admin/AdminAddCoach';
+import AdminAddMember from './pages/admin/AdminAddMember';
+
 function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -33,18 +40,56 @@ function ScrollToTop() {
   return null;
 }
 
+function LoadingScreen() {
+  return (
+    <div className="grid min-h-screen place-items-center bg-ink-950 text-white">
+      <div className="flex flex-col items-center gap-3">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-lime-400" />
+        <p className="text-sm text-white/70">Kraunama…</p>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
-  const role = useStore((s) => s.role);
+  const authChecked = useStore((s) => s.authChecked);
+  const authUser = useStore((s) => s.authUser);
+  const bootstrap = useStore((s) => s.bootstrap);
+
+  useEffect(() => {
+    void bootstrap();
+  }, [bootstrap]);
+
+  if (!authChecked) {
+    return <LoadingScreen />;
+  }
+
+  const home = !authUser
+    ? '/login'
+    : authUser.role === 'admin'
+      ? '/admin'
+      : authUser.role === 'coach'
+        ? '/coach'
+        : '/member';
 
   return (
     <>
       <ScrollToTop />
       <Routes>
-        <Route path="/" element={<Navigate to={role ? (role === 'coach' ? '/coach' : '/member') : '/select-role'} replace />} />
-        <Route path="/login" element={<Navigate to="/select-role" replace />} />
-        <Route path="/select-role" element={<SelectRole />} />
+        <Route path="/" element={<Navigate to={home} replace />} />
+        <Route
+          path="/login"
+          element={authUser ? <Navigate to={home} replace /> : <Login />}
+        />
 
-        <Route path="/member" element={<MemberLayout />}>
+        <Route
+          path="/member"
+          element={
+            <RequireRole roles={['member']}>
+              <MemberLayout />
+            </RequireRole>
+          }
+        >
           <Route index element={<MemberHome />} />
           <Route path="trainings" element={<MemberTrainings />} />
           <Route path="trainings/:id" element={<MemberTrainingDetail />} />
@@ -54,7 +99,14 @@ export default function App() {
           <Route path="profile" element={<MemberProfile />} />
         </Route>
 
-        <Route path="/coach" element={<CoachLayout />}>
+        <Route
+          path="/coach"
+          element={
+            <RequireRole roles={['coach']}>
+              <CoachLayout />
+            </RequireRole>
+          }
+        >
           <Route index element={<CoachDashboard />} />
           <Route path="trainings" element={<CoachTrainings />} />
           <Route path="trainings/new" element={<CoachTrainingForm mode="create" />} />
@@ -68,7 +120,21 @@ export default function App() {
           <Route path="payments" element={<CoachPayments />} />
         </Route>
 
-        <Route path="*" element={<Navigate to="/select-role" replace />} />
+        <Route
+          path="/admin"
+          element={
+            <RequireRole roles={['admin']}>
+              <AdminLayout />
+            </RequireRole>
+          }
+        >
+          <Route index element={<AdminUsers />} />
+          <Route path="plans" element={<AdminPlans />} />
+          <Route path="coaches/new" element={<AdminAddCoach />} />
+          <Route path="members/new" element={<AdminAddMember />} />
+        </Route>
+
+        <Route path="*" element={<Navigate to={home} replace />} />
       </Routes>
     </>
   );

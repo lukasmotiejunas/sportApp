@@ -37,12 +37,16 @@ export function addDays(iso: string, days: number): string {
 }
 
 export function formatDateShort(iso: string): string {
+  if (!iso) return '—';
   const d = new Date(iso + 'T00:00:00');
+  if (Number.isNaN(d.getTime())) return '—';
   return `${DAY_NAMES[d.getDay()]}, ${d.getDate()} ${MONTH_NAMES[d.getMonth()].slice(0, 3)}`;
 }
 
 export function formatDateLong(iso: string): string {
+  if (!iso) return '—';
   const d = new Date(iso + 'T00:00:00');
+  if (Number.isNaN(d.getTime())) return '—';
   return `${DAY_NAMES_LONG[d.getDay()]}, ${d.getDate()} ${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
 }
 
