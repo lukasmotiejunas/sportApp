@@ -37,3 +37,20 @@ export function requireRole(...roles: Role[]) {
     next();
   };
 }
+
+// Returns the clubId the current request is scoped to. Super-admin has no
+// implicit club — if they hit a tenant-scoped route they must specify one via
+// the ?clubId= query param.
+export function requireClubId(req: Request): string {
+  if (req.user?.role === 'super_admin') {
+    const q = typeof req.query.clubId === 'string' ? req.query.clubId : undefined;
+    if (!q) {
+      throw new HttpError(400, 'clubId is required for super_admin requests.');
+    }
+    return q;
+  }
+  if (!req.user?.clubId) {
+    throw new HttpError(403, 'Šiai paskyrai nepriskirtas klubas.');
+  }
+  return req.user.clubId;
+}

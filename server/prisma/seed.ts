@@ -14,6 +14,9 @@ import {
 
 const prisma = new PrismaClient();
 
+// Fixed IDs so re-running the seed is idempotent even across schema resets.
+const DEFAULT_CLUB_ID = 'club_default';
+
 async function main() {
   // Wipe existing data (reverse dependency order) so the seed is idempotent.
   await prisma.user.deleteMany();
@@ -25,9 +28,30 @@ async function main() {
   await prisma.member.deleteMany();
   await prisma.coach.deleteMany();
   await prisma.membershipPlan.deleteMany();
+  await prisma.club.deleteMany();
 
-  // 0. Admin login account (the only account seeded; coaches/members are
-  // added later by the admin through the app).
+  // 0a. The default demo club.
+  await prisma.club.create({
+    data: {
+      id: DEFAULT_CLUB_ID,
+      name: 'Default Club',
+      slug: 'default',
+    },
+  });
+
+  // 0b. Super admin (platform owner) — no club, sees all clubs.
+  const superEmail = (process.env.SUPER_ADMIN_EMAIL ?? 'lukas@kartel.ai').toLowerCase();
+  const superPassword = process.env.SUPER_ADMIN_PASSWORD ?? 'super-admin-123';
+  await prisma.user.create({
+    data: {
+      email: superEmail,
+      passwordHash: await bcrypt.hash(superPassword, 10),
+      role: 'super_admin',
+      name: 'Platform Owner',
+    },
+  });
+
+  // 0c. Default club admin (existing legacy login).
   const adminEmail = (process.env.ADMIN_EMAIL ?? 'admin@sportapp.lt').toLowerCase();
   const adminPassword = process.env.ADMIN_PASSWORD ?? 'admin123';
   await prisma.user.create({
@@ -36,6 +60,7 @@ async function main() {
       passwordHash: await bcrypt.hash(adminPassword, 10),
       role: 'admin',
       name: 'Administratorius',
+      clubId: DEFAULT_CLUB_ID,
     },
   });
 
@@ -43,6 +68,7 @@ async function main() {
   await prisma.membershipPlan.createMany({
     data: membershipPlans.map((p) => ({
       id: p.id,
+      clubId: DEFAULT_CLUB_ID,
       name: p.name,
       monthlyFee: p.monthlyFee,
       currency: p.currency,
@@ -53,6 +79,7 @@ async function main() {
   await prisma.coach.createMany({
     data: coachStaff.map((c) => ({
       id: c.id,
+      clubId: DEFAULT_CLUB_ID,
       name: c.name,
       specialty: c.specialty,
       avatarColor: c.avatarColor,
@@ -64,6 +91,7 @@ async function main() {
   await prisma.member.createMany({
     data: members.map((m) => ({
       id: m.id,
+      clubId: DEFAULT_CLUB_ID,
       name: m.name,
       email: m.email,
       phone: m.phone,
@@ -90,6 +118,7 @@ async function main() {
     await prisma.trainingSession.create({
       data: {
         id: t.id,
+        clubId: DEFAULT_CLUB_ID,
         title: t.title,
         description: t.description,
         date: new Date(t.date),
@@ -130,6 +159,7 @@ async function main() {
   await prisma.leaderboardCategory.createMany({
     data: leaderboardCategories.map((c) => ({
       id: c.id,
+      clubId: DEFAULT_CLUB_ID,
       name: c.name,
       event: c.event,
       measurementType: c.measurementType,
@@ -153,6 +183,7 @@ async function main() {
   });
 
   const counts = {
+    clubs: await prisma.club.count(),
     users: await prisma.user.count(),
     membershipPlans: await prisma.membershipPlan.count(),
     coaches: await prisma.coach.count(),

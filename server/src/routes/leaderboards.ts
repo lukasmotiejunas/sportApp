@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../prisma.js';
-import { asyncHandler } from '../middleware/errorHandler.js';
+import { asyncHandler, HttpError } from '../middleware/errorHandler.js';
+import { requireClubId } from '../middleware/auth.js';
 import {
   serializeLeaderboardCategory,
   serializeLeaderboardResult,
@@ -33,8 +34,9 @@ const resultSchema = z.object({
 
 leaderboardsRouter.get(
   '/categories',
-  asyncHandler(async (_req, res) => {
-    const categories = await prisma.leaderboardCategory.findMany();
+  asyncHandler(async (req, res) => {
+    const clubId = requireClubId(req);
+    const categories = await prisma.leaderboardCategory.findMany({ where: { clubId } });
     res.json(categories.map(serializeLeaderboardCategory));
   }),
 );
@@ -42,8 +44,11 @@ leaderboardsRouter.get(
 leaderboardsRouter.post(
   '/categories',
   asyncHandler(async (req, res) => {
+    const clubId = requireClubId(req);
     const data = categorySchema.parse(req.body);
-    const category = await prisma.leaderboardCategory.create({ data });
+    const category = await prisma.leaderboardCategory.create({
+      data: { ...data, clubId },
+    });
     res.status(201).json(serializeLeaderboardCategory(category));
   }),
 );
@@ -51,6 +56,12 @@ leaderboardsRouter.post(
 leaderboardsRouter.patch(
   '/categories/:id',
   asyncHandler(async (req, res) => {
+    const clubId = requireClubId(req);
+    const existing = await prisma.leaderboardCategory.findFirst({
+      where: { id: req.params.id, clubId },
+    });
+    if (!existing) throw new HttpError(404, 'Kategorija nerasta');
+
     const { id: _ignoredId, ...patch } = categorySchema.partial().parse(req.body);
     const category = await prisma.leaderboardCategory.update({
       where: { id: req.params.id },
@@ -61,14 +72,19 @@ leaderboardsRouter.patch(
 );
 
 // --- Results ---
+// Results are scoped via their category (category has clubId).
 
 leaderboardsRouter.get(
   '/results',
   asyncHandler(async (req, res) => {
+    const clubId = requireClubId(req);
     const categoryId =
       typeof req.query.categoryId === 'string' ? req.query.categoryId : undefined;
     const results = await prisma.leaderboardResult.findMany({
-      where: categoryId ? { categoryId } : undefined,
+      where: {
+        category: { clubId },
+        ...(categoryId ? { categoryId } : {}),
+      },
     });
     res.json(results.map(serializeLeaderboardResult));
   }),
@@ -77,7 +93,16 @@ leaderboardsRouter.get(
 leaderboardsRouter.post(
   '/results',
   asyncHandler(async (req, res) => {
+    const clubId = requireClubId(req);
     const data = resultSchema.parse(req.body);
+
+    const [category, member] = await Promise.all([
+      prisma.leaderboardCategory.findFirst({ where: { id: data.categoryId, clubId } }),
+      prisma.member.findFirst({ where: { id: data.memberId, clubId } }),
+    ]);
+    if (!category) throw new HttpError(400, 'Kategorija nepriklauso šiam klubui.');
+    if (!member) throw new HttpError(400, 'Narys nepriklauso šiam klubui.');
+
     const result = await prisma.leaderboardResult.create({
       data: {
         ...(data.id ? { id: data.id } : {}),
@@ -95,6 +120,12 @@ leaderboardsRouter.post(
 leaderboardsRouter.patch(
   '/results/:id',
   asyncHandler(async (req, res) => {
+    const clubId = requireClubId(req);
+    const existing = await prisma.leaderboardResult.findFirst({
+      where: { id: req.params.id, category: { clubId } },
+    });
+    if (!existing) throw new HttpError(404, 'Rezultatas nerastas');
+
     const patch = resultSchema.partial().parse(req.body);
     const { id: _ignoredId, date, ...rest } = patch;
     const result = await prisma.leaderboardResult.update({
@@ -111,6 +142,12 @@ leaderboardsRouter.patch(
 leaderboardsRouter.delete(
   '/results/:id',
   asyncHandler(async (req, res) => {
+    const clubId = requireClubId(req);
+    const existing = await prisma.leaderboardResult.findFirst({
+      where: { id: req.params.id, category: { clubId } },
+    });
+    if (!existing) throw new HttpError(404, 'Rezultatas nerastas');
+
     await prisma.leaderboardResult.delete({ where: { id: req.params.id } });
     res.status(204).end();
   }),

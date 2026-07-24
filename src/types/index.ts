@@ -1,12 +1,56 @@
-export type Role = 'member' | 'coach' | 'admin';
+export type Role = 'member' | 'coach' | 'admin' | 'super_admin';
 
 export type AuthUser = {
   id: string;
   email: string;
   role: Role;
   name?: string;
+  clubId?: string;
+  clubName?: string;
   memberId?: string;
   coachId?: string;
+};
+
+export type Club = {
+  id: string;
+  name: string;
+  slug: string;
+  createdAt: string;
+};
+
+export type ClubSummary = Club & {
+  memberCount: number;
+  coachCount: number;
+  userCount: number;
+  mrr: number;
+};
+
+export type ClubDetail = Club & {
+  counts: {
+    members: number;
+    coaches: number;
+    users: number;
+    trainingSessions: number;
+    membershipPlans: number;
+  };
+  mrr: number;
+  admins: { id: string; email: string; name?: string; createdAt: string }[];
+  members: {
+    id: string;
+    name: string;
+    email: string;
+    paymentStatus: PaymentStatus;
+    planName: string | null;
+    monthlyFee: number;
+  }[];
+  coaches: { id: string; name: string; specialty: string }[];
+};
+
+export type SuperAdminStats = {
+  clubs: number;
+  members: number;
+  coaches: number;
+  mrr: number;
 };
 
 export type PaymentStatus = 'paid' | 'overdue' | 'pending';

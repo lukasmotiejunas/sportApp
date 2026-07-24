@@ -8,6 +8,7 @@ type Props = {
 };
 
 const roleLabel: Record<string, string> = {
+  super_admin: "platformos savininkas",
   admin: "administratorius",
   coach: "treneris",
   member: "narys",

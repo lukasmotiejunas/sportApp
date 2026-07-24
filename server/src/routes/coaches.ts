@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../prisma.js';
 import { asyncHandler, HttpError } from '../middleware/errorHandler.js';
-import { requireRole } from '../middleware/auth.js';
+import { requireClubId, requireRole } from '../middleware/auth.js';
 import { serializeCoach } from '../serialize.js';
 import { hashPassword } from '../auth/password.js';
 import { initialsFromName, randomAvatarColor } from '../util.js';
@@ -11,8 +11,12 @@ export const coachesRouter = Router();
 
 coachesRouter.get(
   '/',
-  asyncHandler(async (_req, res) => {
-    const coaches = await prisma.coach.findMany({ orderBy: { name: 'asc' } });
+  asyncHandler(async (req, res) => {
+    const clubId = requireClubId(req);
+    const coaches = await prisma.coach.findMany({
+      where: { clubId },
+      orderBy: { name: 'asc' },
+    });
     res.json(coaches.map(serializeCoach));
   }),
 );
@@ -27,8 +31,9 @@ const createCoachSchema = z.object({
 // Admin-only: create a Coach profile + a linked login (User).
 coachesRouter.post(
   '/',
-  requireRole('admin'),
+  requireRole('admin', 'super_admin'),
   asyncHandler(async (req, res) => {
+    const clubId = requireClubId(req);
     const data = createCoachSchema.parse(req.body);
     const email = data.email.toLowerCase();
 
@@ -39,6 +44,7 @@ coachesRouter.post(
 
     const coach = await prisma.coach.create({
       data: {
+        clubId,
         name: data.name,
         specialty: data.specialty,
         initials: initialsFromName(data.name),
@@ -49,6 +55,7 @@ coachesRouter.post(
             passwordHash,
             role: 'coach',
             name: data.name,
+            clubId,
           },
         },
       },

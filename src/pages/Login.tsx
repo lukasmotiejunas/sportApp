@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useStore } from "../store/useStore";
 import type { Role } from "../types";
 
 const roleHome: Record<Role, string> = {
+  super_admin: "/superadmin",
   admin: "/admin",
   coach: "/coach",
   member: "/member",
@@ -37,27 +38,20 @@ export default function Login() {
     <div className="min-h-screen bg-ink-950 text-white">
       <div className="relative isolate mx-auto grid min-h-screen max-w-5xl grid-cols-1 lg:grid-cols-2">
         <div className="hero-gradient absolute inset-0 -z-10" />
-        <div className="flex flex-col justify-between p-6 sm:p-10">
-          <div>
-            <div className="flex items-center gap-2 font-display text-lg font-bold text-lime-300">
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-lime-400/15 ring-1 ring-lime-400/30">
-                <span className="h-1.5 w-1.5 rounded-full bg-lime-400" />
-              </span>
-              Volvere Club
-            </div>
-
-            <div className="mt-14 max-w-md">
-              <p className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-lime-300">
-                <Sparkles className="h-3 w-3" /> Bėgikai ir treneriai
-              </p>
-              <h1 className="font-display text-4xl font-bold tracking-tight sm:text-5xl">
-                Prisijunkite prie savo paskyros.
-              </h1>
-              <p className="mt-4 text-lg text-white/70">
-                Nariai, treneriai ir administratoriai prisijungia su savo el.
-                paštu ir slaptažodžiu.
-              </p>
-            </div>
+        <div className="flex flex-col items-center justify-center gap-8 p-6 sm:p-10">
+          <img
+            src="/lumo-logo.png"
+            alt="Lumo"
+            className="w-72 max-w-full sm:w-96 lg:w-[28rem] xl:w-[32rem]"
+          />
+          <div className="max-w-md text-center">
+            <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
+              Prisijunkite prie savo paskyros.
+            </h1>
+            <p className="mt-4 text-base text-white/70 sm:text-lg">
+              Nariai, treneriai ir administratoriai prisijungia su savo el.
+              paštu ir slaptažodžiu.
+            </p>
           </div>
         </div>
 

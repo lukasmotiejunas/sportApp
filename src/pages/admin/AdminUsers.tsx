@@ -9,12 +9,14 @@ import { ApiError } from "../../api/client";
 import type { AuthUser } from "../../types";
 
 const roleTone: Record<AuthUser["role"], "accent" | "info" | "success"> = {
+  super_admin: "accent",
   admin: "accent",
   coach: "info",
   member: "success",
 };
 
 const roleLabel: Record<AuthUser["role"], string> = {
+  super_admin: "Platformos savininkas",
   admin: "Administratorius",
   coach: "Treneris",
   member: "Narys",

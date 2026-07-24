@@ -1,4 +1,5 @@
 import type {
+  Club,
   Coach,
   LeaderboardCategory,
   LeaderboardResult,
@@ -22,14 +23,25 @@ function toNumber(d: Prisma.Decimal): number {
 }
 
 // Never expose passwordHash to clients.
-export function serializeUser(u: User) {
+export function serializeUser(u: User & { club?: Club | null }) {
   return {
     id: u.id,
     email: u.email,
     role: u.role,
     name: u.name ?? undefined,
+    clubId: u.clubId ?? undefined,
+    clubName: u.club?.name ?? undefined,
     memberId: u.memberId ?? undefined,
     coachId: u.coachId ?? undefined,
+  };
+}
+
+export function serializeClub(c: Club) {
+  return {
+    id: c.id,
+    name: c.name,
+    slug: c.slug,
+    createdAt: c.createdAt.toISOString(),
   };
 }
 

@@ -7,6 +7,7 @@ const JWT_EXPIRES_IN = '7d';
 export type TokenPayload = {
   userId: string;
   role: Role;
+  clubId?: string | null;
   memberId?: string | null;
   coachId?: string | null;
 };

@@ -11,6 +11,7 @@ import { membershipPlansRouter } from './routes/membershipPlans.js';
 import { trainingsRouter } from './routes/trainings.js';
 import { trainingPlansRouter } from './routes/trainingPlans.js';
 import { leaderboardsRouter } from './routes/leaderboards.js';
+import { superAdminRouter } from './routes/superadmin.js';
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.get('/health', (_req, res) => {
 app.use('/auth', authRouter);
 
 // Everything below requires a valid token.
+app.use('/superadmin', requireAuth, superAdminRouter);
 app.use('/users', requireAuth, usersRouter);
 app.use('/members', requireAuth, membersRouter);
 app.use('/coaches', requireAuth, coachesRouter);

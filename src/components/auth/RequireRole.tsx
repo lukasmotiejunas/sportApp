@@ -18,11 +18,13 @@ export function RequireRole({ roles, children }: Props) {
 
   if (!roles.includes(authUser.role)) {
     const home =
-      authUser.role === "admin"
-        ? "/admin"
-        : authUser.role === "coach"
-          ? "/coach"
-          : "/member";
+      authUser.role === "super_admin"
+        ? "/superadmin"
+        : authUser.role === "admin"
+          ? "/admin"
+          : authUser.role === "coach"
+            ? "/coach"
+            : "/member";
     return <Navigate to={home} replace />;
   }
 

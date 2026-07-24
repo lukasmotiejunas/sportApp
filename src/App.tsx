@@ -5,6 +5,7 @@ import { useStore } from './store/useStore';
 import { MemberLayout } from './components/layout/MemberLayout';
 import { CoachLayout } from './components/layout/CoachLayout';
 import { AdminLayout } from './components/layout/AdminLayout';
+import { SuperAdminLayout } from './components/layout/SuperAdminLayout';
 import { RequireRole } from './components/auth/RequireRole';
 import Login from './pages/Login';
 
@@ -31,6 +32,10 @@ import AdminUsers from './pages/admin/AdminUsers';
 import AdminPlans from './pages/admin/AdminPlans';
 import AdminAddCoach from './pages/admin/AdminAddCoach';
 import AdminAddMember from './pages/admin/AdminAddMember';
+
+import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard';
+import SuperAdminCreateClub from './pages/superadmin/SuperAdminCreateClub';
+import SuperAdminClubDetail from './pages/superadmin/SuperAdminClubDetail';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -66,11 +71,13 @@ export default function App() {
 
   const home = !authUser
     ? '/login'
-    : authUser.role === 'admin'
-      ? '/admin'
-      : authUser.role === 'coach'
-        ? '/coach'
-        : '/member';
+    : authUser.role === 'super_admin'
+      ? '/superadmin'
+      : authUser.role === 'admin'
+        ? '/admin'
+        : authUser.role === 'coach'
+          ? '/coach'
+          : '/member';
 
   return (
     <>
@@ -132,6 +139,20 @@ export default function App() {
           <Route path="plans" element={<AdminPlans />} />
           <Route path="coaches/new" element={<AdminAddCoach />} />
           <Route path="members/new" element={<AdminAddMember />} />
+        </Route>
+
+        <Route
+          path="/superadmin"
+          element={
+            <RequireRole roles={['super_admin']}>
+              <SuperAdminLayout />
+            </RequireRole>
+          }
+        >
+          <Route index element={<SuperAdminDashboard />} />
+          <Route path="clubs" element={<SuperAdminDashboard />} />
+          <Route path="clubs/new" element={<SuperAdminCreateClub />} />
+          <Route path="clubs/:id" element={<SuperAdminClubDetail />} />
         </Route>
 
         <Route path="*" element={<Navigate to={home} replace />} />

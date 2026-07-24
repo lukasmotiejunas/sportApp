@@ -1,30 +1,27 @@
 import { Outlet, NavLink } from "react-router-dom";
 import clsx from "clsx";
-import { Users, UserPlus, ShieldCheck, CreditCard } from "lucide-react";
+import { LayoutDashboard, Building2, PlusCircle, Sparkles } from "lucide-react";
 import { UserMenu } from "../ui/UserMenu";
 import { ToastContainer } from "../ui/ToastContainer";
-import { useStore } from "../../store/useStore";
 
 const items = [
-  { to: "/admin", label: "Paskyros", icon: Users, end: true },
-  { to: "/admin/plans", label: "Narystės planai", icon: CreditCard, end: false },
-  { to: "/admin/coaches/new", label: "Pridėti trenerį", icon: UserPlus },
-  { to: "/admin/members/new", label: "Pridėti narį", icon: UserPlus },
+  { to: "/superadmin", label: "Suvestinė", icon: LayoutDashboard, end: true },
+  { to: "/superadmin/clubs", label: "Klubai", icon: Building2, end: false },
+  { to: "/superadmin/clubs/new", label: "Naujas klubas", icon: PlusCircle, end: false },
 ];
 
-export function AdminLayout() {
-  const clubName = useStore((s) => s.authUser?.clubName ?? "");
+export function SuperAdminLayout() {
   return (
     <div className="min-h-screen bg-ink-50 dark:bg-ink-950">
       <div className="flex">
         <aside className="hidden w-64 shrink-0 border-r border-ink-100 bg-white p-4 md:flex md:flex-col dark:border-ink-800 dark:bg-ink-900 md:sticky md:top-0 md:h-screen">
           <div className="mb-6 flex items-center gap-2 px-1 font-display text-lg font-bold text-ink-900 dark:text-lime-400">
             <span className="grid h-8 w-8 place-items-center rounded-xl bg-ink-900 text-lime-400">
-              <ShieldCheck className="h-4 w-4" />
+              <Sparkles className="h-4 w-4" />
             </span>
-            {clubName}
-            <span className="ml-1 rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-ink-600 dark:bg-ink-800 dark:text-ink-300">
-              Admin
+            Lumo
+            <span className="ml-1 rounded-full bg-lime-400 px-2 py-0.5 text-[10px] font-semibold uppercase text-ink-950">
+              Super
             </span>
           </div>
           <nav className="flex flex-col gap-1">
@@ -56,9 +53,9 @@ export function AdminLayout() {
           <header className="sticky top-0 z-20 border-b border-ink-100 bg-white/85 backdrop-blur dark:border-ink-800 dark:bg-ink-950/85 md:hidden">
             <div className="flex items-center gap-2 px-4 py-3">
               <div className="flex items-center gap-2 font-display text-base font-bold text-ink-900 dark:text-lime-400">
-                {clubName}
-                <span className="rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-ink-600 dark:bg-ink-800 dark:text-ink-300">
-                  Admin
+                Lumo
+                <span className="rounded-full bg-lime-400 px-2 py-0.5 text-[10px] font-semibold uppercase text-ink-950">
+                  Super
                 </span>
               </div>
               <div className="ml-auto flex items-center gap-2">
@@ -87,7 +84,7 @@ export function AdminLayout() {
             </div>
           </header>
 
-          <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-4 md:py-8">
+          <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-4 md:py-8">
             <Outlet />
           </main>
         </div>

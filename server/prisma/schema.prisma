@@ -9,6 +9,7 @@ datasource db {
 }
 
 enum Role {
+  super_admin
   admin
   coach
   member
@@ -57,30 +58,54 @@ enum GenderCategory {
   all
 }
 
+model Club {
+  id                   String                @id @default(cuid())
+  name                 String
+  slug                 String                @unique
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  users                User[]
+  members              Member[]
+  coaches              Coach[]
+  trainingSessions     TrainingSession[]
+  membershipPlans      MembershipPlan[]
+  leaderboardCategories LeaderboardCategory[]
+}
+
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
   passwordHash String
   role         Role
   name         String?
+  clubId       String?
+  club         Club?    @relation(fields: [clubId], references: [id], onDelete: Cascade)
   memberId     String?  @unique
   member       Member?  @relation(fields: [memberId], references: [id], onDelete: Cascade)
   coachId      String?  @unique
   coach        Coach?   @relation(fields: [coachId], references: [id], onDelete: Cascade)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  @@index([clubId])
 }
 
 model MembershipPlan {
   id         String   @id @default(cuid())
+  clubId     String
+  club       Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
   name       String
   monthlyFee Decimal  @db.Decimal(10, 2)
   currency   String   @default("EUR")
   members    Member[]
+
+  @@index([clubId])
 }
 
 model Member {
   id                String    @id @default(cuid())
+  clubId            String
+  club              Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
   name              String
   email             String    @unique
   phone             String?
@@ -106,20 +131,28 @@ model Member {
   user              User?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
+
+  @@index([clubId])
 }
 
 model Coach {
   id          String   @id @default(cuid())
+  clubId      String
+  club        Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
   name        String
   specialty   String?
   avatarColor String?
   initials    String?
   sessions    TrainingSession[]
   user        User?
+
+  @@index([clubId])
 }
 
 model TrainingSession {
   id                   String   @id @default(cuid())
+  clubId               String
+  club                 Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
   coachId              String
   coach                Coach    @relation(fields: [coachId], references: [id])
   title                String
@@ -137,6 +170,8 @@ model TrainingSession {
   trainingPlans        TrainingPlan[]
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
+
+  @@index([clubId])
 }
 
 model TrainingRegistration {
@@ -168,6 +203,8 @@ model TrainingPlan {
 
 model LeaderboardCategory {
   id              String   @id @default(cuid())
+  clubId          String
+  club            Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
   name            String
   event           String
   measurementType MeasurementType
@@ -176,6 +213,8 @@ model LeaderboardCategory {
   genderCategory  GenderCategory @default(all)
   archived        Boolean  @default(false)
   results         LeaderboardResult[]
+
+  @@index([clubId])
 }
 
 model LeaderboardResult {

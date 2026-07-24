@@ -50,7 +50,7 @@ type State = {
   pushToast: (t: ToastInput) => void;
   dismissToast: (id: string) => void;
 
-  loadInitialData: () => Promise<void>;
+  loadInitialData: (roleOverride?: Role) => Promise<void>;
 
   // Auth actions
   bootstrap: () => Promise<void>;
@@ -137,7 +137,14 @@ export const useStore = create<State>()(
         },
         dismissToast: (id) => set({ toasts: get().toasts.filter((t) => t.id !== id) }),
 
-        loadInitialData: async () => {
+        loadInitialData: async (roleOverride) => {
+          // Super-admin has no club context; every tenant-scoped endpoint
+          // requires a clubId. The super-admin dashboard fetches its own data.
+          const role = roleOverride ?? get().authUser?.role;
+          if (role === 'super_admin') {
+            set({ loaded: true });
+            return;
+          }
           try {
             const [
               members,
@@ -193,7 +200,7 @@ export const useStore = create<State>()(
               currentMemberId: user.memberId ?? '',
               currentCoachId: user.coachId ?? '',
             });
-            await get().loadInitialData();
+            await get().loadInitialData(user.role);
           } catch {
             // Token invalid/expired -> clear it and show the login screen.
             setAuthToken(null);
@@ -212,7 +219,7 @@ export const useStore = create<State>()(
             // first the target page could mount before its data is loaded and
             // crash (e.g. CoachDashboard reading an undefined coach).
             set({ token });
-            await get().loadInitialData();
+            await get().loadInitialData(user.role);
             set({
               authUser: user,
               role: user.role,

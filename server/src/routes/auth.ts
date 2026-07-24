@@ -18,7 +18,10 @@ authRouter.post(
   '/login',
   asyncHandler(async (req, res) => {
     const { email, password } = loginSchema.parse(req.body);
-    const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+    const user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+      include: { club: true },
+    });
     if (!user) throw new HttpError(401, 'Neteisingas el. paštas arba slaptažodis.');
 
     const ok = await verifyPassword(password, user.passwordHash);
@@ -27,6 +30,7 @@ authRouter.post(
     const token = signToken({
       userId: user.id,
       role: user.role,
+      clubId: user.clubId,
       memberId: user.memberId,
       coachId: user.coachId,
     });
@@ -39,7 +43,10 @@ authRouter.get(
   '/me',
   requireAuth,
   asyncHandler(async (req, res) => {
-    const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.userId },
+      include: { club: true },
+    });
     if (!user) throw new HttpError(404, 'Vartotojas nerastas.');
     res.json(serializeUser(user));
   }),

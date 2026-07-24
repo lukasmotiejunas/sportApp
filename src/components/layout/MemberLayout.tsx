@@ -2,8 +2,10 @@ import { Outlet } from "react-router-dom";
 import { UserMenu } from "../ui/UserMenu";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { ToastContainer } from "../ui/ToastContainer";
+import { useStore } from "../../store/useStore";
 
 export function MemberLayout() {
+  const clubName = useStore((s) => s.authUser?.clubName ?? "");
   return (
     <div className="min-h-screen bg-ink-50 dark:bg-ink-950">
       <header className="sticky top-0 z-20 border-b border-ink-100 bg-white/85 backdrop-blur dark:border-ink-800 dark:bg-ink-950/85">
@@ -12,7 +14,7 @@ export function MemberLayout() {
             <span className="grid h-8 w-8 place-items-center rounded-xl bg-ink-900 text-lime-400">
               <span className="h-1.5 w-1.5 rounded-full bg-lime-400" />
             </span>
-            Volvere Club
+            {clubName}
           </div>
           <div className="ml-auto flex items-center gap-2">
             <UserMenu />

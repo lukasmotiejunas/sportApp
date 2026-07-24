@@ -12,6 +12,7 @@ import {
 import { useState } from "react";
 import { UserMenu } from "../ui/UserMenu";
 import { ToastContainer } from "../ui/ToastContainer";
+import { useStore } from "../../store/useStore";
 
 const items = [
   { to: "/coach", label: "Skydelis", icon: LayoutDashboard, end: true },
@@ -23,6 +24,7 @@ const items = [
 
 export function CoachLayout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const clubName = useStore((s) => s.authUser?.clubName ?? "");
 
   return (
     <div className="min-h-screen bg-ink-50 dark:bg-ink-950">
@@ -33,7 +35,7 @@ export function CoachLayout() {
             <span className="grid h-8 w-8 place-items-center rounded-xl bg-ink-900 text-lime-400">
               <span className="h-1.5 w-1.5 rounded-full bg-lime-400" />
             </span>
-            Volvere Club
+            {clubName}
             <span className="ml-1 rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-ink-600 dark:bg-ink-800 dark:text-ink-300">
               Treneris
             </span>
@@ -60,7 +62,7 @@ export function CoachLayout() {
                 )}
               </button>
               <div className="flex items-center gap-2 font-display text-base font-bold text-ink-900 dark:text-lime-400">
-                Pace Club
+                {clubName}
                 <span className="rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-ink-600 dark:bg-ink-800 dark:text-ink-300">
                   Treneris
                 </span>
