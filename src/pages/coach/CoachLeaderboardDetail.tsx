@@ -115,7 +115,7 @@ export default function CoachLeaderboardDetail() {
                     <td className="px-4 py-3 font-bold">{rank}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <Avatar name={m.name} color={m.avatarColor} size="sm" />
+                        <Avatar name={m.name} color={m.avatarColor} size="sm" photoUrl={m.photoUrl} />
                         <div>
                           <p className="text-sm font-semibold">{m.name}</p>
                           <p className="text-xs text-ink-500">{m.ageGroup}</p>

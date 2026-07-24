@@ -14,7 +14,14 @@ export function ParticipantAvatarGroup({ members, max = 5, size = 'sm' }: Props)
     <div className="flex items-center">
       <div className="flex -space-x-2">
         {visible.map((m) => (
-          <Avatar key={m.id} name={m.name} color={m.avatarColor} size={size} ring />
+          <Avatar
+            key={m.id}
+            name={m.name}
+            color={m.avatarColor}
+            size={size}
+            ring
+            photoUrl={m.photoUrl}
+          />
         ))}
       </div>
       {overflow > 0 && (

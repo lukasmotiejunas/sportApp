@@ -14,7 +14,6 @@ import { useStore, useCurrentMember } from "../../store/useStore";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { CapacityProgress } from "../../components/trainings/CapacityProgress";
 import { PageTitle } from "../../components/layout/PageTitle";
-import { Modal } from "../../components/ui/Modal";
 import { formatDateLong, relativeDay } from "../../utils/dates";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { Avatar } from "../../components/ui/Avatar";
@@ -32,7 +31,6 @@ export default function MemberTrainingDetail() {
   const cancel = useStore((s) => s.cancelRegistration);
   const push = useStore((s) => s.pushToast);
   const [confirmCancel, setConfirmCancel] = useState(false);
-  const [planOpen, setPlanOpen] = useState(false);
 
   const plan = useMemo(
     () =>
@@ -76,7 +74,10 @@ export default function MemberTrainingDetail() {
         message: "Puiku — registracija į treniruotę patvirtinta.",
       });
     } else {
-      push({ kind: "error", message: res.error ?? "Nepavyko užsiregistruoti." });
+      push({
+        kind: "error",
+        message: res.error ?? "Nepavyko užsiregistruoti.",
+      });
     }
   };
 
@@ -192,7 +193,7 @@ export default function MemberTrainingDetail() {
           </div>
         </section>
 
-        <PersonalPlanPanel plan={plan} onExpand={() => setPlanOpen(true)} />
+        <PersonalPlanPanel plan={plan} />
 
         <section className="surface p-4 md:col-span-2">
           <h3 className="mb-3 flex items-center gap-2 font-display text-base font-bold">
@@ -213,7 +214,7 @@ export default function MemberTrainingDetail() {
                   key={m.id}
                   className="flex items-center gap-2 rounded-xl border border-ink-100 p-2 dark:border-ink-800"
                 >
-                  <Avatar name={m.name} color={m.avatarColor} size="sm" />
+                  <Avatar name={m.name} color={m.avatarColor} size="sm" photoUrl={m.photoUrl} />
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold">{m.name}</p>
                   </div>
@@ -225,18 +226,11 @@ export default function MemberTrainingDetail() {
       </div>
 
       {/* Sticky action */}
-      <div className="fixed inset-x-0 bottom-16 z-20 mx-auto max-w-4xl px-4 pb-2 md:static md:mt-4 md:px-0">
+      <div className="fixed inset-x-0 bottom-20 z-20 mx-auto max-w-4xl px-4 pb-2 md:static md:mt-4 md:px-0">
         <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-ink-100 bg-white/95 p-2 shadow-pop backdrop-blur md:border-transparent md:bg-transparent md:p-0 md:shadow-none dark:border-ink-800 dark:bg-ink-950/95 md:dark:bg-transparent">
           {primary()}
         </div>
       </div>
-
-      <FullPlanModal
-        open={planOpen}
-        onClose={() => setPlanOpen(false)}
-        plan={plan}
-        sessionTitle={training.title}
-      />
 
       <ConfirmDialog
         open={confirmCancel}
@@ -276,13 +270,7 @@ function InfoRow({
   );
 }
 
-function PersonalPlanPanel({
-  plan,
-  onExpand,
-}: {
-  plan?: TrainingPlan;
-  onExpand: () => void;
-}) {
+function PersonalPlanPanel({ plan }: { plan?: TrainingPlan }) {
   if (!plan) {
     return (
       <section className="surface flex flex-col items-center justify-center p-6 text-center">
@@ -316,93 +304,25 @@ function PersonalPlanPanel({
         </span>
       </div>
 
-      <div className="relative max-h-72 overflow-hidden">
-        {plan.coachNote && (
-          <div className="mb-3 flex items-start gap-2 rounded-2xl border border-lime-400/25 bg-lime-50/70 p-3 dark:bg-lime-400/[0.08]">
-            <MessageSquareText className="mt-0.5 h-4 w-4 shrink-0 text-lime-600 dark:text-lime-300" />
-            <div className="min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-lime-700 dark:text-lime-300">
-                Trenerio užrašas
-              </p>
-              <p className="mt-0.5 line-clamp-3 text-sm text-ink-700 dark:text-ink-100">
-                {plan.coachNote}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {plan.plan && (
-          <pre className="whitespace-pre-wrap font-sans text-sm text-ink-700 dark:text-ink-200">
-            {plan.plan}
-          </pre>
-        )}
-
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-white via-white/85 to-transparent dark:from-ink-900 dark:via-ink-900/85" />
-      </div>
-
-      <button
-        type="button"
-        onClick={onExpand}
-        className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-2xl border border-ink-100 bg-white px-3 py-2.5 text-sm font-semibold text-ink-800 shadow-sm transition-colors hover:border-lime-400/50 hover:bg-lime-50/50 dark:border-ink-700 dark:bg-ink-900 dark:text-ink-100 dark:hover:border-lime-400/40 dark:hover:bg-lime-400/[0.06]"
-      >
-        Peržiūrėti visą planą
-      </button>
-    </section>
-  );
-}
-
-function FullPlanModal({
-  open,
-  onClose,
-  plan,
-  sessionTitle,
-}: {
-  open: boolean;
-  onClose: () => void;
-  plan?: TrainingPlan;
-  sessionTitle: string;
-}) {
-  if (!plan) return null;
-  return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      size="lg"
-      title={
-        <span className="flex items-center gap-2">
-          <span className="grid h-8 w-8 place-items-center rounded-xl bg-lime-400/15 text-lime-700 dark:text-lime-200">
-            <ClipboardList className="h-4 w-4" />
-          </span>
-          {plan.title}
-        </span>
-      }
-      description={
-        <span className="text-xs text-ink-500">
-          ~{plan.duration} min · {sessionTitle}
-        </span>
-      }
-    >
       {plan.coachNote && (
-        <div className="mb-4 flex items-start gap-2 rounded-2xl border border-lime-400/25 bg-lime-50/70 p-3.5 dark:bg-lime-400/[0.08]">
+        <div className="mb-3 flex items-start gap-2 rounded-2xl border border-lime-400/25 bg-lime-50/70 p-3 dark:bg-lime-400/[0.08]">
           <MessageSquareText className="mt-0.5 h-4 w-4 shrink-0 text-lime-600 dark:text-lime-300" />
-          <div>
+          <div className="min-w-0">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-lime-700 dark:text-lime-300">
               Trenerio užrašas
             </p>
-            <p className="mt-1 text-sm text-ink-700 dark:text-ink-100">
+            <p className="mt-0.5 text-sm text-ink-700 dark:text-ink-100">
               {plan.coachNote}
             </p>
           </div>
         </div>
       )}
 
-      {plan.plan ? (
+      {plan.plan && (
         <pre className="whitespace-pre-wrap font-sans text-sm text-ink-700 dark:text-ink-200">
           {plan.plan}
         </pre>
-      ) : (
-        <p className="text-sm text-ink-500">Treneris dar neparuošė plano detalių.</p>
       )}
-    </Modal>
+    </section>
   );
 }

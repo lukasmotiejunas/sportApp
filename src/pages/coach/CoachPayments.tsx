@@ -195,6 +195,7 @@ export default function CoachPayments() {
                             name={m.name}
                             color={m.avatarColor}
                             size="sm"
+                            photoUrl={m.photoUrl}
                           />
                           <div>
                             <p className="text-sm font-semibold">{m.name}</p>
@@ -239,7 +240,7 @@ export default function CoachPayments() {
               return (
                 <li key={m.id} className="py-3">
                   <div className="flex items-start gap-3">
-                    <Avatar name={m.name} color={m.avatarColor} size="sm" />
+                    <Avatar name={m.name} color={m.avatarColor} size="sm" photoUrl={m.photoUrl} />
                     <div className="flex-1 min-w-0">
                       <p className="truncate text-sm font-semibold">{m.name}</p>
                       <p className="text-xs text-ink-500">

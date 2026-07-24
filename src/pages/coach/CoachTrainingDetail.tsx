@@ -176,7 +176,7 @@ export default function CoachTrainingDetail() {
             {filtered.map((row) => (
               <li key={row.m.id} className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center">
                 <div className="flex flex-1 min-w-0 items-center gap-3">
-                  <Avatar name={row.m.name} color={row.m.avatarColor} size="sm" />
+                  <Avatar name={row.m.name} color={row.m.avatarColor} size="sm" photoUrl={row.m.photoUrl} />
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="truncate text-sm font-semibold">{row.m.name}</p>

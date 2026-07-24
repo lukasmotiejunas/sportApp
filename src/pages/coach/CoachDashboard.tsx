@@ -258,7 +258,7 @@ export default function CoachDashboard() {
                   key={m.id}
                   className="flex items-center gap-3 rounded-xl border border-red-100 bg-red-50/60 p-3 dark:border-red-500/30 dark:bg-red-500/10"
                 >
-                  <Avatar name={m.name} color={m.avatarColor} size="sm" />
+                  <Avatar name={m.name} color={m.avatarColor} size="sm" photoUrl={m.photoUrl} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold">{m.name}</p>
                     <p className="text-xs text-red-700 dark:text-red-300">

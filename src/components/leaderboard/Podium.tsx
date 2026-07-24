@@ -57,7 +57,13 @@ function PodiumStep({
           <Medal className="mx-auto h-4 w-4 text-white/70" />
         )}
       </div>
-      <Avatar name={entry.member.name} color={entry.member.avatarColor} size="md" ring />
+      <Avatar
+        name={entry.member.name}
+        color={entry.member.avatarColor}
+        size="md"
+        ring
+        photoUrl={entry.member.photoUrl}
+      />
       <p className="mt-1.5 truncate max-w-full text-xs font-semibold text-white">{entry.member.name}</p>
       <p className="font-display text-base font-bold tabular-nums">{formatResult(entry.result.value, category)}</p>
       <div

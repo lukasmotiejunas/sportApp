@@ -18,6 +18,11 @@ export function UserMenu({ variant = "compact" }: Props) {
   const navigate = useNavigate();
   const authUser = useStore((s) => s.authUser);
   const logout = useStore((s) => s.logout);
+  const memberPhotoUrl = useStore((s) => {
+    if (s.authUser?.role !== "member") return undefined;
+    const email = s.authUser.email?.toLowerCase();
+    return s.members.find((m) => m.email.toLowerCase() === email)?.photoUrl;
+  });
 
   const name = authUser?.name ?? authUser?.email ?? "—";
   const label = authUser ? roleLabel[authUser.role] ?? authUser.role : "";
@@ -31,7 +36,7 @@ export function UserMenu({ variant = "compact" }: Props) {
     return (
       <div className="rounded-2xl border border-ink-200 bg-white p-3 dark:border-ink-800 dark:bg-ink-900">
         <div className="flex items-center gap-3">
-          <Avatar name={name} size="md" />
+          <Avatar name={name} size="md" photoUrl={memberPhotoUrl} />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold text-ink-900 dark:text-ink-50">
               {name}
@@ -60,7 +65,7 @@ export function UserMenu({ variant = "compact" }: Props) {
         </p>
         <p className="text-[10px] uppercase tracking-wide text-ink-500">{label}</p>
       </div>
-      <Avatar name={name} size="sm" />
+      <Avatar name={name} size="sm" photoUrl={memberPhotoUrl} />
       <button
         type="button"
         onClick={handleLogout}

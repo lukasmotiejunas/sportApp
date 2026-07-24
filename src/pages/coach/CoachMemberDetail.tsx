@@ -78,7 +78,7 @@ export default function CoachMemberDetail() {
 
       <section className="surface mb-4 p-4">
         <div className="flex flex-wrap items-center gap-4">
-          <Avatar name={member.name} color={member.avatarColor} size="xl" />
+          <Avatar name={member.name} color={member.avatarColor} size="xl" photoUrl={member.photoUrl} />
           <div className="min-w-0 flex-1">
             <p className="font-display text-lg font-bold">{member.name}</p>
             <p className="text-sm text-ink-500">

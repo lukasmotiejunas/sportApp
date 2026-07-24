@@ -27,7 +27,7 @@ export function LeaderboardRow({ rank, result, member, category, movement, highl
       <div className="grid h-8 w-8 place-items-center rounded-full bg-ink-100 text-sm font-bold text-ink-700 dark:bg-ink-800 dark:text-ink-100">
         {rank}
       </div>
-      <Avatar name={member.name} color={member.avatarColor} size="sm" />
+      <Avatar name={member.name} color={member.avatarColor} size="sm" photoUrl={member.photoUrl} />
       <div className="flex-1 min-w-0">
         <p className="truncate text-sm font-semibold text-ink-900 dark:text-ink-50">{member.name}</p>
         <p className="text-xs text-ink-500">

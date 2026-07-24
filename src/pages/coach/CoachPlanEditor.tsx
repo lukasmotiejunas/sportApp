@@ -79,7 +79,7 @@ export default function CoachPlanEditor() {
 
       <section className="surface p-4">
         <div className="mb-4 flex items-center gap-3">
-          <Avatar name={member.name} color={member.avatarColor} size="md" />
+          <Avatar name={member.name} color={member.avatarColor} size="md" photoUrl={member.photoUrl} />
           <div className="flex-1 min-w-0">
             <p className="font-display text-base font-bold">{member.name}</p>
             <p className="text-xs text-ink-500">{member.ageGroup}</p>

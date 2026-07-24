@@ -20,6 +20,7 @@ import { Modal } from "../../components/ui/Modal";
 import { formatCurrency } from "../../utils/format";
 import {
   addDays,
+  daysUntil,
   isoDate,
   relativeDay,
   todayIso,
@@ -73,7 +74,7 @@ export default function MemberHome() {
       {/* Hero */}
       <section className="hero-gradient rounded-3xl p-5 text-white shadow-pop">
         <div className="flex items-center gap-3">
-          <Avatar name={member.name} color={member.avatarColor} size="lg" />
+          <Avatar name={member.name} color={member.avatarColor} size="lg" photoUrl={member.photoUrl} />
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold uppercase tracking-widest text-lime-300">
               Sveiki, {member.name.split(" ")[0]}
@@ -157,18 +158,21 @@ export default function MemberHome() {
         </div>
       </section>
 
-      {/* Payment status */}
-      <PaymentStatusBanner
-        status={member.paymentStatus}
-        amount={formatCurrency(plan?.monthlyFee ?? 49)}
-        dueDate={formatDateShort(member.paymentDueDate)}
-        actionLabel={
-          member.paymentStatus === "overdue"
-            ? "Apmokėti dabar — prototipas"
-            : "Peržiūrėti mokėjimus"
-        }
-        onAction={() => (window.location.href = "/member/payments")}
-      />
+      {/* Payment status — show only if unpaid or ≤7 days until next payment */}
+      {(member.paymentStatus !== "paid" ||
+        daysUntil(member.paymentDueDate) <= 7) && (
+        <PaymentStatusBanner
+          status={member.paymentStatus}
+          amount={formatCurrency(plan?.monthlyFee ?? 49)}
+          dueDate={formatDateShort(member.paymentDueDate)}
+          actionLabel={
+            member.paymentStatus === "overdue"
+              ? "Apmokėti dabar — prototipas"
+              : "Peržiūrėti mokėjimus"
+          }
+          onAction={() => (window.location.href = "/member/payments")}
+        />
+      )}
 
       {/* Next training */}
       {next && (
@@ -213,8 +217,8 @@ export default function MemberHome() {
         </section>
       )}
 
-      {/* Quick actions */}
-      <section className="grid grid-cols-2 gap-3">
+      {/* Quick actions — hidden on mobile since bottom nav duplicates these */}
+      <section className="hidden grid-cols-2 gap-3 md:grid">
         <Link
           to="/member/trainings"
           className="surface flex items-center gap-3 p-4 hover:shadow-card"

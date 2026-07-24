@@ -27,7 +27,7 @@ export function MemberCard({ member, to }: Props) {
       to={to}
       className="group flex items-center gap-3 rounded-2xl border border-ink-100 bg-white p-3 transition-colors hover:border-ink-300 dark:border-ink-800 dark:bg-ink-900 dark:hover:border-ink-600"
     >
-      <Avatar name={member.name} color={member.avatarColor} size="md" />
+      <Avatar name={member.name} color={member.avatarColor} size="md" photoUrl={member.photoUrl} />
       <div className="flex-1 min-w-0">
         <p className="truncate text-sm font-semibold text-ink-900 dark:text-ink-50">
           {member.name}
