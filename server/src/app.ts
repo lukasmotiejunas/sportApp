@@ -15,6 +15,7 @@ import { leaderboardsRouter } from './routes/leaderboards.js';
 import { superAdminRouter } from './routes/superadmin.js';
 import { signupRouter } from './routes/signup.js';
 import { subscriptionRouter } from './routes/subscription.js';
+import { profileRouter } from './routes/profile.js';
 import { webhooksRouter } from './routes/webhooks.js';
 
 const app = express();
@@ -39,10 +40,12 @@ app.use('/signup', signupRouter);
 
 // Everything below requires a valid token.
 app.use('/superadmin', requireAuth, superAdminRouter);
-// /users and /subscription are always reachable (even when the club is
-// suspended) so the admin can log in and pay/reactivate.
+// /users, /subscription and /profile are always reachable (even when the
+// club is suspended) so the admin can log in and pay/reactivate/update their
+// own credentials.
 app.use('/users', requireAuth, usersRouter);
 app.use('/subscription', requireAuth, subscriptionRouter);
+app.use('/profile', requireAuth, profileRouter);
 // Club-scoped domain routes are blocked when the subscription is past_due or
 // cancelled — see requireActiveSubscription.
 app.use('/members', requireAuth, requireActiveSubscription, membersRouter);

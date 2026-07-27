@@ -68,6 +68,7 @@ type State = {
   bootstrap: () => Promise<void>;
   login: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   logout: () => void;
+  patchAuthUser: (patch: Partial<AuthUser>) => void;
 
   // Member actions
   registerForTraining: (trainingId: string, memberId: string) => { ok: boolean; error?: string };
@@ -273,6 +274,12 @@ export const useStore = create<State>()(
               err instanceof ApiError ? err.message : 'Nepavyko prisijungti.';
             return { ok: false, error: message };
           }
+        },
+
+        patchAuthUser: (patch) => {
+          const current = get().authUser;
+          if (!current) return;
+          set({ authUser: { ...current, ...patch } });
         },
 
         logout: () => {

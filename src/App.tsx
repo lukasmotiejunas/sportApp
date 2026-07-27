@@ -35,6 +35,7 @@ import CoachPayments from './pages/coach/CoachPayments';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminPlans from './pages/admin/AdminPlans';
 import AdminSubscription from './pages/admin/AdminSubscription';
+import AdminProfile from './pages/admin/AdminProfile';
 import AdminAddCoach from './pages/admin/AdminAddCoach';
 import AdminAddMember from './pages/admin/AdminAddMember';
 
@@ -112,6 +113,7 @@ export default function App() {
               }
             >
               <Route path="subscription" element={<AdminSubscription />} />
+              <Route path="profile" element={<AdminProfile />} />
             </Route>
           )}
           <Route path="*" element={<ClubSuspended />} />
@@ -182,6 +184,7 @@ export default function App() {
           <Route index element={<AdminUsers />} />
           <Route path="plans" element={<AdminPlans />} />
           <Route path="subscription" element={<AdminSubscription />} />
+          <Route path="profile" element={<AdminProfile />} />
           <Route path="coaches/new" element={<AdminAddCoach />} />
           <Route path="members/new" element={<AdminAddMember />} />
         </Route>

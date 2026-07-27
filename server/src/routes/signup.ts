@@ -100,6 +100,10 @@ signupRouter.post(
         payment_behavior: 'default_incomplete',
         payment_settings: {
           save_default_payment_method: 'on_subscription',
+          // Restrict Payment Element to cards only. Without this Stripe
+          // auto-enables everything eligible (Klarna, Satispay, iDEAL, etc.),
+          // which is confusing for a monthly SaaS subscription.
+          payment_method_types: ['card'],
         },
         // Newer Stripe API (dahlia) exposes the client_secret via
         // `latest_invoice.confirmation_secret`; the old `payment_intent` path

@@ -1,6 +1,6 @@
 import { Outlet, NavLink } from "react-router-dom";
 import clsx from "clsx";
-import { Users, UserPlus, ShieldCheck, CreditCard, Receipt } from "lucide-react";
+import { Users, UserPlus, ShieldCheck, CreditCard, Receipt, UserCog } from "lucide-react";
 import { UserMenu } from "../ui/UserMenu";
 import { ToastContainer } from "../ui/ToastContainer";
 import { useStore } from "../../store/useStore";
@@ -9,6 +9,7 @@ const items = [
   { to: "/admin", label: "Paskyros", icon: Users, end: true },
   { to: "/admin/plans", label: "Narystės planai", icon: CreditCard, end: false },
   { to: "/admin/subscription", label: "Prenumerata", icon: Receipt, end: false },
+  { to: "/admin/profile", label: "Profilis", icon: UserCog, end: false },
   { to: "/admin/coaches/new", label: "Pridėti trenerį", icon: UserPlus },
   { to: "/admin/members/new", label: "Pridėti narį", icon: UserPlus },
 ];
