@@ -21,7 +21,6 @@ import MemberLeaderboardDetail from './pages/member/MemberLeaderboardDetail';
 import MemberPayments from './pages/member/MemberPayments';
 import MemberProfile from './pages/member/MemberProfile';
 
-import CoachDashboard from './pages/coach/CoachDashboard';
 import CoachTrainings from './pages/coach/CoachTrainings';
 import CoachTrainingDetail from './pages/coach/CoachTrainingDetail';
 import CoachTrainingForm from './pages/coach/CoachTrainingForm';
@@ -30,8 +29,9 @@ import CoachMemberDetail from './pages/coach/CoachMemberDetail';
 import CoachPlanEditor from './pages/coach/CoachPlanEditor';
 import CoachLeaderboards from './pages/coach/CoachLeaderboards';
 import CoachLeaderboardDetail from './pages/coach/CoachLeaderboardDetail';
-import CoachPayments from './pages/coach/CoachPayments';
 
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminPayments from './pages/admin/AdminPayments';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminPlans from './pages/admin/AdminPlans';
 import AdminSubscription from './pages/admin/AdminSubscription';
@@ -160,7 +160,7 @@ export default function App() {
             </RequireRole>
           }
         >
-          <Route index element={<CoachDashboard />} />
+          <Route index element={<CoachTrainings />} />
           <Route path="trainings" element={<CoachTrainings />} />
           <Route path="trainings/new" element={<CoachTrainingForm mode="create" />} />
           <Route path="trainings/:id" element={<CoachTrainingDetail />} />
@@ -170,7 +170,6 @@ export default function App() {
           <Route path="plans/:trainingId/:memberId" element={<CoachPlanEditor />} />
           <Route path="leaderboards" element={<CoachLeaderboards />} />
           <Route path="leaderboards/:id" element={<CoachLeaderboardDetail />} />
-          <Route path="payments" element={<CoachPayments />} />
         </Route>
 
         <Route
@@ -181,7 +180,9 @@ export default function App() {
             </RequireRole>
           }
         >
-          <Route index element={<AdminUsers />} />
+          <Route index element={<AdminDashboard />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="payments" element={<AdminPayments />} />
           <Route path="plans" element={<AdminPlans />} />
           <Route path="subscription" element={<AdminSubscription />} />
           <Route path="profile" element={<AdminProfile />} />

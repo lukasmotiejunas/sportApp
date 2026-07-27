@@ -2,8 +2,6 @@ import { Outlet, NavLink } from "react-router-dom";
 import clsx from "clsx";
 import {
   BarChart3,
-  CreditCard,
-  LayoutDashboard,
   Trophy,
   Users2,
   Menu,
@@ -16,11 +14,9 @@ import { BackgroundLogo } from "./BackgroundLogo";
 import { useStore } from "../../store/useStore";
 
 const items = [
-  { to: "/coach", label: "Skydelis", icon: LayoutDashboard, end: true },
-  { to: "/coach/trainings", label: "Treniruotės", icon: BarChart3 },
+  { to: "/coach/trainings", label: "Treniruotės", icon: BarChart3, end: false },
   { to: "/coach/members", label: "Nariai", icon: Users2 },
   { to: "/coach/leaderboards", label: "Rezultatai", icon: Trophy },
-  { to: "/coach/payments", label: "Mokėjimai", icon: CreditCard },
 ];
 
 export function CoachLayout() {

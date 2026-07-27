@@ -1,13 +1,24 @@
 import { Outlet, NavLink } from "react-router-dom";
 import clsx from "clsx";
-import { Users, UserPlus, ShieldCheck, CreditCard, Receipt, UserCog } from "lucide-react";
+import {
+  Users,
+  UserPlus,
+  ShieldCheck,
+  CreditCard,
+  Receipt,
+  UserCog,
+  LayoutDashboard,
+  Wallet,
+} from "lucide-react";
 import { UserMenu } from "../ui/UserMenu";
 import { ToastContainer } from "../ui/ToastContainer";
 import { BackgroundLogo } from "./BackgroundLogo";
 import { useStore } from "../../store/useStore";
 
 const items = [
-  { to: "/admin", label: "Paskyros", icon: Users, end: true },
+  { to: "/admin", label: "Skydelis", icon: LayoutDashboard, end: true },
+  { to: "/admin/users", label: "Paskyros", icon: Users, end: false },
+  { to: "/admin/payments", label: "Mokėjimai", icon: Wallet, end: false },
   { to: "/admin/plans", label: "Narystės planai", icon: CreditCard, end: false },
   { to: "/admin/subscription", label: "Prenumerata", icon: Receipt, end: false },
   { to: "/admin/profile", label: "Profilis", icon: UserCog, end: false },
