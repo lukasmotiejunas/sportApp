@@ -1,11 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { UserPlus, RefreshCw } from "lucide-react";
+import { RefreshCw, Trash2, UserPlus } from "lucide-react";
 import { PageTitle } from "../../components/layout/PageTitle";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { Avatar } from "../../components/ui/Avatar";
-import { fetchUsers } from "../../api/endpoints";
+import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
+import {
+  deleteCoachApi,
+  deleteMemberApi,
+  fetchUsers,
+} from "../../api/endpoints";
 import { ApiError } from "../../api/client";
+import { useStore } from "../../store/useStore";
 import type { AuthUser } from "../../types";
 
 const roleTone: Record<AuthUser["role"], "accent" | "info" | "success"> = {
@@ -23,9 +29,14 @@ const roleLabel: Record<AuthUser["role"], string> = {
 };
 
 export default function AdminUsers() {
+  const currentUserId = useStore((s) => s.authUser?.id ?? "");
+  const push = useStore((s) => s.pushToast);
+
   const [users, setUsers] = useState<AuthUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<AuthUser | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const load = () => {
     setLoading(true);
@@ -39,6 +50,32 @@ export default function AdminUsers() {
   };
 
   useEffect(load, []);
+
+  const doDelete = async (user: AuthUser) => {
+    setDeletingId(user.id);
+    try {
+      if (user.role === "member" && user.memberId) {
+        await deleteMemberApi(user.memberId);
+      } else if (user.role === "coach" && user.coachId) {
+        await deleteCoachApi(user.coachId);
+      } else {
+        throw new Error("Ši paskyra negali būti ištrinta.");
+      }
+      setUsers((prev) => prev.filter((u) => u.id !== user.id));
+      push({ kind: "success", message: `„${user.name ?? user.email}" ištrintas.` });
+    } catch (err) {
+      push({
+        kind: "error",
+        message:
+          err instanceof ApiError ? err.message : "Nepavyko ištrinti paskyros.",
+      });
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const canDelete = (u: AuthUser) =>
+    u.id !== currentUserId && (u.role === "member" || u.role === "coach");
 
   return (
     <div>
@@ -84,10 +121,44 @@ export default function AdminUsers() {
               <StatusBadge tone={roleTone[u.role]} dot>
                 {roleLabel[u.role]}
               </StatusBadge>
+              {canDelete(u) && (
+                <button
+                  type="button"
+                  className="btn-ghost h-9 px-2 text-sm text-red-600 disabled:opacity-40"
+                  onClick={() => setPendingDelete(u)}
+                  disabled={deletingId === u.id}
+                  aria-label={`Ištrinti ${u.name ?? u.email}`}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span className="hidden sm:inline">Ištrinti</span>
+                </button>
+              )}
             </div>
           ))
         )}
       </section>
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        onClose={() => setPendingDelete(null)}
+        onConfirm={() => {
+          if (pendingDelete) void doDelete(pendingDelete);
+          setPendingDelete(null);
+        }}
+        title={
+          pendingDelete?.role === "coach"
+            ? `Ištrinti trenerį „${pendingDelete?.name ?? pendingDelete?.email}"?`
+            : `Ištrinti narį „${pendingDelete?.name ?? pendingDelete?.email}"?`
+        }
+        message={
+          pendingDelete?.role === "coach"
+            ? "Bus pašalinta trenerio paskyra ir prisijungimo duomenys. Jei treneriui priskirtos treniruotės, ištrinti nepavyks — pirmiausia jas perskirstykite arba ištrinkite."
+            : "Bus pašalintas narys, jo prisijungimo duomenys, treniruočių registracijos, individualūs planai ir rezultatai. Šio veiksmo atšaukti nebus galima."
+        }
+        confirmLabel="Ištrinti"
+        cancelLabel="Atšaukti"
+        destructive
+      />
     </div>
   );
 }

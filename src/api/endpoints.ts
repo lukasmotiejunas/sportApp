@@ -35,6 +35,12 @@ export const createMembershipPlanApi = (input: CreateMembershipPlanInput) =>
 export const deleteMembershipPlanApi = (id: string) =>
   api.del<void>(`/membership-plans/${id}`);
 
+export const deleteMemberApi = (id: string) =>
+  api.del<void>(`/members/${id}`);
+
+export const deleteCoachApi = (id: string) =>
+  api.del<void>(`/coaches/${id}`);
+
 export type CreateCoachInput = {
   name: string;
   email: string;

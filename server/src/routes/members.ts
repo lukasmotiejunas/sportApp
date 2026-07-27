@@ -124,6 +124,23 @@ membersRouter.get(
   }),
 );
 
+// Admin-only: permanently delete a Member. Prisma cascades remove the linked
+// User, training registrations, individual training plans, and leaderboard
+// results in a single statement.
+membersRouter.delete(
+  '/:id',
+  requireRole('admin', 'super_admin'),
+  asyncHandler(async (req, res) => {
+    const clubId = requireClubId(req);
+    const existing = await prisma.member.findFirst({
+      where: { id: req.params.id, clubId },
+    });
+    if (!existing) throw new HttpError(404, 'Narys nerastas');
+    await prisma.member.delete({ where: { id: req.params.id } });
+    res.status(204).end();
+  }),
+);
+
 membersRouter.patch(
   '/:id',
   asyncHandler(async (req, res) => {

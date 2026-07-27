@@ -64,3 +64,31 @@ coachesRouter.post(
     res.status(201).json(serializeCoach(coach));
   }),
 );
+
+// Admin-only: permanently delete a Coach. Refuses if the coach still has
+// training sessions attached (the TrainingSession.coach FK has no cascade to
+// avoid quietly dropping historical data).
+coachesRouter.delete(
+  '/:id',
+  requireRole('admin', 'super_admin'),
+  asyncHandler(async (req, res) => {
+    const clubId = requireClubId(req);
+    const existing = await prisma.coach.findFirst({
+      where: { id: req.params.id, clubId },
+    });
+    if (!existing) throw new HttpError(404, 'Treneris nerastas');
+
+    const sessionCount = await prisma.trainingSession.count({
+      where: { coachId: req.params.id },
+    });
+    if (sessionCount > 0) {
+      throw new HttpError(
+        409,
+        `Trenerio ištrinti negalima — jam priskirta ${sessionCount} treniruočių. Pirmiausia perskirstykite arba ištrinkite treniruotes.`,
+      );
+    }
+
+    await prisma.coach.delete({ where: { id: req.params.id } });
+    res.status(204).end();
+  }),
+);
