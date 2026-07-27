@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   AlertTriangle,
   ArrowRight,
@@ -8,9 +8,12 @@ import {
   LogOut,
   Mail,
   RefreshCw,
+  Trash2,
 } from "lucide-react";
+import { ConfirmDialog } from "../components/ui/ConfirmDialog";
 import { useStore } from "../store/useStore";
 import {
+  deleteClub,
   fetchPayInvoiceUrl,
   fetchSubscription,
   reactivateSubscription,
@@ -27,8 +30,12 @@ export default function ClubSuspended() {
   const setSubscriptionStatus = useStore((s) => s.setSubscriptionStatus);
   const push = useStore((s) => s.pushToast);
 
-  const [busy, setBusy] = useState<"pay" | "reactivate" | "refresh" | null>(null);
+  const [busy, setBusy] = useState<
+    "pay" | "reactivate" | "refresh" | "delete" | null
+  >(null);
   const [adminEmail, setAdminEmail] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const navigate = useNavigate();
 
   const isAdmin = authUser?.role === "admin";
   const clubName = authUser?.clubName ?? "";
@@ -100,6 +107,22 @@ export default function ClubSuspended() {
           err instanceof ApiError ? err.message : "Nepavyko atnaujinti.",
       });
     } finally {
+      setBusy(null);
+    }
+  };
+
+  const doDelete = async () => {
+    setBusy("delete");
+    try {
+      await deleteClub();
+      logout();
+      navigate("/plans", { replace: true });
+    } catch (err) {
+      push({
+        kind: "error",
+        message:
+          err instanceof ApiError ? err.message : "Nepavyko ištrinti klubo.",
+      });
       setBusy(null);
     }
   };
@@ -219,6 +242,23 @@ export default function ClubSuspended() {
                 Patikrinti iš naujo
               </button>
             </div>
+
+            {cancelled && (
+              <div className="mt-6 border-t border-white/10 pt-5">
+                <p className="text-sm text-white/60">
+                  Nebeplanuojate naudotis Lumo? Ištrinkite klubą visam laikui.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setConfirmDelete(true)}
+                  disabled={busy !== null}
+                  className="mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-red-400/40 bg-red-500/10 text-sm font-semibold text-red-200 transition-colors hover:bg-red-500/20"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {busy === "delete" ? "Trinama…" : "Ištrinti klubą visam laikui"}
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur">
@@ -261,6 +301,18 @@ export default function ClubSuspended() {
           </div>
         )}
       </main>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={() => {
+          void doDelete();
+        }}
+        title={`Ištrinti klubą „${clubName}"?`}
+        message="Bus visam laikui ištrinti klubo nariai, treneriai, treniruotės, planai, rezultatai ir prisijungimo paskyros. Šio veiksmo atšaukti nebus galima."
+        confirmLabel="Taip, ištrinti visam laikui"
+        destructive
+      />
     </div>
   );
 }

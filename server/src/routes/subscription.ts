@@ -221,6 +221,39 @@ subscriptionRouter.post(
   }),
 );
 
+// DELETE /club — permanently delete the entire club. Only allowed when the
+// subscription is fully cancelled; otherwise the admin must cancel first.
+// Also removes the Stripe customer (best-effort) to keep records tidy.
+subscriptionRouter.delete(
+  '/club',
+  asyncHandler(async (req, res) => {
+    const clubId = requireClubId(req);
+    const sub = await prisma.clubSubscription.findUnique({ where: { clubId } });
+    if (!sub) throw new HttpError(404, 'Prenumerata nerasta.');
+    if (sub.status !== 'cancelled') {
+      throw new HttpError(
+        400,
+        'Klubą galima ištrinti tik atšaukus prenumeratą.',
+      );
+    }
+
+    if (sub.stripeCustomerId) {
+      // Non-fatal — if Stripe cleanup fails we still delete the club so the
+      // admin isn't stuck. Orphan Stripe customer is harmless (subscription
+      // already cancelled, no future charges).
+      await getStripe()
+        .customers.del(sub.stripeCustomerId)
+        .catch(() => {});
+    }
+
+    // Prisma cascade deletes users, members, coaches, trainings, plans,
+    // leaderboards, and the subscription row itself.
+    await prisma.club.delete({ where: { id: clubId } });
+
+    res.status(204).end();
+  }),
+);
+
 // GET /pay-invoice-url — hosted invoice URL for the latest unpaid invoice, so
 // the admin can retry payment on a past_due subscription.
 subscriptionRouter.get(

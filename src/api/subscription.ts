@@ -18,3 +18,5 @@ export const reactivateSubscription = () =>
 
 export const fetchPayInvoiceUrl = () =>
   api.get<{ url: string | null }>('/subscription/pay-invoice-url');
+
+export const deleteClub = () => api.del<void>('/subscription/club');

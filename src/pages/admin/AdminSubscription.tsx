@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   AlertTriangle,
   Ban,
@@ -7,6 +8,7 @@ import {
   ExternalLink,
   RotateCcw,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import { PageTitle } from "../../components/layout/PageTitle";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
@@ -16,6 +18,7 @@ import { useStore } from "../../store/useStore";
 import { ApiError } from "../../api/client";
 import {
   cancelSubscription,
+  deleteClub,
   fetchPayInvoiceUrl,
   fetchSubscription,
   fetchSubscriptionPayments,
@@ -78,15 +81,19 @@ const INVOICE_STATUS_LABEL: Record<string, string> = {
 export default function AdminSubscription() {
   const push = useStore((s) => s.pushToast);
   const setSubscriptionStatus = useStore((s) => s.setSubscriptionStatus);
+  const logout = useStore((s) => s.logout);
+  const clubName = useStore((s) => s.authUser?.clubName ?? "");
+  const navigate = useNavigate();
 
   const [sub, setSub] = useState<ClubSubscription | null>(null);
   const [payments, setPayments] = useState<SubscriptionPayment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<"cancel" | "resume" | "reactivate" | "pay" | null>(
-    null,
-  );
+  const [busy, setBusy] = useState<
+    "cancel" | "resume" | "reactivate" | "pay" | "delete" | null
+  >(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const load = async () => {
     setError(null);
@@ -176,6 +183,23 @@ export default function AdminSubscription() {
     }
   };
 
+  const doDelete = async () => {
+    setBusy("delete");
+    try {
+      await deleteClub();
+      // Session is gone with the club — clear token and send them home.
+      logout();
+      navigate("/plans", { replace: true });
+    } catch (err) {
+      push({
+        kind: "error",
+        message:
+          err instanceof ApiError ? err.message : "Nepavyko ištrinti klubo.",
+      });
+      setBusy(null);
+    }
+  };
+
   const openPayInvoice = async () => {
     setBusy("pay");
     try {
@@ -246,6 +270,12 @@ export default function AdminSubscription() {
               <PaymentsTable payments={payments} />
             )}
           </section>
+
+          <DangerZone
+            canDelete={sub.status === "cancelled"}
+            busy={busy === "delete"}
+            onDelete={() => setConfirmDelete(true)}
+          />
         </>
       )}
 
@@ -264,7 +294,70 @@ export default function AdminSubscription() {
         confirmLabel="Taip, atšaukti"
         destructive
       />
+
+      <ConfirmDialog
+        open={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={() => {
+          void doDelete();
+        }}
+        title={`Ištrinti klubą „${clubName}"?`}
+        message="Bus visam laikui ištrinti klubo nariai, treneriai, treniruotės, planai, rezultatai ir prisijungimo paskyros. Šio veiksmo atšaukti nebus galima."
+        confirmLabel="Taip, ištrinti visam laikui"
+        destructive
+      />
     </div>
+  );
+}
+
+function DangerZone({
+  canDelete,
+  busy,
+  onDelete,
+}: {
+  canDelete: boolean;
+  busy: boolean;
+  onDelete: () => void;
+}) {
+  return (
+    <section className="mt-6 rounded-2xl border border-red-200 bg-red-50/60 p-5 dark:border-red-500/30 dark:bg-red-500/5">
+      <div className="flex items-start gap-3">
+        <div className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300">
+          <AlertTriangle className="h-4 w-4" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h2 className="font-display text-base font-bold text-red-900 dark:text-red-200">
+            Pavojinga zona
+          </h2>
+          <p className="mt-1 text-sm text-red-800/80 dark:text-red-200/70">
+            Ištrinkite klubą visam laikui — bus pašalinti visi nariai,
+            treneriai, treniruotės ir rezultatai. Klubą galima ištrinti tik
+            atšaukus prenumeratą.
+          </p>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={onDelete}
+              disabled={!canDelete || busy}
+              className="btn-danger disabled:opacity-40"
+              title={
+                canDelete
+                  ? undefined
+                  : "Pirmiausia atšaukite prenumeratą."
+              }
+            >
+              <Trash2 className="h-4 w-4" />
+              {busy ? "Trinama…" : "Ištrinti klubą visam laikui"}
+            </button>
+            {!canDelete && (
+              <span className="text-xs text-red-800/70 dark:text-red-200/60">
+                Prieš ištrindami klubą, atšaukite prenumeratą aukščiau.
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -277,7 +370,7 @@ function SubscriptionCard({
   onPayInvoice,
 }: {
   sub: ClubSubscription;
-  busy: "cancel" | "resume" | "reactivate" | "pay" | null;
+  busy: "cancel" | "resume" | "reactivate" | "pay" | "delete" | null;
   onCancel: () => void;
   onResume: () => void;
   onReactivate: () => void;
