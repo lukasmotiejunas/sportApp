@@ -12,10 +12,17 @@ import { trainingsRouter } from './routes/trainings.js';
 import { trainingPlansRouter } from './routes/trainingPlans.js';
 import { leaderboardsRouter } from './routes/leaderboards.js';
 import { superAdminRouter } from './routes/superadmin.js';
+import { signupRouter } from './routes/signup.js';
+import { webhooksRouter } from './routes/webhooks.js';
 
 const app = express();
 
 app.use(cors());
+
+// Stripe webhooks MUST see the raw body for signature verification. Mount the
+// router before express.json() so it can attach its own express.raw() parser.
+app.use('/webhooks', webhooksRouter);
+
 app.use(express.json());
 
 app.get('/health', (_req, res) => {
@@ -24,6 +31,9 @@ app.get('/health', (_req, res) => {
 
 // Public auth routes (login). /auth/me is protected inside the router.
 app.use('/auth', authRouter);
+
+// Public self-signup: prospective club owners buy a plan without an account.
+app.use('/signup', signupRouter);
 
 // Everything below requires a valid token.
 app.use('/superadmin', requireAuth, superAdminRouter);

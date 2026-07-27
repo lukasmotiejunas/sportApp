@@ -48,10 +48,6 @@ export default function Login() {
             <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
               Prisijunkite prie savo paskyros.
             </h1>
-            <p className="mt-4 text-base text-white/70 sm:text-lg">
-              Nariai, treneriai ir administratoriai prisijungia su savo el.
-              paštu ir slaptažodžiu.
-            </p>
           </div>
         </div>
 

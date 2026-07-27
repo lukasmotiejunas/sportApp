@@ -58,6 +58,13 @@ enum GenderCategory {
   all
 }
 
+enum SubscriptionStatus {
+  trialing
+  active
+  past_due
+  cancelled
+}
+
 model Club {
   id                   String                @id @default(cuid())
   name                 String
@@ -70,6 +77,30 @@ model Club {
   trainingSessions     TrainingSession[]
   membershipPlans      MembershipPlan[]
   leaderboardCategories LeaderboardCategory[]
+  subscription         ClubSubscription?
+}
+
+model ClubSubscription {
+  id                   String             @id @default(cuid())
+  clubId               String             @unique
+  club                 Club               @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  status               SubscriptionStatus @default(trialing)
+  monthlyFee           Decimal            @default(0.01) @db.Decimal(10, 2)
+  currency             String             @default("EUR")
+  trialEndsAt          DateTime
+  currentPeriodEnd     DateTime
+  cancelledAt          DateTime?
+  stripeCustomerId     String?            @unique
+  stripeSubscriptionId String?            @unique
+  stripePriceId        String?
+  cardBrand            String?
+  cardLast4            String?
+  cardExpMonth         Int?
+  cardExpYear          Int?
+  cardholderName       String?
+  billingEmail         String?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
 }
 
 model User {

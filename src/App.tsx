@@ -8,6 +8,7 @@ import { AdminLayout } from './components/layout/AdminLayout';
 import { SuperAdminLayout } from './components/layout/SuperAdminLayout';
 import { RequireRole } from './components/auth/RequireRole';
 import Login from './pages/Login';
+import Plans from './pages/Plans';
 
 import MemberHome from './pages/member/MemberHome';
 import MemberTrainings from './pages/member/MemberTrainings';
@@ -88,6 +89,7 @@ export default function App() {
           path="/login"
           element={authUser ? <Navigate to={home} replace /> : <Login />}
         />
+        <Route path="/plans" element={<Plans />} />
 
         <Route
           path="/member"
