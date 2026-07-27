@@ -9,6 +9,8 @@ import { SuperAdminLayout } from './components/layout/SuperAdminLayout';
 import { RequireRole } from './components/auth/RequireRole';
 import Login from './pages/Login';
 import Plans from './pages/Plans';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
 import ClubSuspended from './pages/ClubSuspended';
 
 import MemberHome from './pages/member/MemberHome';
@@ -98,6 +100,8 @@ export default function App() {
         <ScrollToTop />
         <Routes>
           <Route path="/plans" element={<Plans />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
           {isAdmin && (
             <Route
               path="/admin"
@@ -126,6 +130,8 @@ export default function App() {
           element={authUser ? <Navigate to={home} replace /> : <Login />}
         />
         <Route path="/plans" element={<Plans />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/privacy" element={<Privacy />} />
 
         <Route
           path="/member"

@@ -119,7 +119,7 @@ export default function Login() {
                   Turite sporto klubą?
                 </p>
                 <p className="mt-1 text-xs text-ink-700">
-                  Išbandykite Lumo 1 parą nemokamai — sukurkite savo klubą per kelias minutes.
+                  Prenumeruokite Lumo už €0,50 per mėnesį — sukurkite savo klubą per kelias minutes.
                 </p>
               </div>
             </div>
@@ -129,6 +129,16 @@ export default function Login() {
             >
               Sukurti klubą
               <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          <div className="mt-6 flex items-center justify-center gap-4 text-xs text-ink-400">
+            <Link to="/terms" className="hover:text-ink-700">
+              Paslaugų sąlygos
+            </Link>
+            <span>·</span>
+            <Link to="/privacy" className="hover:text-ink-700">
+              Privatumo politika
             </Link>
           </div>
         </div>

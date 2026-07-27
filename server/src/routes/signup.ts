@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import type Stripe from 'stripe';
 import { z } from 'zod';
 import { prisma } from '../prisma.js';
 import { asyncHandler, HttpError } from '../middleware/errorHandler.js';
@@ -32,9 +33,12 @@ const signupSchema = z.object({
   adminPassword: z.string().min(6, 'Slaptažodis turi būti bent 6 simbolių.'),
 });
 
-// Creates the club + admin user + Stripe customer + trialing subscription.
-// Returns the SetupIntent client_secret so the browser can confirm the card
-// via Stripe Elements. Card data never touches our server.
+const MONTHLY_FEE = 0.5;
+
+// Creates the club + admin user + Stripe customer + subscription. The
+// subscription is created with `payment_behavior: default_incomplete` so no
+// charge fires until the browser confirms the PaymentIntent. Returns the
+// PaymentIntent client_secret to the browser. Card data never touches us.
 signupRouter.post(
   '/',
   asyncHandler(async (req, res) => {
@@ -90,41 +94,46 @@ signupRouter.post(
       const subscription = await stripe.subscriptions.create({
         customer: customer.id,
         items: [{ price: priceId }],
-        trial_period_days: 1,
-        // `default_incomplete` returns a pending_setup_intent we finish on the
-        // client. Without it, Stripe would try to charge the (nonexistent)
-        // payment method immediately and 400.
+        // No free trial — charge immediately. `default_incomplete` returns an
+        // Invoice with a PaymentIntent we confirm on the client via Stripe
+        // Elements, so we get 3DS/SCA handled properly.
         payment_behavior: 'default_incomplete',
         payment_settings: {
           save_default_payment_method: 'on_subscription',
         },
-        expand: ['pending_setup_intent'],
+        expand: ['latest_invoice.payment_intent'],
         metadata: { clubId: club.id },
       });
       subscriptionId = subscription.id;
 
-      const setupIntent = subscription.pending_setup_intent as
-        | { client_secret: string | null }
+      const invoice = subscription.latest_invoice as
+        | (Stripe.Invoice & { payment_intent: Stripe.PaymentIntent | string | null })
         | null;
-      const clientSecret = setupIntent?.client_secret;
+      const pi =
+        invoice && typeof invoice.payment_intent === 'object'
+          ? invoice.payment_intent
+          : null;
+      const clientSecret = pi?.client_secret;
       if (!clientSecret) {
-        throw new Error('Stripe did not return a SetupIntent client_secret.');
+        throw new Error('Stripe did not return a PaymentIntent client_secret.');
       }
 
-      const trialEndsAt = subscription.trial_end
-        ? new Date(subscription.trial_end * 1000)
-        : new Date(Date.now() + 24 * 60 * 60 * 1000);
+      const periodEndSec =
+        subscription.items.data[0]?.current_period_end ??
+        Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60;
+      const periodEnd = new Date(periodEndSec * 1000);
 
-      // 3. Persist the subscription reference. Card details are populated
-      //    later by the setup_intent.succeeded webhook.
+      // 3. Persist the subscription reference. Insert as `active` optimistically —
+      //    the client is about to confirm the PaymentIntent. If that fails, the
+      //    invoice.payment_failed webhook flips status to past_due.
       await prisma.clubSubscription.create({
         data: {
           clubId: club.id,
-          status: 'trialing',
-          monthlyFee: 0.01,
+          status: 'active',
+          monthlyFee: MONTHLY_FEE,
           currency: 'EUR',
-          trialEndsAt,
-          currentPeriodEnd: trialEndsAt,
+          trialEndsAt: periodEnd,
+          currentPeriodEnd: periodEnd,
           stripeCustomerId: customer.id,
           stripeSubscriptionId: subscription.id,
           stripePriceId: priceId,
@@ -136,10 +145,10 @@ signupRouter.post(
         club: { id: club.id, name: club.name, slug: club.slug },
         admin: { email, name: data.adminName },
         subscription: {
-          status: 'trialing' as const,
-          monthlyFee: 0.01,
+          status: 'active' as const,
+          monthlyFee: MONTHLY_FEE,
           currency: 'EUR',
-          trialEndsAt: trialEndsAt.toISOString(),
+          trialEndsAt: periodEnd.toISOString(),
           stripeSubscriptionId: subscription.id,
         },
         clientSecret,
