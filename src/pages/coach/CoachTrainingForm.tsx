@@ -5,12 +5,14 @@ import { PageTitle } from '../../components/layout/PageTitle';
 import { FormField, SelectField, TextareaField } from '../../components/ui/FormField';
 import { useStore } from '../../store/useStore';
 import { todayIso } from '../../utils/dates';
+import { useTrainingsBase } from '../../utils/roleContext';
 
 type Props = { mode: 'create' | 'edit' };
 
 export default function CoachTrainingForm({ mode }: Props) {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { base, eyebrow } = useTrainingsBase();
   const existing = useStore((s) => (mode === 'edit' ? s.trainingSessions.find((t) => t.id === id) : undefined));
   const coaches = useStore((s) => s.coaches);
   const create = useStore((s) => s.createTraining);
@@ -60,18 +62,18 @@ export default function CoachTrainingForm({ mode }: Props) {
     if (mode === 'create') {
       const created = create(clean);
       push({ kind: 'success', message: 'Treniruotė sukurta.' });
-      navigate(`/coach/trainings/${created.id}`);
+      navigate(`${base}/${created.id}`);
     } else if (existing) {
       update(existing.id, clean);
       push({ kind: 'success', message: 'Treniruotė atnaujinta.' });
-      navigate(`/coach/trainings/${existing.id}`);
+      navigate(`${base}/${existing.id}`);
     }
   };
 
   if (mode === 'edit' && !existing) {
     return (
       <div>
-        <PageTitle title="Treniruotė nerasta" backTo="/coach/trainings" />
+        <PageTitle title="Treniruotė nerasta" backTo={base} />
       </div>
     );
   }
@@ -80,8 +82,8 @@ export default function CoachTrainingForm({ mode }: Props) {
     <div className="max-w-3xl">
       <PageTitle
         title={mode === 'create' ? 'Nauja treniruotė' : 'Redaguoti treniruotę'}
-        eyebrow="Treneris"
-        backTo={mode === 'create' ? '/coach/trainings' : `/coach/trainings/${existing?.id}`}
+        eyebrow={eyebrow}
+        backTo={mode === 'create' ? base : `${base}/${existing?.id}`}
       />
 
       <form onSubmit={submit} className="space-y-6">

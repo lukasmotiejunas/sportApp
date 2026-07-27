@@ -8,6 +8,7 @@ import { FilterChip } from '../../components/ui/FilterChip';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { formatDateShort, todayIso, relativeDay } from '../../utils/dates';
+import { useTrainingsBase } from '../../utils/roleContext';
 
 const timeFilters = [
   { id: 'upcoming', label: 'Artėjančios' },
@@ -19,6 +20,7 @@ const timeFilters = [
 const statusLabel = { open: 'Atvira', closed: 'Uždaryta', cancelled: 'Atšaukta' } as const;
 
 export default function CoachTrainings() {
+  const { base, eyebrow } = useTrainingsBase();
   const trainings = useStore((s) => s.trainingSessions);
   const coaches = useStore((s) => s.coaches);
   const duplicate = useStore((s) => s.duplicateTraining);
@@ -44,9 +46,9 @@ export default function CoachTrainings() {
       <PageTitle
         title="Treniruotės"
         description="Valdykite visas klubo treniruotes — kurkite, redaguokite, kopijuokite ir peržiūrėkite dalyvių sąrašą."
-        eyebrow="Treneris"
+        eyebrow={eyebrow}
         action={
-          <Link to="/coach/trainings/new" className="btn-primary">
+          <Link to={`${base}/new`} className="btn-primary">
             <Plus className="h-4 w-4" /> Sukurti treniruotę
           </Link>
         }
@@ -66,7 +68,7 @@ export default function CoachTrainings() {
           title="Nė viena treniruotė neatitinka filtrų"
           description="Pabandykite išplėsti laikotarpį."
           action={
-            <Link to="/coach/trainings/new" className="btn-primary">
+            <Link to={`${base}/new`} className="btn-primary">
               <Plus className="h-4 w-4" /> Sukurti treniruotę
             </Link>
           }
@@ -113,8 +115,8 @@ export default function CoachTrainings() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
-                        <Link to={`/coach/trainings/${t.id}`} className="btn-ghost h-8 px-2 text-xs">Atidaryti</Link>
-                        <Link to={`/coach/trainings/${t.id}/edit`} className="btn-ghost h-8 px-2 text-xs">
+                        <Link to={`${base}/${t.id}`} className="btn-ghost h-8 px-2 text-xs">Atidaryti</Link>
+                        <Link to={`${base}/${t.id}/edit`} className="btn-ghost h-8 px-2 text-xs">
                           <Pencil className="h-3.5 w-3.5" />
                         </Link>
                         <button
@@ -166,8 +168,8 @@ export default function CoachTrainings() {
                     </StatusBadge>
                   </div>
                   <div className="mt-3 flex flex-wrap items-center gap-1">
-                    <Link to={`/coach/trainings/${t.id}`} className="btn-ghost h-8 px-2 text-xs">Atidaryti</Link>
-                    <Link to={`/coach/trainings/${t.id}/edit`} className="btn-ghost h-8 px-2 text-xs">
+                    <Link to={`${base}/${t.id}`} className="btn-ghost h-8 px-2 text-xs">Atidaryti</Link>
+                    <Link to={`${base}/${t.id}/edit`} className="btn-ghost h-8 px-2 text-xs">
                       <Pencil className="h-3.5 w-3.5" /> Redaguoti
                     </Link>
                     <button

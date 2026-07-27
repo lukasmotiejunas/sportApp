@@ -8,6 +8,7 @@ import { CapacityProgress } from '../../components/trainings/CapacityProgress';
 import { Avatar } from '../../components/ui/Avatar';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { formatDateLong } from '../../utils/dates';
+import { useTrainingsBase } from '../../utils/roleContext';
 
 const paymentTone = {
   paid: 'success',
@@ -22,6 +23,7 @@ const statusLabel = { open: 'Atvira', closed: 'Uždaryta', cancelled: 'Atšaukta
 export default function CoachTrainingDetail() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
+  const { base, isAdmin } = useTrainingsBase();
   const training = useStore((s) => s.trainingSessions.find((t) => t.id === id));
   const members = useStore((s) => s.members);
   const coaches = useStore((s) => s.coaches);
@@ -36,7 +38,7 @@ export default function CoachTrainingDetail() {
   if (!training) {
     return (
       <div>
-        <PageTitle title="Treniruotė nerasta" backTo="/coach/trainings" />
+        <PageTitle title="Treniruotė nerasta" backTo={base} />
       </div>
     );
   }
@@ -62,10 +64,10 @@ export default function CoachTrainingDetail() {
       <PageTitle
         title={training.title}
         description={`${formatDateLong(training.date)} · ${training.startTime}–${training.endTime}`}
-        backTo="/coach/trainings"
+        backTo={base}
         action={
           <div className="flex items-center gap-1">
-            <Link to={`/coach/trainings/${training.id}/edit`} className="btn-outline">
+            <Link to={`${base}/${training.id}/edit`} className="btn-outline">
               <Pencil className="h-4 w-4" /> Redaguoti
             </Link>
             <button
@@ -198,16 +200,18 @@ export default function CoachTrainingDetail() {
                     <StatusBadge tone="neutral">Nėra plano</StatusBadge>
                   )}
                 </div>
-                <div className="flex items-center gap-1">
-                  <Link to={`/coach/members/${row.m.id}`} className="btn-ghost h-9 px-3 text-xs">Profilis</Link>
-                  <Link
-                    to={`/coach/plans/${training.id}/${row.m.id}`}
-                    className="btn-primary h-9 px-3 text-xs"
-                  >
-                    <ClipboardEdit className="h-3.5 w-3.5" />
-                    {row.memberPlan ? 'Redaguoti planą' : 'Sukurti planą'}
-                  </Link>
-                </div>
+                {!isAdmin && (
+                  <div className="flex items-center gap-1">
+                    <Link to={`/coach/members/${row.m.id}`} className="btn-ghost h-9 px-3 text-xs">Profilis</Link>
+                    <Link
+                      to={`/coach/plans/${training.id}/${row.m.id}`}
+                      className="btn-primary h-9 px-3 text-xs"
+                    >
+                      <ClipboardEdit className="h-3.5 w-3.5" />
+                      {row.memberPlan ? 'Redaguoti planą' : 'Sukurti planą'}
+                    </Link>
+                  </div>
+                )}
               </li>
             ))}
           </ul>
@@ -225,7 +229,7 @@ export default function CoachTrainingDetail() {
         onConfirm={() => {
           remove(training.id);
           push({ kind: 'info', message: 'Treniruotė ištrinta.' });
-          navigate('/coach/trainings');
+          navigate(base);
         }}
         title="Ištrinti šią treniruotę?"
         message="Užsiregistravę dalyviai neteks savo vietų. Prototipe šis veiksmas negali būti atšauktas."

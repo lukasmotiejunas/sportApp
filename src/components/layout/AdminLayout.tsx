@@ -9,6 +9,7 @@ import {
   UserCog,
   LayoutDashboard,
   Wallet,
+  BarChart3,
 } from "lucide-react";
 import { UserMenu } from "../ui/UserMenu";
 import { ToastContainer } from "../ui/ToastContainer";
@@ -18,6 +19,7 @@ import { useStore } from "../../store/useStore";
 const items = [
   { to: "/admin", label: "Skydelis", icon: LayoutDashboard, end: true },
   { to: "/admin/users", label: "Paskyros", icon: Users, end: false },
+  { to: "/admin/trainings", label: "Treniruotės", icon: BarChart3, end: false },
   { to: "/admin/payments", label: "Mokėjimai", icon: Wallet, end: false },
   { to: "/admin/plans", label: "Narystės planai", icon: CreditCard, end: false },
   { to: "/admin/subscription", label: "Prenumerata", icon: Receipt, end: false },

@@ -21,6 +21,8 @@ import MemberLeaderboardDetail from './pages/member/MemberLeaderboardDetail';
 import MemberPayments from './pages/member/MemberPayments';
 import MemberProfile from './pages/member/MemberProfile';
 
+// Trainings pages are reused under both /coach/* (coach) and /admin/*
+// (admin). They derive their base path from useTrainingsBase().
 import CoachTrainings from './pages/coach/CoachTrainings';
 import CoachTrainingDetail from './pages/coach/CoachTrainingDetail';
 import CoachTrainingForm from './pages/coach/CoachTrainingForm';
@@ -183,6 +185,10 @@ export default function App() {
           <Route index element={<AdminDashboard />} />
           <Route path="users" element={<AdminUsers />} />
           <Route path="payments" element={<AdminPayments />} />
+          <Route path="trainings" element={<CoachTrainings />} />
+          <Route path="trainings/new" element={<CoachTrainingForm mode="create" />} />
+          <Route path="trainings/:id" element={<CoachTrainingDetail />} />
+          <Route path="trainings/:id/edit" element={<CoachTrainingForm mode="edit" />} />
           <Route path="plans" element={<AdminPlans />} />
           <Route path="subscription" element={<AdminSubscription />} />
           <Route path="profile" element={<AdminProfile />} />
