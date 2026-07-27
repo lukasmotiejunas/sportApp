@@ -95,27 +95,26 @@ signupRouter.post(
         customer: customer.id,
         items: [{ price: priceId }],
         // No free trial — charge immediately. `default_incomplete` returns an
-        // Invoice with a PaymentIntent we confirm on the client via Stripe
-        // Elements, so we get 3DS/SCA handled properly.
+        // Invoice with a confirmation_secret we finish on the client via
+        // Stripe Elements (handles 3DS/SCA).
         payment_behavior: 'default_incomplete',
         payment_settings: {
           save_default_payment_method: 'on_subscription',
         },
-        expand: ['latest_invoice.payment_intent'],
+        // Newer Stripe API (dahlia) exposes the client_secret via
+        // `latest_invoice.confirmation_secret`; the old `payment_intent` path
+        // was removed.
+        expand: ['latest_invoice.confirmation_secret'],
         metadata: { clubId: club.id },
       });
       subscriptionId = subscription.id;
 
-      const invoice = subscription.latest_invoice as
-        | (Stripe.Invoice & { payment_intent: Stripe.PaymentIntent | string | null })
-        | null;
-      const pi =
-        invoice && typeof invoice.payment_intent === 'object'
-          ? invoice.payment_intent
-          : null;
-      const clientSecret = pi?.client_secret;
+      const invoice = subscription.latest_invoice as Stripe.Invoice | null;
+      const clientSecret = invoice?.confirmation_secret?.client_secret;
       if (!clientSecret) {
-        throw new Error('Stripe did not return a PaymentIntent client_secret.');
+        throw new Error(
+          'Stripe did not return an invoice confirmation_secret. Check API version and expand params.',
+        );
       }
 
       const periodEndSec =
