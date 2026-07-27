@@ -1,5 +1,7 @@
 export type Role = 'member' | 'coach' | 'admin' | 'super_admin';
 
+export type SubscriptionStatus = 'trialing' | 'active' | 'past_due' | 'cancelled';
+
 export type AuthUser = {
   id: string;
   email: string;
@@ -9,6 +11,39 @@ export type AuthUser = {
   clubName?: string;
   memberId?: string;
   coachId?: string;
+  subscription?: {
+    status: SubscriptionStatus;
+    trialEndsAt: string;
+    currentPeriodEnd: string;
+  } | null;
+};
+
+export type ClubSubscription = {
+  status: SubscriptionStatus;
+  monthlyFee: number;
+  currency: string;
+  trialEndsAt: string;
+  currentPeriodEnd: string;
+  cancelledAt: string | null;
+  cancelAtPeriodEnd: boolean;
+  card: {
+    brand: string | null;
+    last4: string;
+    expMonth: number | null;
+    expYear: number | null;
+  } | null;
+};
+
+export type SubscriptionPayment = {
+  id: string;
+  number: string | null;
+  status: string | null;
+  amount: number;
+  currency: string;
+  created: string;
+  paidAt: string | null;
+  hostedInvoiceUrl: string | null;
+  invoicePdf: string | null;
 };
 
 export type Club = {

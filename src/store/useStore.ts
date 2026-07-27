@@ -3,7 +3,12 @@ import { persist } from 'zustand/middleware';
 // Payments are intentionally kept client-side (feature skipped for the backend
 // for now). Everything else is loaded from and persisted to the API.
 import { payments as mockPayments } from '../data/mockData';
-import { ApiError, setAuthToken, setOnUnauthorized } from '../api/client';
+import {
+  ApiError,
+  setAuthToken,
+  setOnUnauthorized,
+  setOnSubscriptionSuspended,
+} from '../api/client';
 import * as apiEndpoints from '../api/endpoints';
 import { loginApi, fetchMe } from '../api/auth';
 import type {
@@ -16,6 +21,7 @@ import type {
   Payment,
   PaymentStatus,
   Role,
+  SubscriptionStatus,
   ToastRecord,
   TrainingPlan,
   TrainingSession,
@@ -34,6 +40,12 @@ type State = {
   role: Role | null;
   currentMemberId: string;
   currentCoachId: string;
+
+  // Platform subscription status of the current user's club. `null` for
+  // super_admin, unknown-legacy clubs, and unauthenticated states.
+  subscriptionStatus: SubscriptionStatus | null;
+  markSubscriptionSuspended: () => void;
+  setSubscriptionStatus: (status: SubscriptionStatus | null) => void;
 
   loaded: boolean;
 
@@ -114,6 +126,15 @@ export const useStore = create<State>()(
         role: null,
         currentMemberId: '',
         currentCoachId: '',
+        subscriptionStatus: null,
+
+        markSubscriptionSuspended: () => {
+          const current = get().subscriptionStatus;
+          // Preserve which specific bad state we're in if we already know it.
+          if (current === 'past_due' || current === 'cancelled') return;
+          set({ subscriptionStatus: 'past_due' });
+        },
+        setSubscriptionStatus: (status) => set({ subscriptionStatus: status }),
 
         loaded: false,
 
@@ -185,6 +206,8 @@ export const useStore = create<State>()(
         bootstrap: async () => {
           // Force logout if any request returns 401 (expired/invalid token).
           setOnUnauthorized(() => get().logout());
+          // Flip into suspension mode on any 403 subscription_suspended.
+          setOnSubscriptionSuspended(() => get().markSubscriptionSuspended());
 
           const token = get().token;
           if (!token) {
@@ -199,8 +222,18 @@ export const useStore = create<State>()(
               role: user.role,
               currentMemberId: user.memberId ?? '',
               currentCoachId: user.coachId ?? '',
+              subscriptionStatus: user.subscription?.status ?? null,
             });
-            await get().loadInitialData(user.role);
+            // Skip loading domain data when suspended — those endpoints will
+            // 403 anyway. Admin can navigate straight to /admin/subscription.
+            const suspended =
+              user.subscription?.status === 'past_due' ||
+              user.subscription?.status === 'cancelled';
+            if (!suspended) {
+              await get().loadInitialData(user.role);
+            } else {
+              set({ loaded: true });
+            }
           } catch {
             // Token invalid/expired -> clear it and show the login screen.
             setAuthToken(null);
@@ -219,12 +252,20 @@ export const useStore = create<State>()(
             // first the target page could mount before its data is loaded and
             // crash (e.g. CoachDashboard reading an undefined coach).
             set({ token });
-            await get().loadInitialData(user.role);
+            const suspended =
+              user.subscription?.status === 'past_due' ||
+              user.subscription?.status === 'cancelled';
+            if (!suspended) {
+              await get().loadInitialData(user.role);
+            } else {
+              set({ loaded: true });
+            }
             set({
               authUser: user,
               role: user.role,
               currentMemberId: user.memberId ?? '',
               currentCoachId: user.coachId ?? '',
+              subscriptionStatus: user.subscription?.status ?? null,
             });
             return { ok: true };
           } catch (err) {
@@ -242,6 +283,7 @@ export const useStore = create<State>()(
             role: null,
             currentMemberId: '',
             currentCoachId: '',
+            subscriptionStatus: null,
             loaded: false,
             members: [],
             coaches: [],

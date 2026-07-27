@@ -29,6 +29,14 @@ export function setOnUnauthorized(handler: (() => void) | null) {
   onUnauthorized = handler;
 }
 
+// Called when the backend reports the club's platform subscription is not
+// active (past_due / cancelled). Frontend flips into the suspension screen.
+let onSubscriptionSuspended: (() => void) | null = null;
+
+export function setOnSubscriptionSuspended(handler: (() => void) | null) {
+  onSubscriptionSuspended = handler;
+}
+
 async function request<T>(
   method: string,
   path: string,
@@ -53,6 +61,13 @@ async function request<T>(
       // ignore non-JSON error bodies
     }
     if (res.status === 401 && onUnauthorized) onUnauthorized();
+    if (
+      res.status === 403 &&
+      message === 'subscription_suspended' &&
+      onSubscriptionSuspended
+    ) {
+      onSubscriptionSuspended();
+    }
     throw new ApiError(res.status, message);
   }
 

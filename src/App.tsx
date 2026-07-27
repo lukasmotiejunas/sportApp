@@ -9,6 +9,7 @@ import { SuperAdminLayout } from './components/layout/SuperAdminLayout';
 import { RequireRole } from './components/auth/RequireRole';
 import Login from './pages/Login';
 import Plans from './pages/Plans';
+import ClubSuspended from './pages/ClubSuspended';
 
 import MemberHome from './pages/member/MemberHome';
 import MemberTrainings from './pages/member/MemberTrainings';
@@ -31,6 +32,7 @@ import CoachPayments from './pages/coach/CoachPayments';
 
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminPlans from './pages/admin/AdminPlans';
+import AdminSubscription from './pages/admin/AdminSubscription';
 import AdminAddCoach from './pages/admin/AdminAddCoach';
 import AdminAddMember from './pages/admin/AdminAddMember';
 
@@ -60,6 +62,7 @@ function LoadingScreen() {
 export default function App() {
   const authChecked = useStore((s) => s.authChecked);
   const authUser = useStore((s) => s.authUser);
+  const subscriptionStatus = useStore((s) => s.subscriptionStatus);
   const bootstrap = useStore((s) => s.bootstrap);
 
   useEffect(() => {
@@ -79,6 +82,39 @@ export default function App() {
         : authUser.role === 'coach'
           ? '/coach'
           : '/member';
+
+  // Club is suspended (unpaid/cancelled). Admins can still reach
+  // /admin/subscription to fix billing; everyone else sees the suspension
+  // screen for any route.
+  const suspended =
+    !!authUser &&
+    authUser.role !== 'super_admin' &&
+    (subscriptionStatus === 'past_due' || subscriptionStatus === 'cancelled');
+
+  if (suspended) {
+    const isAdmin = authUser.role === 'admin';
+    return (
+      <>
+        <ScrollToTop />
+        <Routes>
+          <Route path="/plans" element={<Plans />} />
+          {isAdmin && (
+            <Route
+              path="/admin"
+              element={
+                <RequireRole roles={['admin']}>
+                  <AdminLayout />
+                </RequireRole>
+              }
+            >
+              <Route path="subscription" element={<AdminSubscription />} />
+            </Route>
+          )}
+          <Route path="*" element={<ClubSuspended />} />
+        </Routes>
+      </>
+    );
+  }
 
   return (
     <>
@@ -139,6 +175,7 @@ export default function App() {
         >
           <Route index element={<AdminUsers />} />
           <Route path="plans" element={<AdminPlans />} />
+          <Route path="subscription" element={<AdminSubscription />} />
           <Route path="coaches/new" element={<AdminAddCoach />} />
           <Route path="members/new" element={<AdminAddMember />} />
         </Route>

@@ -20,7 +20,7 @@ authRouter.post(
     const { email, password } = loginSchema.parse(req.body);
     const user = await prisma.user.findUnique({
       where: { email: email.toLowerCase() },
-      include: { club: true },
+      include: { club: { include: { subscription: true } } },
     });
     if (!user) throw new HttpError(401, 'Neteisingas el. paštas arba slaptažodis.');
 
@@ -35,7 +35,20 @@ authRouter.post(
       coachId: user.coachId,
     });
 
-    res.json({ token, user: serializeUser(user) });
+    const sub = user.club?.subscription;
+    res.json({
+      token,
+      user: {
+        ...serializeUser(user),
+        subscription: sub
+          ? {
+              status: sub.status,
+              trialEndsAt: sub.trialEndsAt.toISOString(),
+              currentPeriodEnd: sub.currentPeriodEnd.toISOString(),
+            }
+          : null,
+      },
+    });
   }),
 );
 
@@ -45,9 +58,20 @@ authRouter.get(
   asyncHandler(async (req, res) => {
     const user = await prisma.user.findUnique({
       where: { id: req.user!.userId },
-      include: { club: true },
+      include: { club: { include: { subscription: true } } },
     });
     if (!user) throw new HttpError(404, 'Vartotojas nerastas.');
-    res.json(serializeUser(user));
+
+    const sub = user.club?.subscription;
+    res.json({
+      ...serializeUser(user),
+      subscription: sub
+        ? {
+            status: sub.status,
+            trialEndsAt: sub.trialEndsAt.toISOString(),
+            currentPeriodEnd: sub.currentPeriodEnd.toISOString(),
+          }
+        : null,
+    });
   }),
 );
