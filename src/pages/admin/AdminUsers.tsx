@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { RefreshCw, Trash2, UserPlus } from "lucide-react";
+import { Copy, ExternalLink, LinkIcon, RefreshCw, Trash2, UserPlus } from "lucide-react";
 import { PageTitle } from "../../components/layout/PageTitle";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { Avatar } from "../../components/ui/Avatar";
@@ -30,6 +30,7 @@ const roleLabel: Record<AuthUser["role"], string> = {
 
 export default function AdminUsers() {
   const currentUserId = useStore((s) => s.authUser?.id ?? "");
+  const clubSlug = useStore((s) => s.authUser?.clubSlug ?? "");
   const push = useStore((s) => s.pushToast);
 
   const [users, setUsers] = useState<AuthUser[]>([]);
@@ -37,6 +38,23 @@ export default function AdminUsers() {
   const [error, setError] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<AuthUser | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const joinUrl = useMemo(
+    () => (clubSlug ? `${window.location.origin}/join/${clubSlug}` : ""),
+    [clubSlug],
+  );
+
+  const copyJoinLink = async () => {
+    if (!joinUrl) return;
+    try {
+      await navigator.clipboard.writeText(joinUrl);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 1500);
+    } catch {
+      push({ kind: "error", message: "Nepavyko nukopijuoti nuorodos." });
+    }
+  };
 
   const load = () => {
     setLoading(true);
@@ -96,6 +114,46 @@ export default function AdminUsers() {
           <RefreshCw className="h-4 w-4" /> Atnaujinti
         </button>
       </div>
+
+      {joinUrl && (
+        <div className="mb-4 rounded-2xl border border-lime-300 bg-lime-50 p-4 dark:border-lime-500/30 dark:bg-lime-500/10">
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-lime-400 text-ink-950 dark:bg-lime-400 dark:text-ink-950">
+              <LinkIcon className="h-4 w-4" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-display text-sm font-bold text-ink-900 dark:text-lime-100">
+                Nario registracijos nuoroda
+              </p>
+              <p className="mt-0.5 text-xs text-ink-700 dark:text-lime-100/80">
+                Nauji nariai gali užsiregistruoti patys — pasidalinkite šia nuoroda.
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <code className="min-w-0 flex-1 truncate rounded-lg border border-ink-200 bg-white px-3 py-2 font-mono text-xs text-ink-900 dark:border-ink-700 dark:bg-ink-900 dark:text-ink-100">
+                  {joinUrl}
+                </code>
+                <button
+                  type="button"
+                  onClick={copyJoinLink}
+                  className="btn-outline h-9 px-3 text-xs"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                  {copiedLink ? "Nukopijuota" : "Kopijuoti"}
+                </button>
+                <a
+                  href={joinUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-ghost h-9 px-3 text-xs"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  Atidaryti
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">

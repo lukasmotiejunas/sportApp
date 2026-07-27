@@ -11,6 +11,7 @@ import Login from './pages/Login';
 import Plans from './pages/Plans';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
+import MemberJoin from './pages/MemberJoin';
 import ClubSuspended from './pages/ClubSuspended';
 
 import MemberHome from './pages/member/MemberHome';
@@ -105,6 +106,7 @@ export default function App() {
           <Route path="/plans" element={<Plans />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
+          <Route path="/join/:slug" element={<MemberJoin />} />
           {isAdmin && (
             <Route
               path="/admin"
@@ -136,6 +138,7 @@ export default function App() {
         <Route path="/plans" element={<Plans />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
+        <Route path="/join/:slug" element={<MemberJoin />} />
 
         <Route
           path="/member"

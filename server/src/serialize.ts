@@ -31,6 +31,7 @@ export function serializeUser(u: User & { club?: Club | null }) {
     name: u.name ?? undefined,
     clubId: u.clubId ?? undefined,
     clubName: u.club?.name ?? undefined,
+    clubSlug: u.club?.slug ?? undefined,
     memberId: u.memberId ?? undefined,
     coachId: u.coachId ?? undefined,
   };

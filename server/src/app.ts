@@ -17,6 +17,7 @@ import { signupRouter } from './routes/signup.js';
 import { subscriptionRouter } from './routes/subscription.js';
 import { profileRouter } from './routes/profile.js';
 import { webhooksRouter } from './routes/webhooks.js';
+import { publicRouter } from './routes/public.js';
 
 const app = express();
 
@@ -37,6 +38,9 @@ app.use('/auth', authRouter);
 
 // Public self-signup: prospective club owners buy a plan without an account.
 app.use('/signup', signupRouter);
+
+// Public per-club endpoints (member join flow). No auth.
+app.use('/public', publicRouter);
 
 // Everything below requires a valid token.
 app.use('/superadmin', requireAuth, superAdminRouter);
