@@ -72,10 +72,13 @@ profileRouter.post(
 );
 
 const updateClubSchema = z.object({
-  name: z.string().min(2, 'Klubo pavadinimas per trumpas.').max(120),
+  name: z.string().min(2, 'Klubo pavadinimas per trumpas.').max(120).optional(),
+  // Data URL (image/*;base64,...) or empty string / null to clear.
+  // ~200KB max — resized on the client to keep DB rows lean.
+  logoUrl: z.string().max(300_000).nullable().optional(),
 });
 
-// PUT /club — admin-only, update own club's name.
+// PUT /club — admin-only, update own club's name and/or logo.
 profileRouter.put(
   '/club',
   requireRole('admin'),
@@ -83,17 +86,26 @@ profileRouter.put(
     const clubId = req.user!.clubId;
     if (!clubId) throw new HttpError(403, 'Šiai paskyrai nepriskirtas klubas.');
 
-    const { name } = updateClubSchema.parse(req.body);
+    const data = updateClubSchema.parse(req.body);
+    if (data.name === undefined && data.logoUrl === undefined) {
+      throw new HttpError(400, 'Nėra ką atnaujinti.');
+    }
 
     const updated = await prisma.club.update({
       where: { id: clubId },
-      data: { name },
+      data: {
+        ...(data.name !== undefined ? { name: data.name } : {}),
+        ...(data.logoUrl !== undefined
+          ? { logoUrl: data.logoUrl === '' ? null : data.logoUrl }
+          : {}),
+      },
     });
 
     res.json({
       id: updated.id,
       name: updated.name,
       slug: updated.slug,
+      logoUrl: updated.logoUrl ?? null,
     });
   }),
 );

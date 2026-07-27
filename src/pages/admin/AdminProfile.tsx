@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Building2, KeyRound, User } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Building2, ImageIcon, KeyRound, Trash2, Upload, User } from "lucide-react";
 import { PageTitle } from "../../components/layout/PageTitle";
 import { FormField } from "../../components/ui/FormField";
 import { useStore } from "../../store/useStore";
@@ -9,6 +9,7 @@ import {
   updateClubApi,
   updateSelfApi,
 } from "../../api/profile";
+import { resizeImageToDataUrl } from "../../utils/image";
 
 export default function AdminProfile() {
   const authUser = useStore((s) => s.authUser);
@@ -32,6 +33,11 @@ export default function AdminProfile() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [pwBusy, setPwBusy] = useState(false);
   const [pwError, setPwError] = useState<string | null>(null);
+
+  // Logo section
+  const logoFileInputRef = useRef<HTMLInputElement>(null);
+  const [logoBusy, setLogoBusy] = useState(false);
+  const currentLogo = authUser?.clubLogo ?? null;
 
   // Re-sync local state when authUser refreshes (e.g. after bootstrap).
   useEffect(() => {
@@ -96,6 +102,48 @@ export default function AdminProfile() {
       );
     } finally {
       setSelfBusy(false);
+    }
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      push({ kind: "error", message: "Pasirinkite paveikslėlį." });
+      return;
+    }
+    setLogoBusy(true);
+    try {
+      const dataUrl = await resizeImageToDataUrl(file, 512, 0.9);
+      const updated = await updateClubApi({ logoUrl: dataUrl });
+      patchAuthUser({ clubLogo: updated.logoUrl });
+      push({ kind: "success", message: "Klubo logotipas atnaujintas." });
+    } catch (err) {
+      push({
+        kind: "error",
+        message:
+          err instanceof ApiError ? err.message : "Nepavyko įkelti logotipo.",
+      });
+    } finally {
+      setLogoBusy(false);
+    }
+  };
+
+  const handleLogoRemove = async () => {
+    setLogoBusy(true);
+    try {
+      const updated = await updateClubApi({ logoUrl: null });
+      patchAuthUser({ clubLogo: updated.logoUrl });
+      push({ kind: "info", message: "Logotipas pašalintas." });
+    } catch (err) {
+      push({
+        kind: "error",
+        message:
+          err instanceof ApiError ? err.message : "Nepavyko pašalinti logotipo.",
+      });
+    } finally {
+      setLogoBusy(false);
     }
   };
 
@@ -170,6 +218,59 @@ export default function AdminProfile() {
               </button>
             </div>
           </form>
+
+          <div className="mt-6 border-t border-ink-100 pt-6 dark:border-ink-800">
+            <label className="label mb-3 flex items-center gap-2">
+              <ImageIcon className="h-4 w-4 text-ink-500" />
+              Klubo logotipas
+            </label>
+            <p className="mb-4 text-xs text-ink-500">
+              Įkeltas logotipas atsiras kaip fonas visiems klubo nariams, treneriams ir administratoriams.
+              Jei nekelsite, bus rodomas Lumo logotipas.
+            </p>
+            <div className="flex items-center gap-4">
+              <div className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-xl border border-ink-200 bg-ink-50 dark:border-ink-700 dark:bg-ink-800">
+                {currentLogo ? (
+                  <img
+                    src={currentLogo}
+                    alt="Klubo logotipas"
+                    className="max-h-full max-w-full object-contain"
+                  />
+                ) : (
+                  <ImageIcon className="h-6 w-6 text-ink-400" />
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <input
+                  ref={logoFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoUpload}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => logoFileInputRef.current?.click()}
+                  disabled={logoBusy}
+                  className="btn-outline h-10 px-4 text-sm"
+                >
+                  <Upload className="h-4 w-4" />
+                  {logoBusy ? "Įkeliama…" : currentLogo ? "Pakeisti" : "Įkelti logotipą"}
+                </button>
+                {currentLogo && (
+                  <button
+                    type="button"
+                    onClick={handleLogoRemove}
+                    disabled={logoBusy}
+                    className="btn-ghost h-10 px-3 text-sm text-red-600"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Pašalinti
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
         </section>
 
         <section className="surface p-5">

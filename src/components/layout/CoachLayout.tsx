@@ -12,6 +12,7 @@ import {
 import { useState } from "react";
 import { UserMenu } from "../ui/UserMenu";
 import { ToastContainer } from "../ui/ToastContainer";
+import { BackgroundLogo } from "./BackgroundLogo";
 import { useStore } from "../../store/useStore";
 
 const items = [
@@ -27,7 +28,8 @@ export function CoachLayout() {
   const clubName = useStore((s) => s.authUser?.clubName ?? "");
 
   return (
-    <div className="min-h-screen bg-ink-50 dark:bg-ink-950">
+    <div className="relative min-h-screen">
+      <BackgroundLogo />
       <div className="flex">
         {/* Sidebar */}
         <aside className="hidden w-64 shrink-0 border-r border-ink-100 bg-white p-4 md:flex md:flex-col dark:border-ink-800 dark:bg-ink-900 md:sticky md:top-0 md:h-screen">

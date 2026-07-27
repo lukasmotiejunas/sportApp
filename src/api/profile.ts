@@ -14,5 +14,14 @@ export const changePasswordApi = (input: {
   newPassword: string;
 }) => api.post<void>('/profile/password', input);
 
-export const updateClubApi = (input: { name: string }) =>
-  api.put<{ id: string; name: string; slug: string }>('/profile/club', input);
+export type UpdateClubInput = {
+  name?: string;
+  // Data URL to set, empty string / null to clear the logo.
+  logoUrl?: string | null;
+};
+
+export const updateClubApi = (input: UpdateClubInput) =>
+  api.put<{ id: string; name: string; slug: string; logoUrl: string | null }>(
+    '/profile/club',
+    input,
+  );

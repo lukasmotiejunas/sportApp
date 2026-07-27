@@ -69,6 +69,9 @@ model Club {
   id                   String                @id @default(cuid())
   name                 String
   slug                 String                @unique
+  // Base64 data URL (resized on the client, ~30KB typical). null = fall back
+  // to the platform Lumo logo in the app background.
+  logoUrl              String?
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
   users                User[]

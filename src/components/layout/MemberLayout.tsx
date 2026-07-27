@@ -2,12 +2,14 @@ import { Outlet } from "react-router-dom";
 import { UserMenu } from "../ui/UserMenu";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { ToastContainer } from "../ui/ToastContainer";
+import { BackgroundLogo } from "./BackgroundLogo";
 import { useStore } from "../../store/useStore";
 
 export function MemberLayout() {
   const clubName = useStore((s) => s.authUser?.clubName ?? "");
   return (
-    <div className="min-h-screen bg-ink-50 dark:bg-ink-950">
+    <div className="relative min-h-screen">
+      <BackgroundLogo />
       <header className="sticky top-0 z-20 border-b border-ink-100 bg-white/85 backdrop-blur dark:border-ink-800 dark:bg-ink-950/85">
         <div className="mx-auto flex max-w-4xl items-center gap-3 px-4 py-3">
           <div className="flex items-center gap-2 font-display text-lg font-bold text-ink-900 dark:text-lime-400">

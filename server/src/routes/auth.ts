@@ -40,6 +40,7 @@ authRouter.post(
       token,
       user: {
         ...serializeUser(user),
+        clubLogo: user.club?.logoUrl ?? null,
         subscription: sub
           ? {
               status: sub.status,
@@ -65,6 +66,7 @@ authRouter.get(
     const sub = user.club?.subscription;
     res.json({
       ...serializeUser(user),
+      clubLogo: user.club?.logoUrl ?? null,
       subscription: sub
         ? {
             status: sub.status,
