@@ -13,7 +13,6 @@ import {
   ChevronLeft,
   Lock,
 } from "lucide-react";
-import { loadStripe, type Stripe } from "@stripe/stripe-js";
 import {
   Elements,
   PaymentElement,
@@ -22,18 +21,9 @@ import {
 } from "@stripe/react-stripe-js";
 import { signupApi, type SignupResult } from "../api/signup";
 import { ApiError } from "../api/client";
+import { getStripePromise } from "../utils/stripe";
 
 const MONTHLY_FEE = 0.5;
-
-const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ?? "";
-// Cache the Stripe promise across renders — loadStripe caches internally too
-// but keeping the promise stable avoids Elements re-initialising.
-let stripePromise: Promise<Stripe | null> | null = null;
-function getStripePromise() {
-  if (!publishableKey) return null;
-  if (!stripePromise) stripePromise = loadStripe(publishableKey);
-  return stripePromise;
-}
 
 const FEATURES: {
   icon: React.ComponentType<{ className?: string }>;

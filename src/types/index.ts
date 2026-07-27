@@ -100,6 +100,8 @@ export type MembershipPlan = {
   currency: string;
   // null = unlimited weekly trainings; otherwise 1..N cap.
   trainingsPerWeek: number | null;
+  // null = plan not yet mirrored to the club's Stripe Connect account.
+  stripePriceId: string | null;
 };
 
 export type Gender = 'male' | 'female' | 'unspecified';
@@ -126,6 +128,10 @@ export type Member = {
     push: boolean;
   };
   coachNotes?: string;
+  // Set once the member has an active Stripe subscription on the club's
+  // connected account. Presence disables the admin's manual paid/overdue
+  // toggle for this member (Stripe drives status via webhooks).
+  stripeSubscriptionId?: string | null;
 };
 
 export type CoachStaff = {

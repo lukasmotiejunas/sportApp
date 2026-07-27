@@ -17,15 +17,20 @@ import { signupRouter } from './routes/signup.js';
 import { subscriptionRouter } from './routes/subscription.js';
 import { profileRouter } from './routes/profile.js';
 import { webhooksRouter } from './routes/webhooks.js';
+import { webhooksConnectRouter } from './routes/webhooksConnect.js';
 import { publicRouter } from './routes/public.js';
+import { connectRouter } from './routes/connect.js';
 
 const app = express();
 
 app.use(cors());
 
 // Stripe webhooks MUST see the raw body for signature verification. Mount the
-// router before express.json() so it can attach its own express.raw() parser.
+// routers before express.json() so they can attach their own express.raw().
+// Two separate destinations: platform (Lumo→clubs subs) and connect
+// (member→club subs on connected accounts).
 app.use('/webhooks', webhooksRouter);
+app.use('/webhooks', webhooksConnectRouter);
 
 app.use(express.json());
 
@@ -50,6 +55,7 @@ app.use('/superadmin', requireAuth, superAdminRouter);
 app.use('/users', requireAuth, usersRouter);
 app.use('/subscription', requireAuth, subscriptionRouter);
 app.use('/profile', requireAuth, profileRouter);
+app.use('/connect', requireAuth, connectRouter);
 // Club-scoped domain routes are blocked when the subscription is past_due or
 // cancelled — see requireActiveSubscription.
 app.use('/members', requireAuth, requireActiveSubscription, membersRouter);

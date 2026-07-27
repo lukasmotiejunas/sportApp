@@ -54,6 +54,8 @@ export function serializeMembershipPlan(p: MembershipPlan) {
     currency: p.currency,
     // null = unlimited weekly trainings.
     trainingsPerWeek: p.trainingsPerWeek ?? null,
+    // null = not yet mirrored on club's Stripe Connect account.
+    stripePriceId: p.stripePriceId ?? null,
   };
 }
 
@@ -90,6 +92,9 @@ export function serializeMember(m: Member) {
       push: m.notifyPush,
     },
     coachNotes: m.coachNotes ?? undefined,
+    // Presence signals that payment status is auto-driven by Stripe webhooks —
+    // the admin's manual paid/overdue toggle should be disabled for this member.
+    stripeSubscriptionId: m.stripeSubscriptionId ?? null,
   };
 }
 

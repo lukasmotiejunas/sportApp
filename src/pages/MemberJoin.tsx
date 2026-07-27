@@ -11,11 +11,37 @@ import {
   Sparkles,
   User,
 } from "lucide-react";
-import { fetchPublicClub, joinClubApi, type PublicClub } from "../api/public";
+import { loadStripe, type Stripe } from "@stripe/stripe-js";
+import {
+  Elements,
+  PaymentElement,
+  useElements,
+  useStripe,
+} from "@stripe/react-stripe-js";
+import {
+  fetchPublicClub,
+  joinClubApi,
+  type JoinResult,
+  type PublicClub,
+} from "../api/public";
 import { ApiError } from "../api/client";
 import type { MembershipPlan } from "../types";
 
-type Step = "form" | "success";
+const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ?? "";
+
+// One Stripe.js instance per connected account. Cached across renders so the
+// Elements iframe isn't torn down on state changes.
+const connectedStripeCache = new Map<string, Promise<Stripe | null>>();
+function getConnectedStripe(stripeAccount: string): Promise<Stripe | null> | null {
+  if (!publishableKey) return null;
+  const cached = connectedStripeCache.get(stripeAccount);
+  if (cached) return cached;
+  const p = loadStripe(publishableKey, { stripeAccount });
+  connectedStripeCache.set(stripeAccount, p);
+  return p;
+}
+
+type Step = "form" | "payment" | "success";
 
 type FormState = {
   name: string;
@@ -25,8 +51,6 @@ type FormState = {
   dateOfBirth: string;
   gender: "male" | "female" | "unspecified";
   membershipPlanId: string;
-  bankAccountHolder: string;
-  bankAccountIban: string;
 };
 
 const initialForm: FormState = {
@@ -37,8 +61,6 @@ const initialForm: FormState = {
   dateOfBirth: "",
   gender: "unspecified",
   membershipPlanId: "",
-  bankAccountHolder: "",
-  bankAccountIban: "",
 };
 
 function formatMoney(v: number, currency: string): string {
@@ -63,8 +85,8 @@ export default function MemberJoin() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [step, setStep] = useState<Step>("form");
+  const [result, setResult] = useState<JoinResult | null>(null);
   const [savedPassword, setSavedPassword] = useState("");
-  const [joinedName, setJoinedName] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -74,7 +96,6 @@ export default function MemberJoin() {
       .then((c) => {
         if (cancelled) return;
         setClub(c);
-        // Preselect the first (cheapest) plan for a smoother flow.
         if (c.plans[0]) {
           setForm((prev) => ({ ...prev, membershipPlanId: c.plans[0].id }));
         }
@@ -116,12 +137,17 @@ export default function MemberJoin() {
         dateOfBirth: form.dateOfBirth || undefined,
         gender: form.gender,
         membershipPlanId: form.membershipPlanId || undefined,
-        bankAccountHolder: form.bankAccountHolder.trim() || undefined,
-        bankAccountIban: form.bankAccountIban.trim() || undefined,
       });
       setSavedPassword(form.password);
-      setJoinedName(res.member.name);
-      setStep("success");
+      setResult(res);
+      // If Stripe returned a client secret, take the member to a real payment
+      // step. Otherwise the club isn't Connect-ready (or the plan is free) —
+      // skip straight to success.
+      if (res.paymentRequired && res.clientSecret) {
+        setStep("payment");
+      } else {
+        setStep("success");
+      }
     } catch (err) {
       setError(
         err instanceof ApiError
@@ -161,14 +187,28 @@ export default function MemberJoin() {
     );
   }
 
-  if (step === "success") {
+  if (step === "success" && result) {
     return (
       <SuccessScreen
         clubName={club.name}
         clubLogo={club.logoUrl}
-        memberName={joinedName}
-        email={form.email.trim().toLowerCase()}
+        memberName={result.member.name}
+        email={result.member.email}
         password={savedPassword}
+        paymentWasCollected={result.paymentRequired && !!result.clientSecret}
+      />
+    );
+  }
+
+  if (step === "payment" && result?.clientSecret && result.club.stripeConnectAccountId) {
+    return (
+      <PaymentStep
+        clubName={club.name}
+        clubLogo={club.logoUrl}
+        clientSecret={result.clientSecret}
+        stripeAccount={result.club.stripeConnectAccountId}
+        plan={chosenPlan}
+        onSuccess={() => setStep("success")}
       />
     );
   }
@@ -213,7 +253,7 @@ export default function MemberJoin() {
             Prisijunkite prie klubo „{club.name}".
           </h1>
           <p className="mt-2 text-sm text-white/70">
-            Užpildykite formą, pasirinkite narystės planą ir gaukite prisijungimo duomenis.
+            Užpildykite formą, pasirinkite narystės planą ir kitame žingsnyje apmokėkite pirmą mėnesį.
           </p>
         </div>
 
@@ -297,28 +337,6 @@ export default function MemberJoin() {
             )}
           </FormSection>
 
-          <FormSection
-            step={3}
-            title="Mokėjimo duomenys"
-            description="Įveskite banko sąskaitos duomenis. Šiuo metu tikri mokėjimai nevykdomi — duomenys naudojami tik demonstracijai."
-            icon={CreditCard}
-          >
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field
-                label="Sąskaitos savininkas"
-                value={form.bankAccountHolder}
-                onChange={(v) => setField("bankAccountHolder", v)}
-                placeholder="Vardas Pavardė"
-              />
-              <Field
-                label="IBAN"
-                value={form.bankAccountIban}
-                onChange={(v) => setField("bankAccountIban", v.toUpperCase())}
-                placeholder="LT12 3456 7890 1234 5678"
-              />
-            </div>
-          </FormSection>
-
           <div className="rounded-2xl border border-lime-400/30 bg-lime-400/10 p-5 text-sm">
             <p className="font-display text-base font-bold text-lime-200">
               {chosenPlan
@@ -326,7 +344,7 @@ export default function MemberJoin() {
                 : "Pasirinkite narystės planą aukščiau."}
             </p>
             <p className="mt-1.5 text-white/70">
-              Užbaigus registraciją būsite pridėti prie klubo „{club.name}". Prisijungimo duomenys bus rodomi kitame ekrane.
+              Kitame žingsnyje pridėsite mokėjimo kortelę. Kortelė bus automatiškai apmokestinama kas mėnesį, kol atšauksite prenumeratą.
             </p>
           </div>
 
@@ -341,7 +359,7 @@ export default function MemberJoin() {
             disabled={submitting}
             className="btn-accent h-12 w-full text-base"
           >
-            {submitting ? "Registruojama…" : "Baigti registraciją"}
+            {submitting ? "Ruošiamasi…" : "Tęsti į mokėjimą"}
             {!submitting && <ArrowRight className="h-4 w-4" />}
           </button>
 
@@ -352,6 +370,194 @@ export default function MemberJoin() {
         </form>
       </main>
     </div>
+  );
+}
+
+function PaymentStep(props: {
+  clubName: string;
+  clubLogo: string | null;
+  clientSecret: string;
+  stripeAccount: string;
+  plan: MembershipPlan | null;
+  onSuccess: () => void;
+}) {
+  const { clubName, clubLogo, clientSecret, stripeAccount, plan, onSuccess } = props;
+  const promise = getConnectedStripe(stripeAccount);
+
+  return (
+    <div className="relative min-h-screen bg-ink-950 text-white">
+      <div className="hero-gradient absolute inset-0 -z-10" />
+
+      <header className="border-b border-white/10">
+        <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-2">
+            {clubLogo ? (
+              <img src={clubLogo} alt={`${clubName} logotipas`} className="h-8 max-w-[120px] object-contain" />
+            ) : (
+              <img src="/lumo-logo.png" alt="Lumo" className="h-7 w-auto" />
+            )}
+          </div>
+          <span className="text-xs font-semibold uppercase tracking-widest text-lime-300">
+            2/2 · Mokėjimas
+          </span>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-3xl px-6 py-10">
+        <div className="mb-8">
+          <span className="inline-flex items-center gap-2 rounded-full border border-lime-400/30 bg-lime-400/10 px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-lime-300">
+            <Lock className="h-3.5 w-3.5" /> Saugus mokėjimas
+          </span>
+          <h1 className="mt-3 font-display text-3xl font-bold sm:text-4xl">
+            Pridėkite mokėjimo kortelę.
+          </h1>
+          {plan && (
+            <p className="mt-2 text-sm text-white/70">
+              {plan.name} — <strong className="text-white">{formatMoney(plan.monthlyFee, plan.currency)}</strong> / mėn.
+              Mokestis kartojasi kas mėnesį, kol atšauksite prenumeratą.
+            </p>
+          )}
+        </div>
+
+        {!promise ? (
+          <div className="rounded-xl border border-red-400/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+            Trūksta „VITE_STRIPE_PUBLISHABLE_KEY" aplinkos kintamojo. Praneškite klubo administratoriui.
+          </div>
+        ) : (
+          <Elements
+            stripe={promise}
+            options={{
+              // The `stripeAccount` connection was set at loadStripe() level
+              // above, so all Elements calls route to the connected account.
+              clientSecret,
+              appearance: {
+                theme: "night",
+                variables: {
+                  colorPrimary: "#9ae819",
+                  colorBackground: "rgba(255,255,255,0.06)",
+                  colorText: "#ffffff",
+                  colorTextSecondary: "rgba(255,255,255,0.6)",
+                  colorTextPlaceholder: "rgba(255,255,255,0.3)",
+                  colorDanger: "#f87171",
+                  fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif",
+                  spacingUnit: "4px",
+                  borderRadius: "12px",
+                },
+                rules: {
+                  ".Input": {
+                    border: "1px solid rgba(255,255,255,0.1)",
+                  },
+                  ".Input:focus": {
+                    border: "1px solid #9ae819",
+                    boxShadow: "0 0 0 3px rgba(154,232,25,0.2)",
+                  },
+                  ".Label": {
+                    color: "rgba(255,255,255,0.8)",
+                    fontWeight: "600",
+                  },
+                },
+              },
+            }}
+          >
+            <PaymentForm onSuccess={onSuccess} plan={plan} />
+          </Elements>
+        )}
+      </main>
+    </div>
+  );
+}
+
+function PaymentForm({
+  onSuccess,
+  plan,
+}: {
+  onSuccess: () => void;
+  plan: MembershipPlan | null;
+}) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("redirect_status") === "succeeded") {
+      onSuccess();
+    }
+  }, [onSuccess]);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!stripe || !elements) return;
+    setError(null);
+    setSubmitting(true);
+
+    const { error: err, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        return_url: window.location.href,
+      },
+      redirect: "if_required",
+    });
+
+    if (err) {
+      setError(err.message ?? "Nepavyko apmokėti kortelės.");
+      setSubmitting(false);
+      return;
+    }
+
+    if (paymentIntent && paymentIntent.status === "succeeded") {
+      onSuccess();
+      return;
+    }
+
+    setSubmitting(false);
+  };
+
+  return (
+    <form onSubmit={submit} className="space-y-5">
+      <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur">
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-lime-400/15 text-lime-300">
+            <CreditCard className="h-4 w-4" />
+          </div>
+          <div>
+            <h2 className="font-display text-lg font-bold text-white">
+              Mokėjimo kortelė
+            </h2>
+            <p className="mt-1 text-sm text-white/60">
+              Kortelės duomenys apdorojami Stripe — mūsų serveryje nesaugomi.
+            </p>
+          </div>
+        </div>
+        <div className="mt-5">
+          <PaymentElement />
+        </div>
+      </section>
+
+      {error && (
+        <div className="rounded-xl border border-red-400/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+          {error}
+        </div>
+      )}
+
+      <button
+        type="submit"
+        disabled={!stripe || !elements || submitting}
+        className="btn-accent h-12 w-full text-base"
+      >
+        {submitting
+          ? "Tvirtinama…"
+          : plan
+            ? `Apmokėti ${formatMoney(plan.monthlyFee, plan.currency)}`
+            : "Apmokėti"}
+        {!submitting && <ArrowRight className="h-4 w-4" />}
+      </button>
+
+      <p className="pb-6 text-center text-xs text-white/50">
+        Užšifruotas ryšys. Kortelės duomenys apsaugoti Stripe.
+      </p>
+    </form>
   );
 }
 
@@ -514,12 +720,14 @@ function SuccessScreen({
   memberName,
   email,
   password,
+  paymentWasCollected,
 }: {
   clubName: string;
   clubLogo: string | null;
   memberName: string;
   email: string;
   password: string;
+  paymentWasCollected: boolean;
 }) {
   const [copied, setCopied] = useState<"email" | "password" | null>(null);
   const copy = async (which: "email" | "password", value: string) => {
@@ -563,7 +771,9 @@ function SuccessScreen({
             {memberName}, esate klubo „{clubName}" narys.
           </h1>
           <p className="mt-3 text-sm text-white/70">
-            Prisijunkite naudodami toliau nurodytus duomenis ir pradėkite naršyti treniruotes.
+            {paymentWasCollected
+              ? "Mokėjimas patvirtintas. Prisijunkite naudodami toliau nurodytus duomenis."
+              : "Klubo administratorius su Jumis susisieks dėl mokėjimo. Kol kas galite prisijungti su šiais duomenimis."}
           </p>
         </div>
 

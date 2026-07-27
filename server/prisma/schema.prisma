@@ -72,6 +72,11 @@ model Club {
   // Base64 data URL (resized on the client, ~30KB typical). null = fall back
   // to the platform Lumo logo in the app background.
   logoUrl              String?
+  // Stripe Connect (Express) account for taking member payments directly to
+  // this club's bank. `stripeAccountReady` flips true once Stripe fires
+  // account.updated with charges_enabled=true.
+  stripeConnectAccountId String?           @unique
+  stripeAccountReady     Boolean           @default(false)
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
   users                User[]
@@ -133,6 +138,10 @@ model MembershipPlan {
   currency          String   @default("EUR")
   // null = unlimited trainings per week; otherwise 1..N cap.
   trainingsPerWeek  Int?
+  // Mirrored on the club's Stripe Connect account so member subscriptions can
+  // reference a real Price. Populated lazily once the club connect is ready.
+  stripeProductId   String?
+  stripePriceId     String?
   members           Member[]
 
   @@index([clubId])
@@ -165,6 +174,11 @@ model Member {
   trainingPlans     TrainingPlan[]
   results           LeaderboardResult[]
   user              User?
+  // Stripe Customer + Subscription live on the club's connected account, so
+  // both ids are only unique in combination with the club — but Stripe issues
+  // globally unique ids either way, so we keep them @unique for cheap lookup.
+  stripeCustomerId     String? @unique
+  stripeSubscriptionId String? @unique
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 

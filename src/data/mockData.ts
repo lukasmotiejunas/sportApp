@@ -13,8 +13,8 @@ import { addDays, todayIso } from '../utils/dates';
 const today = todayIso();
 
 export const membershipPlans: MembershipPlan[] = [
-  { id: 'plan-unlimited', name: 'Neribotas bėgimo klubas', monthlyFee: 49, currency: 'EUR', trainingsPerWeek: null },
-  { id: 'plan-lite', name: 'Savaitgalio bėgikas', monthlyFee: 29, currency: 'EUR', trainingsPerWeek: 2 },
+  { id: 'plan-unlimited', name: 'Neribotas bėgimo klubas', monthlyFee: 49, currency: 'EUR', trainingsPerWeek: null, stripePriceId: null },
+  { id: 'plan-lite', name: 'Savaitgalio bėgikas', monthlyFee: 29, currency: 'EUR', trainingsPerWeek: 2, stripePriceId: null },
 ];
 
 export const coachStaff: CoachStaff[] = [

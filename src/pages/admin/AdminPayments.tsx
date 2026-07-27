@@ -216,34 +216,43 @@ export default function AdminPayments() {
                         </StatusBadge>
                       </td>
                       <td className="py-3 text-right">
-                        <div className="flex justify-end gap-1">
-                          <button
-                            className="btn-ghost h-8 px-2 text-xs"
-                            onClick={() => {
-                              setPaymentStatus(m.id, "paid");
-                              push({
-                                kind: "success",
-                                message: `${m.name} pažymėtas kaip apmokėjęs.`,
-                              });
-                            }}
-                            disabled={m.paymentStatus === "paid"}
+                        {m.stripeSubscriptionId ? (
+                          <span
+                            className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-ink-400"
+                            title="Būseną automatiškai valdo Stripe pagal narystės mokėjimus"
                           >
-                            Pažymėti apmokėtu
-                          </button>
-                          <button
-                            className="btn-ghost h-8 px-2 text-xs text-red-600"
-                            onClick={() => {
-                              setPaymentStatus(m.id, "overdue");
-                              push({
-                                kind: "warning",
-                                message: `${m.name} pažymėtas kaip vėluojantis.`,
-                              });
-                            }}
-                            disabled={m.paymentStatus === "overdue"}
-                          >
-                            Vėluoja
-                          </button>
-                        </div>
+                            Stripe automatiškai
+                          </span>
+                        ) : (
+                          <div className="flex justify-end gap-1">
+                            <button
+                              className="btn-ghost h-8 px-2 text-xs"
+                              onClick={() => {
+                                setPaymentStatus(m.id, "paid");
+                                push({
+                                  kind: "success",
+                                  message: `${m.name} pažymėtas kaip apmokėjęs.`,
+                                });
+                              }}
+                              disabled={m.paymentStatus === "paid"}
+                            >
+                              Pažymėti apmokėtu
+                            </button>
+                            <button
+                              className="btn-ghost h-8 px-2 text-xs text-red-600"
+                              onClick={() => {
+                                setPaymentStatus(m.id, "overdue");
+                                push({
+                                  kind: "warning",
+                                  message: `${m.name} pažymėtas kaip vėluojantis.`,
+                                });
+                              }}
+                              disabled={m.paymentStatus === "overdue"}
+                            >
+                              Vėluoja
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   );
@@ -273,34 +282,40 @@ export default function AdminPayments() {
                       {paymentLabel[m.paymentStatus]}
                     </StatusBadge>
                   </div>
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    <button
-                      className="btn-ghost h-8 px-2 text-xs"
-                      onClick={() => {
-                        setPaymentStatus(m.id, "paid");
-                        push({
-                          kind: "success",
-                          message: `${m.name} pažymėtas kaip apmokėjęs.`,
-                        });
-                      }}
-                      disabled={m.paymentStatus === "paid"}
-                    >
-                      Pažymėti kaip apmokėtą
-                    </button>
-                    <button
-                      className="btn-ghost h-8 px-2 text-xs text-red-600"
-                      onClick={() => {
-                        setPaymentStatus(m.id, "overdue");
-                        push({
-                          kind: "warning",
-                          message: `${m.name} pažymėtas kaip vėluojantis.`,
-                        });
-                      }}
-                      disabled={m.paymentStatus === "overdue"}
-                    >
-                      Vėluoja
-                    </button>
-                  </div>
+                  {m.stripeSubscriptionId ? (
+                    <p className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-ink-400">
+                      Būseną valdo Stripe
+                    </p>
+                  ) : (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      <button
+                        className="btn-ghost h-8 px-2 text-xs"
+                        onClick={() => {
+                          setPaymentStatus(m.id, "paid");
+                          push({
+                            kind: "success",
+                            message: `${m.name} pažymėtas kaip apmokėjęs.`,
+                          });
+                        }}
+                        disabled={m.paymentStatus === "paid"}
+                      >
+                        Pažymėti kaip apmokėtą
+                      </button>
+                      <button
+                        className="btn-ghost h-8 px-2 text-xs text-red-600"
+                        onClick={() => {
+                          setPaymentStatus(m.id, "overdue");
+                          push({
+                            kind: "warning",
+                            message: `${m.name} pažymėtas kaip vėluojantis.`,
+                          });
+                        }}
+                        disabled={m.paymentStatus === "overdue"}
+                      >
+                        Vėluoja
+                      </button>
+                    </div>
+                  )}
                 </li>
               );
             })}

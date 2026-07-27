@@ -1,10 +1,19 @@
 import { useState } from "react";
-import { CreditCard, Infinity as InfinityIcon, Plus, Trash2 } from "lucide-react";
+import {
+  Check,
+  Clock,
+  CreditCard,
+  Infinity as InfinityIcon,
+  Plus,
+  RefreshCw,
+  Trash2,
+} from "lucide-react";
 import { PageTitle } from "../../components/layout/PageTitle";
 import { FormField } from "../../components/ui/FormField";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { useStore } from "../../store/useStore";
 import { formatCurrency } from "../../utils/format";
+import { api } from "../../api/client";
 import type { MembershipPlan } from "../../types";
 
 export default function AdminPlans() {
@@ -12,6 +21,28 @@ export default function AdminPlans() {
   const addMembershipPlan = useStore((s) => s.addMembershipPlan);
   const removeMembershipPlan = useStore((s) => s.removeMembershipPlan);
   const push = useStore((s) => s.pushToast);
+  const [syncing, setSyncing] = useState(false);
+
+  const needsSync = plans.some((p) => !p.stripePriceId && p.monthlyFee > 0);
+
+  const sync = async () => {
+    setSyncing(true);
+    try {
+      const updated = await api.post<MembershipPlan[]>(
+        "/membership-plans/sync",
+      );
+      useStore.setState({ membershipPlans: updated });
+      push({ kind: "success", message: "Planai sinchronizuoti su Stripe." });
+    } catch (err) {
+      push({
+        kind: "error",
+        message:
+          err instanceof Error ? err.message : "Nepavyko sinchronizuoti.",
+      });
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const [name, setName] = useState("");
   const [fee, setFee] = useState("");
@@ -145,10 +176,22 @@ export default function AdminPlans() {
       </section>
 
       <section className="surface">
-        <div className="border-b border-ink-100 p-4 dark:border-ink-800">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ink-100 p-4 dark:border-ink-800">
           <h2 className="flex items-center gap-2 font-display text-base font-bold">
             <CreditCard className="h-4 w-4 text-ink-500" /> Esami planai
           </h2>
+          {needsSync && (
+            <button
+              type="button"
+              onClick={sync}
+              disabled={syncing}
+              className="btn-ghost h-9 px-3 text-xs"
+              title="Iš naujo bandyti sukurti Stripe kainas"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
+              {syncing ? "Sinchronizuojama…" : "Sinchronizuoti su Stripe"}
+            </button>
+          )}
         </div>
         {plans.length === 0 ? (
           <p className="p-4 text-sm text-ink-500">Planų dar nėra. Sukurkite pirmą aukščiau.</p>
@@ -172,6 +215,32 @@ export default function AdminPlans() {
                         <>{p.trainingsPerWeek} treniruotės / sav.</>
                       )}
                     </span>
+                    {p.monthlyFee > 0 && (
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                          p.stripePriceId
+                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300"
+                            : "bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300"
+                        }`}
+                        title={
+                          p.stripePriceId
+                            ? "Planas prijungtas prie Stripe — nariai gali mokėti"
+                            : "Laukiama, kol klubas užbaigs Stripe registraciją"
+                        }
+                      >
+                        {p.stripePriceId ? (
+                          <>
+                            <Check className="h-3 w-3" />
+                            Stripe
+                          </>
+                        ) : (
+                          <>
+                            <Clock className="h-3 w-3" />
+                            Laukiama Stripe
+                          </>
+                        )}
+                      </span>
+                    )}
                   </p>
                 </div>
                 <button

@@ -1,10 +1,12 @@
 import { Router } from 'express';
+import type Stripe from 'stripe';
 import { z } from 'zod';
 import { prisma } from '../prisma.js';
 import { asyncHandler, HttpError } from '../middleware/errorHandler.js';
 import { hashPassword } from '../auth/password.js';
 import { initialsFromName, randomAvatarColor } from '../util.js';
 import { serializeMember, serializeMembershipPlan } from '../serialize.js';
+import { getStripe, LUMO_APPLICATION_FEE_PERCENT } from '../stripe.js';
 
 export const publicRouter = Router();
 
@@ -48,9 +50,6 @@ const joinSchema = z.object({
   dateOfBirth: z.string().optional(),
   gender: z.enum(['male', 'female', 'unspecified']).optional(),
   membershipPlanId: z.string().optional(),
-  // Fake payment fields — collected for UX only. Not persisted for now.
-  bankAccountHolder: z.string().optional(),
-  bankAccountIban: z.string().optional(),
 });
 
 // POST /clubs/:slug/members — public member registration into an existing
@@ -83,6 +82,9 @@ publicRouter.post(
       throw new HttpError(409, 'Vartotojas su tokiu el. paštu jau egzistuoja.');
     }
 
+    let planForStripe:
+      | { id: string; stripePriceId: string | null; monthlyFee: number }
+      | null = null;
     if (data.membershipPlanId) {
       const plan = await prisma.membershipPlan.findFirst({
         where: { id: data.membershipPlanId, clubId: club.id },
@@ -90,6 +92,11 @@ publicRouter.post(
       if (!plan) {
         throw new HttpError(400, 'Pasirinktas planas nepriskirtas šiam klubui.');
       }
+      planForStripe = {
+        id: plan.id,
+        stripePriceId: plan.stripePriceId,
+        monthlyFee: Number(plan.monthlyFee),
+      };
     }
 
     const passwordHash = await hashPassword(data.password);
@@ -118,9 +125,76 @@ publicRouter.post(
       },
     });
 
+    // If the club has a verified Connect account AND the chosen plan is
+    // synced to Stripe AND the fee is > 0, create a Customer + incomplete
+    // Subscription on the connected account. The client finishes payment via
+    // Stripe Elements against that connected account.
+    let clientSecret: string | null = null;
+    let paymentRequired = false;
+    if (
+      club.stripeAccountReady &&
+      club.stripeConnectAccountId &&
+      planForStripe?.stripePriceId &&
+      planForStripe.monthlyFee > 0
+    ) {
+      paymentRequired = true;
+      const stripe = getStripe();
+      const acct = club.stripeConnectAccountId;
+      try {
+        const customer = await stripe.customers.create(
+          {
+            email,
+            name: data.name,
+            metadata: { memberId: member.id, clubId: club.id },
+          },
+          { stripeAccount: acct },
+        );
+        const subscription = await stripe.subscriptions.create(
+          {
+            customer: customer.id,
+            items: [{ price: planForStripe.stripePriceId }],
+            payment_behavior: 'default_incomplete',
+            payment_settings: {
+              save_default_payment_method: 'on_subscription',
+              payment_method_types: ['card'],
+            },
+            application_fee_percent: LUMO_APPLICATION_FEE_PERCENT(),
+            expand: ['latest_invoice.confirmation_secret'],
+            metadata: { memberId: member.id, clubId: club.id },
+          },
+          { stripeAccount: acct },
+        );
+        const invoice = subscription.latest_invoice as Stripe.Invoice | null;
+        clientSecret = invoice?.confirmation_secret?.client_secret ?? null;
+
+        await prisma.member.update({
+          where: { id: member.id },
+          data: {
+            stripeCustomerId: customer.id,
+            stripeSubscriptionId: subscription.id,
+          },
+        });
+      } catch (err) {
+        // Do NOT undo the member — admin can still see them as pending. Log
+        // and return without a client secret so the frontend shows the "no
+        // payment yet" success path.
+        // eslint-disable-next-line no-console
+        console.error('Stripe subscription create failed:', err);
+        clientSecret = null;
+        paymentRequired = false;
+      }
+    }
+
     res.status(201).json({
       member: serializeMember(member),
-      club: { id: club.id, name: club.name, slug: club.slug },
+      club: {
+        id: club.id,
+        name: club.name,
+        slug: club.slug,
+        stripeConnectAccountId: club.stripeConnectAccountId,
+      },
+      paymentRequired,
+      clientSecret,
       loginUrl: '/login',
     });
   }),

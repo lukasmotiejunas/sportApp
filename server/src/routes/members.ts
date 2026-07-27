@@ -6,6 +6,7 @@ import { requireClubId, requireRole } from '../middleware/auth.js';
 import { serializeMember } from '../serialize.js';
 import { hashPassword } from '../auth/password.js';
 import { initialsFromName, randomAvatarColor } from '../util.js';
+import { getStripe } from '../stripe.js';
 
 export const membersRouter = Router();
 
@@ -126,7 +127,9 @@ membersRouter.get(
 
 // Admin-only: permanently delete a Member. Prisma cascades remove the linked
 // User, training registrations, individual training plans, and leaderboard
-// results in a single statement.
+// results in a single statement. If the member has an active Stripe
+// subscription on the club's connected account, cancel it first so the card
+// stops being charged.
 membersRouter.delete(
   '/:id',
   requireRole('admin', 'super_admin'),
@@ -134,8 +137,18 @@ membersRouter.delete(
     const clubId = requireClubId(req);
     const existing = await prisma.member.findFirst({
       where: { id: req.params.id, clubId },
+      include: { club: { select: { stripeConnectAccountId: true } } },
     });
     if (!existing) throw new HttpError(404, 'Narys nerastas');
+
+    if (existing.stripeSubscriptionId && existing.club.stripeConnectAccountId) {
+      await getStripe()
+        .subscriptions.cancel(existing.stripeSubscriptionId, undefined, {
+          stripeAccount: existing.club.stripeConnectAccountId,
+        })
+        .catch(() => {});
+    }
+
     await prisma.member.delete({ where: { id: req.params.id } });
     res.status(204).end();
   }),
