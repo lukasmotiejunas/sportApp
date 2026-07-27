@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { useStore } from "../store/useStore";
 import type { Role } from "../types";
 
@@ -102,6 +102,35 @@ export default function Login() {
               {!submitting && <ArrowRight className="h-4 w-4" />}
             </button>
           </form>
+
+          <div className="mt-6 flex items-center gap-3 text-xs font-semibold uppercase tracking-widest text-ink-400">
+            <span className="h-px flex-1 bg-ink-200" />
+            arba
+            <span className="h-px flex-1 bg-ink-200" />
+          </div>
+
+          <div className="mt-6 rounded-2xl border border-lime-300 bg-lime-50 p-4">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-lime-400 text-ink-950">
+                <Sparkles className="h-4 w-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-display text-sm font-bold text-ink-900">
+                  Turite sporto klubą?
+                </p>
+                <p className="mt-1 text-xs text-ink-700">
+                  Išbandykite Lumo 1 parą nemokamai — sukurkite savo klubą per kelias minutes.
+                </p>
+              </div>
+            </div>
+            <Link
+              to="/plans"
+              className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-ink-950 text-sm font-semibold text-white transition-colors hover:bg-ink-800"
+            >
+              Sukurti klubą
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
         </div>
       </div>
     </div>
