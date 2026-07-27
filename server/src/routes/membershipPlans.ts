@@ -23,6 +23,8 @@ const createPlanSchema = z.object({
   name: z.string().min(1),
   monthlyFee: z.number().nonnegative(),
   currency: z.string().min(1).max(8).optional(),
+  // null / undefined = unlimited. 1..10 = weekly cap.
+  trainingsPerWeek: z.number().int().min(1).max(10).nullable().optional(),
 });
 
 // Admin-only: create a membership plan.
@@ -38,6 +40,7 @@ membershipPlansRouter.post(
         name: data.name,
         monthlyFee: data.monthlyFee,
         currency: data.currency ?? 'EUR',
+        trainingsPerWeek: data.trainingsPerWeek ?? null,
       },
     });
     res.status(201).json(serializeMembershipPlan(plan));

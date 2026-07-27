@@ -51,6 +51,8 @@ export function serializeMembershipPlan(p: MembershipPlan) {
     name: p.name,
     monthlyFee: toNumber(p.monthlyFee),
     currency: p.currency,
+    // null = unlimited weekly trainings.
+    trainingsPerWeek: p.trainingsPerWeek ?? null,
   };
 }
 

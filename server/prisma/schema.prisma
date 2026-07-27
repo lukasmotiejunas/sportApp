@@ -122,13 +122,15 @@ model User {
 }
 
 model MembershipPlan {
-  id         String   @id @default(cuid())
-  clubId     String
-  club       Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  name       String
-  monthlyFee Decimal  @db.Decimal(10, 2)
-  currency   String   @default("EUR")
-  members    Member[]
+  id                String   @id @default(cuid())
+  clubId            String
+  club              Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  name              String
+  monthlyFee        Decimal  @db.Decimal(10, 2)
+  currency          String   @default("EUR")
+  // null = unlimited trainings per week; otherwise 1..N cap.
+  trainingsPerWeek  Int?
+  members           Member[]
 
   @@index([clubId])
 }

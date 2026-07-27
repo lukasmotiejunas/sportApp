@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CreditCard, Plus, Trash2 } from "lucide-react";
+import { CreditCard, Infinity as InfinityIcon, Plus, Trash2 } from "lucide-react";
 import { PageTitle } from "../../components/layout/PageTitle";
 import { FormField } from "../../components/ui/FormField";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
@@ -16,6 +16,8 @@ export default function AdminPlans() {
   const [name, setName] = useState("");
   const [fee, setFee] = useState("");
   const [currency, setCurrency] = useState("EUR");
+  const [unlimited, setUnlimited] = useState(true);
+  const [trainingsPerWeek, setTrainingsPerWeek] = useState("3");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [toDelete, setToDelete] = useState<MembershipPlan | null>(null);
@@ -32,11 +34,20 @@ export default function AdminPlans() {
       setError("Įveskite teisingą kainą.");
       return;
     }
+    let cap: number | null = null;
+    if (!unlimited) {
+      cap = Number(trainingsPerWeek);
+      if (!Number.isInteger(cap) || cap < 1 || cap > 10) {
+        setError("Treniruočių per savaitę limitas turi būti sveikas skaičius nuo 1 iki 10.");
+        return;
+      }
+    }
     setSubmitting(true);
     const res = await addMembershipPlan({
       name: name.trim(),
       monthlyFee,
       currency: currency.trim() || "EUR",
+      trainingsPerWeek: cap,
     });
     setSubmitting(false);
     if (res.ok) {
@@ -44,6 +55,8 @@ export default function AdminPlans() {
       setName("");
       setFee("");
       setCurrency("EUR");
+      setUnlimited(true);
+      setTrainingsPerWeek("3");
     } else {
       setError(res.error ?? "Nepavyko sukurti plano.");
     }
@@ -85,6 +98,38 @@ export default function AdminPlans() {
             onChange={(e) => setCurrency(e.target.value)}
             placeholder="EUR"
           />
+
+          <div className="sm:col-span-3">
+            <label className="label">Treniruotės per savaitę</label>
+            <div className="flex items-center gap-3">
+              <label className="inline-flex items-center gap-2 text-sm text-ink-700 dark:text-ink-200">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-ink-300 text-ink-900 focus:ring-ink-900"
+                  checked={unlimited}
+                  onChange={(e) => setUnlimited(e.target.checked)}
+                />
+                Neribotai
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="10"
+                step="1"
+                disabled={unlimited}
+                value={trainingsPerWeek}
+                onChange={(e) => setTrainingsPerWeek(e.target.value)}
+                className="input h-11 w-28 disabled:opacity-40"
+                placeholder="3"
+              />
+              <span className="text-xs text-ink-500">
+                {unlimited
+                  ? "Narys galės registruotis į visas treniruotes."
+                  : "Nuo 1 iki 10 treniruočių savaitėje."}
+              </span>
+            </div>
+          </div>
+
           {error && (
             <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 sm:col-span-3">
               {error}
@@ -115,8 +160,18 @@ export default function AdminPlans() {
                   <p className="truncate text-sm font-semibold text-ink-900 dark:text-ink-50">
                     {p.name}
                   </p>
-                  <p className="text-xs text-ink-500">
-                    {formatCurrency(p.monthlyFee)} / mėn.
+                  <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-500">
+                    <span>{formatCurrency(p.monthlyFee)} / mėn.</span>
+                    <span className="inline-flex items-center gap-1">
+                      {p.trainingsPerWeek === null ? (
+                        <>
+                          <InfinityIcon className="h-3 w-3" />
+                          Neribotai treniruočių / sav.
+                        </>
+                      ) : (
+                        <>{p.trainingsPerWeek} treniruotės / sav.</>
+                      )}
+                    </span>
                   </p>
                 </div>
                 <button

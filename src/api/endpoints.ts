@@ -28,6 +28,7 @@ export type CreateMembershipPlanInput = {
   name: string;
   monthlyFee: number;
   currency?: string;
+  trainingsPerWeek?: number | null;
 };
 export const createMembershipPlanApi = (input: CreateMembershipPlanInput) =>
   api.post<MembershipPlan>('/membership-plans', input);

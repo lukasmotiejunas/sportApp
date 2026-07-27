@@ -95,6 +95,8 @@ export type MembershipPlan = {
   name: string;
   monthlyFee: number;
   currency: string;
+  // null = unlimited weekly trainings; otherwise 1..N cap.
+  trainingsPerWeek: number | null;
 };
 
 export type Gender = 'male' | 'female' | 'unspecified';

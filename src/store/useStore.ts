@@ -103,6 +103,7 @@ type State = {
     name: string;
     monthlyFee: number;
     currency?: string;
+    trainingsPerWeek?: number | null;
   }) => Promise<{ ok: boolean; error?: string }>;
   removeMembershipPlan: (id: string) => void;
 };

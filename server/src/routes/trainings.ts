@@ -36,6 +36,22 @@ async function assertCoachInClub(coachId: string, clubId: string) {
   if (!coach) throw new HttpError(400, 'Treneris nepriklauso šiam klubui.');
 }
 
+// ISO-week bounds (Monday 00:00 → next Monday 00:00) enclosing `date`.
+// Prisma @db.Date columns come back as UTC midnight, so we do the math in UTC
+// to avoid the day drifting into the previous week in negative timezones.
+function isoWeekRange(date: Date): { start: Date; end: Date } {
+  const d = new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
+  );
+  const dayOfWeek = d.getUTCDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+  const daysSinceMonday = (dayOfWeek + 6) % 7;
+  const start = new Date(d);
+  start.setUTCDate(d.getUTCDate() - daysSinceMonday);
+  const end = new Date(start);
+  end.setUTCDate(start.getUTCDate() + 7);
+  return { start, end };
+}
+
 trainingsRouter.get(
   '/',
   asyncHandler(async (req, res) => {
@@ -181,7 +197,10 @@ trainingsRouter.post(
         where: { id: trainingId, clubId },
         include: withRegistrations,
       }),
-      prisma.member.findFirst({ where: { id: memberId, clubId } }),
+      prisma.member.findFirst({
+        where: { id: memberId, clubId },
+        include: { membershipPlan: true },
+      }),
     ]);
 
     if (!training || !member) throw new HttpError(404, 'Nerasta');
@@ -196,6 +215,30 @@ trainingsRouter.post(
     }
     if (training.registrations.length >= training.capacity) {
       throw new HttpError(409, 'Ši treniruotė užpildyta.');
+    }
+
+    // Weekly cap enforcement — count all non-cancelled registrations for this
+    // member in the ISO week of the target training's date. `null` on the plan
+    // means unlimited.
+    const cap = member.membershipPlan?.trainingsPerWeek ?? null;
+    if (cap !== null) {
+      const { start, end } = isoWeekRange(training.date);
+      const takenThisWeek = await prisma.trainingRegistration.count({
+        where: {
+          memberId,
+          status: { not: 'cancelled' },
+          session: {
+            clubId,
+            date: { gte: start, lt: end },
+          },
+        },
+      });
+      if (takenThisWeek >= cap) {
+        throw new HttpError(
+          409,
+          `Viršijote savaitės limitą (${cap} treniruotės). Pabandykite kitą savaitę arba rinkitės didesnį planą.`,
+        );
+      }
     }
 
     await prisma.trainingRegistration.create({
