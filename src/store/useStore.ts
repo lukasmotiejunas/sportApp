@@ -74,7 +74,7 @@ type State = {
   registerForTraining: (trainingId: string, memberId: string) => { ok: boolean; error?: string };
   cancelRegistration: (trainingId: string, memberId: string) => void;
   updateMember: (id: string, patch: Partial<Member>) => void;
-  simulatePayment: (memberId: string) => void;
+  refreshMyBilling: () => Promise<void>;
 
   // Coach actions
   createTraining: (t: Omit<TrainingSession, 'id' | 'registrations' | 'status'>) => TrainingSession;
@@ -364,19 +364,19 @@ export const useStore = create<State>()(
           apiEndpoints.patchMember(id, patch).catch(onSyncError('Nepavyko atnaujinti nario.'));
         },
 
-        simulatePayment: (memberId) => {
-          // Payments are client-side only for now (backend feature skipped).
-          const iso = todayIso();
-          set({
-            members: get().members.map((m) =>
-              m.id === memberId ? { ...m, paymentStatus: 'paid', lastPaymentDate: iso } : m,
-            ),
-            payments: get().payments.map((p) =>
-              p.memberId === memberId
-                ? { ...p, status: 'paid', paidDate: iso, method: p.method ?? 'Visa · 4242' }
-                : p,
-            ),
-          });
+        refreshMyBilling: async () => {
+          const state = get();
+          if (state.authUser?.role !== 'member' || !state.currentMemberId) return;
+          try {
+            const billing = await apiEndpoints.fetchMyBillingApi();
+            set({
+              members: get().members.map((m) =>
+                m.id === billing.member.id ? billing.member : m,
+              ),
+            });
+          } catch {
+            // Silent — banner/history will just show whatever's already cached.
+          }
         },
 
         createTraining: (t) => {

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import clsx from "clsx";
 import {
@@ -35,7 +35,14 @@ export default function MemberHome() {
   const trainings = useStore((s) => s.trainingSessions);
   const categories = useStore((s) => s.leaderboardCategories);
   const membershipPlans = useStore((s) => s.membershipPlans);
+  const refreshMyBilling = useStore((s) => s.refreshMyBilling);
   const plan = membershipPlans.find((p) => p.id === member.membershipPlanId);
+
+  // Pull real Stripe status so the banner doesn't lie when a webhook was
+  // missed between "subscription paid" and "our DB updated".
+  useEffect(() => {
+    void refreshMyBilling();
+  }, [refreshMyBilling]);
 
   const today = todayIso();
   const upcoming = trainings
@@ -165,11 +172,7 @@ export default function MemberHome() {
           status={member.paymentStatus}
           amount={formatCurrency(plan?.monthlyFee ?? 49)}
           dueDate={formatDateShort(member.paymentDueDate)}
-          actionLabel={
-            member.paymentStatus === "overdue"
-              ? "Apmokėti dabar — prototipas"
-              : "Peržiūrėti mokėjimus"
-          }
+          actionLabel="Peržiūrėti mokėjimus"
           onAction={() => (window.location.href = "/member/payments")}
         />
       )}

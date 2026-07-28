@@ -20,6 +20,7 @@ import { webhooksRouter } from './routes/webhooks.js';
 import { webhooksConnectRouter } from './routes/webhooksConnect.js';
 import { publicRouter } from './routes/public.js';
 import { connectRouter } from './routes/connect.js';
+import { meRouter } from './routes/me.js';
 
 const app = express();
 
@@ -61,6 +62,9 @@ app.use('/users', requireAuth, usersRouter);
 app.use('/subscription', requireAuth, subscriptionRouter);
 app.use('/profile', requireAuth, profileRouter);
 app.use('/connect', requireAuth, connectRouter);
+// Member self-service: their own real Stripe billing data (subscription
+// status, invoices) from the club's connected account.
+app.use('/me', requireAuth, meRouter);
 // Club-scoped domain routes are blocked when the subscription is past_due or
 // cancelled — see requireActiveSubscription.
 app.use('/members', requireAuth, requireActiveSubscription, membersRouter);

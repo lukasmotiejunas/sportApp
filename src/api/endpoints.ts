@@ -67,6 +67,37 @@ export const createMemberApi = (input: CreateMemberInput) =>
 export const patchMember = (id: string, patch: Partial<Member>) =>
   api.patch<Member>(`/members/${id}`, patch);
 
+// --- Member self-service billing ---
+export type MyBillingInvoice = {
+  id: string;
+  number: string | null;
+  amount: number;
+  currency: string;
+  status: string;
+  paidAt: string | null;
+  createdDate: string;
+  hostedInvoiceUrl: string | null;
+  invoicePdf: string | null;
+  periodStart: string | null;
+  periodEnd: string | null;
+};
+export type MyBillingResponse = {
+  hasSubscription: boolean;
+  status: 'paid' | 'overdue' | 'pending';
+  subscriptionStatus: string | null;
+  currentPeriodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
+  upcomingInvoice: {
+    amount: number;
+    currency: string;
+    dueDate: string | null;
+  } | null;
+  invoices: MyBillingInvoice[];
+  defaultPaymentMethod: { brand: string; last4: string } | null;
+  member: Member;
+};
+export const fetchMyBillingApi = () => api.get<MyBillingResponse>('/me/billing');
+
 // --- Trainings ---
 export const createTrainingApi = (training: Partial<TrainingSession> & { id: string }) =>
   api.post<TrainingSession>('/trainings', training);
