@@ -12,11 +12,16 @@ connectRouter.use(requireRole('admin'));
 
 // Absolute base URL for Stripe's redirect back to us. Falls back to the
 // request origin when APP_URL isn't set (local dev without a domain).
+// Stripe rejects http:// URLs in live mode, so we force https:// for any
+// non-localhost host regardless of what the proxy header says.
 function appBaseUrl(req: { protocol: string; get: (h: string) => string | undefined }): string {
   const fromEnv = process.env.APP_URL?.replace(/\/$/, '');
   if (fromEnv) return fromEnv;
-  const host = req.get('host');
-  return `${req.protocol}://${host}`;
+  const host = req.get('host') ?? 'localhost:4000';
+  const isLocal =
+    host.startsWith('localhost') || host.startsWith('127.0.0.1');
+  const proto = isLocal ? 'http' : 'https';
+  return `${proto}://${host}`;
 }
 
 const onboardBody = z.object({}).optional();

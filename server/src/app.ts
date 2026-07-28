@@ -23,6 +23,11 @@ import { connectRouter } from './routes/connect.js';
 
 const app = express();
 
+// Behind Vercel's edge, TLS terminates before the Node function. Without
+// trusting the proxy, req.protocol reports "http" and any URL we hand to
+// Stripe (accountLinks, return_url) is rejected as "Livemode must be HTTPS".
+app.set('trust proxy', 1);
+
 app.use(cors());
 
 // Stripe webhooks MUST see the raw body for signature verification. Mount the
