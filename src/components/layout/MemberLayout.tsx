@@ -24,7 +24,7 @@ export function MemberLayout() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl px-4 pb-40 pt-4 md:pb-8">
+      <main className="mx-auto max-w-4xl px-4 pb-40 pt-4">
         <Outlet />
       </main>
 

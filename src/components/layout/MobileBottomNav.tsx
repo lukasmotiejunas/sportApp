@@ -13,10 +13,10 @@ const items = [
 export function MobileBottomNav() {
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-ink-100 bg-white/95 backdrop-blur dark:border-ink-800 dark:bg-ink-950/95 md:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-ink-100 bg-white/95 backdrop-blur dark:border-ink-800 dark:bg-ink-950/95"
       aria-label="Pagrindinis"
     >
-      <div className="grid grid-cols-5 safe-bottom">
+      <div className="mx-auto grid max-w-4xl grid-cols-5 safe-bottom">
         {items.map((it) => (
           <NavLink
             key={it.to}
