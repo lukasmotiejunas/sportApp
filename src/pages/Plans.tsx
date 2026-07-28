@@ -152,11 +152,11 @@ export default function Plans() {
     }
   };
 
-  // Rough "next charge" preview shown on the signup steps. The authoritative
-  // next-charge date comes from the server after payment succeeds.
+  // Rough "next charge" preview shown on the signup steps — 14 days out to
+  // match the trial. The authoritative next-charge date comes from the server.
   const nextChargeDate = useMemo(() => {
     const d = new Date();
-    d.setMonth(d.getMonth() + 1);
+    d.setDate(d.getDate() + 14);
     return d.toLocaleDateString("lt-LT", {
       year: "numeric",
       month: "long",
@@ -219,15 +219,15 @@ export default function Plans() {
             </h1>
             <p className="mt-4 max-w-xl text-lg text-white/70">
               Nariai, treniruotės, mokėjimai ir rezultatai vienoje vietoje.
-              Vos <strong>{formatPrice(MONTHLY_FEE)} per mėnesį</strong> už visą klubą —
-              bet kada galite atsisakyti.
+              Pirmos <strong>2 savaitės — nemokamai</strong>, o po to vos{" "}
+              <strong>{formatPrice(MONTHLY_FEE)} per mėnesį</strong> už visą klubą.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <button
                 onClick={startSignup}
                 className="btn-accent group h-12 px-6 text-base"
               >
-                Prenumeruoti už {formatPrice(MONTHLY_FEE)} / mėn.
+                Išbandyti nemokamai 2 savaites
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </button>
               <a
@@ -312,8 +312,8 @@ export default function Plans() {
                 <span className="mb-2 text-lg text-white/60">/ mėn.</span>
               </div>
               <p className="mt-2 text-sm text-white/70">
-                Mokate iš karto. Prenumerata automatiškai kartojasi kas mėnesį,
-                kol atšauksite.
+                Pirmos 2 savaitės — nemokamai. Po to prenumerata automatiškai
+                kartojasi kas mėnesį, kol atšauksite.
               </p>
             </div>
 
@@ -334,11 +334,11 @@ export default function Plans() {
                 onClick={startSignup}
                 className="btn-accent h-12 w-full max-w-sm px-6 text-base"
               >
-                Prenumeruoti už {formatPrice(MONTHLY_FEE)} / mėn.
+                Išbandyti nemokamai 2 savaites
                 <ArrowRight className="h-4 w-4" />
               </button>
               <p className="text-xs text-white/50">
-                Kortelė apmokestinama iš karto. Bet kada galite atsisakyti prenumeratos.
+                Šiandien nieko neapmokestiname. Bet kada galite atsisakyti prenumeratos.
               </p>
             </div>
           </div>
@@ -351,11 +351,11 @@ export default function Plans() {
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <Faq
               q="Kada bus nurašytas pirmas mokėjimas?"
-              a={`Iš karto po registracijos. Įvesite kortelės duomenis, patvirtinsite mokėjimą, ir ${formatPrice(MONTHLY_FEE)} bus nurašyta nedelsiant. Kitas mokėjimas — po mėnesio.`}
+              a={`Pirmos 2 savaitės — nemokamai. Registracijos metu tik įvesite kortelės duomenis, tačiau šiandien nieko neapmokestiname. Praėjus 14 dienų, kortelė bus automatiškai apmokestinama ${formatPrice(MONTHLY_FEE)}.`}
             />
             <Faq
               q="Kas nutinka kas mėnesį?"
-              a={`Kiekvieno mėnesio tą pačią dieną kortelė bus automatiškai apmokestinama ${formatPrice(MONTHLY_FEE)}. Mokestis kartojasi tol, kol atšauksite prenumeratą.`}
+              a={`Kai baigsis nemokamas laikotarpis, kiekvieno mėnesio tą pačią dieną kortelė bus automatiškai apmokestinama ${formatPrice(MONTHLY_FEE)}. Mokestis kartojasi tol, kol atšauksite prenumeratą.`}
             />
             <Faq
               q="Ar galiu atsisakyti bet kada?"
@@ -439,10 +439,10 @@ function InfoStep(props: {
             Sukurkite savo klubo paskyrą.
           </h1>
           <p className="mt-2 text-sm text-white/70">
-            Šiandien nurašysime{" "}
-            <strong className="text-white">{formatPrice(MONTHLY_FEE)}</strong>, tada tas
-            pats mokestis kartosis kas mėnesį (kitas mokėjimas —{" "}
-            <strong className="text-white">{nextChargeDate}</strong>), kol atšauksite prenumeratą.
+            Pirmos 2 savaitės — nemokamai. Pirmasis mokėjimas{" "}
+            <strong className="text-white">{formatPrice(MONTHLY_FEE)}</strong> bus{" "}
+            <strong className="text-white">{nextChargeDate}</strong>, ir kartosis
+            kas mėnesį, kol atšauksite prenumeratą.
           </p>
         </div>
 
@@ -497,14 +497,14 @@ function InfoStep(props: {
 
           <div className="rounded-2xl border border-lime-400/30 bg-lime-400/10 p-5 text-sm">
             <p className="font-display text-base font-bold text-lime-200">
-              {formatPrice(MONTHLY_FEE)} per mėnesį — apmokestinama iš karto.
+              2 savaitės nemokamai, po to {formatPrice(MONTHLY_FEE)} per mėnesį.
             </p>
             <p className="mt-1.5 text-white/70">
-              Kitame žingsnyje pridėsite mokėjimo kortelę. Kortelė bus
-              apmokestinta{" "}
-              <strong className="text-white">{formatPrice(MONTHLY_FEE)}</strong> iš karto,
-              o kitas mokėjimas — <strong className="text-white">{nextChargeDate}</strong>.
-              Prenumerata kartojasi kas mėnesį, kol atšauksite.
+              Kitame žingsnyje pridėsite mokėjimo kortelę — šiandien nieko
+              neapmokestiname. Pirmasis mokėjimas{" "}
+              <strong className="text-white">{formatPrice(MONTHLY_FEE)}</strong>{" "}
+              bus <strong className="text-white">{nextChargeDate}</strong>, ir
+              kartosis kas mėnesį, kol atšauksite.
             </p>
           </div>
 
@@ -624,9 +624,11 @@ function PaymentShell({
             Pridėkite mokėjimo kortelę.
           </h1>
           <p className="mt-2 text-sm text-white/70">
-            Kortelė bus apmokestinta{" "}
-            <strong className="text-white">{formatPrice(MONTHLY_FEE)}</strong> iš karto,
-            o po to — kas mėnesį, kol atšauksite prenumeratą.
+            Pirmos <strong className="text-white">2 savaitės — nemokamai</strong>.
+            Po to kortelė bus apmokestinta{" "}
+            <strong className="text-white">{formatPrice(MONTHLY_FEE)}</strong>{" "}
+            kas mėnesį, kol atšauksite prenumeratą. Šiandien nieko
+            neapmokestiname.
           </p>
         </div>
         {children}
@@ -648,7 +650,7 @@ function PaymentForm({
   const [submitting, setSubmitting] = useState(false);
 
   // Stripe may redirect the user (3DS challenge, wallets) and return to
-  // /plans?payment_intent=...&redirect_status=succeeded. If we detect that,
+  // /plans?setup_intent=...&redirect_status=succeeded. If we detect that,
   // treat it as success. redirect: 'if_required' avoids the redirect for
   // simple cards.
   useEffect(() => {
@@ -664,7 +666,7 @@ function PaymentForm({
     setError(null);
     setSubmitting(true);
 
-    const { error: err, paymentIntent } = await stripe.confirmPayment({
+    const { error: err, setupIntent } = await stripe.confirmSetup({
       elements,
       confirmParams: {
         return_url: window.location.origin + "/plans",
@@ -673,12 +675,12 @@ function PaymentForm({
     });
 
     if (err) {
-      setError(err.message ?? "Nepavyko apmokėti kortelės.");
+      setError(err.message ?? "Nepavyko išsaugoti kortelės.");
       setSubmitting(false);
       return;
     }
 
-    if (paymentIntent && paymentIntent.status === "succeeded") {
+    if (setupIntent && setupIntent.status === "succeeded") {
       onSuccess();
       return;
     }
@@ -709,14 +711,16 @@ function PaymentForm({
 
       <div className="rounded-2xl border border-lime-400/30 bg-lime-400/10 p-5 text-sm">
         <p className="font-display text-base font-bold text-lime-200">
-          Mokate {formatPrice(MONTHLY_FEE)} iš karto. Po to — kas mėnesį.
+          2 savaitės nemokamai. Šiandien nieko neapmokestiname.
         </p>
         <p className="mt-1.5 text-white/70">
-          Paspausdami „Apmokėti ir sukurti klubą" sutinkate, kad jūsų kortelė
+          Paspausdami „Aktyvuoti bandymo laikotarpį" sutinkate, kad po nemokamo
+          laikotarpio ({" "}
+          <strong className="text-white">{nextChargeDate}</strong>) jūsų kortelė
           bus apmokestinta{" "}
-          <strong className="text-white">{formatPrice(MONTHLY_FEE)}</strong> iš karto,
-          o kitas mokėjimas — <strong className="text-white">{nextChargeDate}</strong>.
-          Prenumerata kartojasi kas mėnesį, kol atšauksite ją iš klubo administravimo skydelio.
+          <strong className="text-white">{formatPrice(MONTHLY_FEE)}</strong> per
+          mėnesį. Prenumerata kartojasi kas mėnesį, kol atšauksite ją iš klubo
+          administravimo skydelio.
         </p>
       </div>
 
@@ -733,7 +737,7 @@ function PaymentForm({
       >
         {submitting
           ? "Tvirtinama…"
-          : `Apmokėti ${formatPrice(MONTHLY_FEE)} ir sukurti klubą`}
+          : "Aktyvuoti bandymo laikotarpį"}
         {!submitting && <ArrowRight className="h-4 w-4" />}
       </button>
 

@@ -1,12 +1,24 @@
 import { useEffect, useState } from "react";
-import { CreditCard, ExternalLink, FileText, ShieldCheck } from "lucide-react";
+import {
+  AlertTriangle,
+  CreditCard,
+  ExternalLink,
+  FileText,
+  ShieldCheck,
+  XCircle,
+} from "lucide-react";
 import { useStore, useCurrentMember } from "../../store/useStore";
 import { PageTitle } from "../../components/layout/PageTitle";
 import { PaymentStatusBanner } from "../../components/payments/PaymentStatusBanner";
 import { StatusBadge } from "../../components/ui/StatusBadge";
+import { Modal } from "../../components/ui/Modal";
 import { formatCurrency } from "../../utils/format";
 import { formatDateShort } from "../../utils/dates";
-import { fetchMyBillingApi, type MyBillingResponse } from "../../api/endpoints";
+import {
+  cancelMySubscriptionApi,
+  fetchMyBillingApi,
+  type MyBillingResponse,
+} from "../../api/endpoints";
 import { ApiError } from "../../api/client";
 
 const invoiceTone: Record<string, "success" | "warning" | "danger" | "info"> = {
@@ -28,11 +40,15 @@ const invoiceLabel: Record<string, string> = {
 export default function MemberPayments() {
   const member = useCurrentMember();
   const plans = useStore((s) => s.membershipPlans);
+  const push = useStore((s) => s.pushToast);
+  const refreshMyBilling = useStore((s) => s.refreshMyBilling);
   const plan = plans.find((p) => p.id === member.membershipPlanId);
 
   const [billing, setBilling] = useState<MyBillingResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -57,6 +73,31 @@ export default function MemberPayments() {
       cancelled = true;
     };
   }, []);
+
+  const doCancel = async () => {
+    setCancelling(true);
+    try {
+      await cancelMySubscriptionApi();
+      const fresh = await fetchMyBillingApi();
+      setBilling(fresh);
+      await refreshMyBilling();
+      push({
+        kind: "success",
+        message: "Narystė bus sustabdyta einamojo laikotarpio pabaigoje.",
+      });
+      setCancelOpen(false);
+    } catch (err) {
+      push({
+        kind: "error",
+        message:
+          err instanceof ApiError
+            ? err.message
+            : "Nepavyko sustabdyti narystės.",
+      });
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   if (!plan) {
     return (
@@ -98,6 +139,24 @@ export default function MemberPayments() {
         amount={formatCurrency(upcomingAmount)}
         dueDate={dueDateIso ? formatDateShort(dueDateIso) : "—"}
       />
+
+      {billing?.hasSubscription && billing.cancelAtPeriodEnd && (
+        <div className="mt-4 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <div>
+            <p className="font-display text-sm font-bold">
+              Narystė sustabdyta
+            </p>
+            <p className="mt-0.5">
+              Prieiga prie treniruočių ir registracijos galios iki{" "}
+              <strong>
+                {dueDateIso ? formatDateShort(dueDateIso) : "einamojo laikotarpio pabaigos"}
+              </strong>
+              . Po to prenumerata bus atšaukta ir mokėjimai nebus nurašomi.
+            </p>
+          </div>
+        </div>
+      )}
 
       <section className="surface mt-4 p-4">
         <div className="mb-3 flex items-center justify-between">
@@ -144,6 +203,19 @@ export default function MemberPayments() {
             prie rezultatų lentelių
           </li>
         </ul>
+
+        {billing?.hasSubscription && !billing.cancelAtPeriodEnd && (
+          <div className="mt-4 flex justify-end border-t border-ink-100 pt-4 dark:border-ink-800">
+            <button
+              type="button"
+              onClick={() => setCancelOpen(true)}
+              className="btn-ghost h-9 px-3 text-sm text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-500/10"
+            >
+              <XCircle className="h-4 w-4" />
+              Sustabdyti narystę
+            </button>
+          </div>
+        )}
       </section>
 
       <section className="mt-4">
@@ -226,6 +298,47 @@ export default function MemberPayments() {
           </div>
         )}
       </section>
+
+      <Modal
+        open={cancelOpen}
+        onClose={() => (cancelling ? undefined : setCancelOpen(false))}
+        title={
+          <span className="flex items-center gap-2">
+            <XCircle className="h-5 w-5 text-red-500" /> Sustabdyti narystę?
+          </span>
+        }
+        description={
+          dueDateIso
+            ? `Prieiga liks aktyvi iki ${formatDateShort(dueDateIso)}. Po to prenumerata bus atšaukta, mokėjimai nebus nurašomi, o registracija į treniruotes bus išjungta.`
+            : "Prenumerata bus atšaukta einamojo laikotarpio pabaigoje."
+        }
+        footer={
+          <>
+            <button
+              type="button"
+              className="btn-ghost"
+              onClick={() => setCancelOpen(false)}
+              disabled={cancelling}
+            >
+              Atgal
+            </button>
+            <button
+              type="button"
+              className="btn-primary bg-red-600 hover:bg-red-500"
+              onClick={doCancel}
+              disabled={cancelling}
+            >
+              {cancelling ? "Stabdoma…" : "Taip, sustabdyti"}
+            </button>
+          </>
+        }
+      >
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+          <AlertTriangle className="mr-1 inline h-4 w-4" />
+          Sustabdžius narystę bus išjungta registracija į naujas treniruotes,
+          kai baigsis apmokėtas laikotarpis.
+        </div>
+      </Modal>
     </div>
   );
 }

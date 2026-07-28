@@ -104,11 +104,14 @@ webhooksConnectRouter.post(
       }
 
       case 'customer.subscription.deleted': {
+        // Subscription fully ended (cancelled at period end, or otherwise
+        // terminated). Flip to `overdue` so registerForTraining blocks — the
+        // paid period is over and no future charge is coming.
         const sub = event.data.object as Stripe.Subscription;
         await prisma.member.updateMany({
           where: { stripeSubscriptionId: sub.id },
           data: {
-            paymentStatus: 'pending',
+            paymentStatus: 'overdue',
             stripeSubscriptionId: null,
           },
         });

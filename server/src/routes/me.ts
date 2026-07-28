@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { z } from 'zod';
 import { prisma } from '../prisma.js';
 import { asyncHandler, HttpError } from '../middleware/errorHandler.js';
 import { getStripe } from '../stripe.js';
@@ -182,6 +183,49 @@ meRouter.get(
       })),
       defaultPaymentMethod,
       member: serializeMember(updatedMember),
+    });
+  }),
+);
+
+const cancelBody = z.object({ immediately: z.boolean().optional() }).optional();
+
+// POST /me/subscription/cancel — mark the member's subscription to end at the
+// current period. They keep access until the paid period ends; Stripe fires
+// `customer.subscription.deleted` after that, which our webhook flips to
+// `overdue` so the training-registration endpoint blocks them.
+meRouter.post(
+  '/subscription/cancel',
+  asyncHandler(async (req, res) => {
+    if (!req.user?.memberId) {
+      throw new HttpError(403, 'Šis endpointas prieinamas tik nariams.');
+    }
+    cancelBody.parse(req.body);
+
+    const member = await prisma.member.findUnique({
+      where: { id: req.user.memberId },
+      include: { club: { select: { stripeConnectAccountId: true } } },
+    });
+    if (!member) throw new HttpError(404, 'Narys nerastas.');
+    if (!member.stripeSubscriptionId || !member.club.stripeConnectAccountId) {
+      throw new HttpError(400, 'Aktyvi Stripe prenumerata nerasta.');
+    }
+
+    const stripe = getStripe();
+    const subscription = await stripe.subscriptions.update(
+      member.stripeSubscriptionId,
+      { cancel_at_period_end: true },
+      { stripeAccount: member.club.stripeConnectAccountId },
+    );
+
+    const item = subscription.items?.data?.[0];
+    const periodEnd = item?.current_period_end
+      ? new Date(item.current_period_end * 1000)
+      : null;
+
+    res.json({
+      cancelAtPeriodEnd: subscription.cancel_at_period_end,
+      currentPeriodEnd: periodEnd ? periodEnd.toISOString().slice(0, 10) : null,
+      subscriptionStatus: subscription.status,
     });
   }),
 );

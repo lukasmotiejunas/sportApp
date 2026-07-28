@@ -98,6 +98,14 @@ export type MyBillingResponse = {
 };
 export const fetchMyBillingApi = () => api.get<MyBillingResponse>('/me/billing');
 
+export type CancelSubscriptionResponse = {
+  cancelAtPeriodEnd: boolean;
+  currentPeriodEnd: string | null;
+  subscriptionStatus: string;
+};
+export const cancelMySubscriptionApi = () =>
+  api.post<CancelSubscriptionResponse>('/me/subscription/cancel');
+
 // --- Admin Stripe payments overview ---
 export type ClubPaymentInvoice = {
   id: string;

@@ -34,11 +34,13 @@ const signupSchema = z.object({
 });
 
 const MONTHLY_FEE = 0.5;
+const TRIAL_DAYS = 14;
 
-// Creates the club + admin user + Stripe customer + subscription. The
-// subscription is created with `payment_behavior: default_incomplete` so no
-// charge fires until the browser confirms the PaymentIntent. Returns the
-// PaymentIntent client_secret to the browser. Card data never touches us.
+// Creates the club + admin user + Stripe customer + subscription with a
+// 14-day free trial. `payment_behavior: default_incomplete` + a trial period
+// makes Stripe issue a SetupIntent instead of a PaymentIntent — the browser
+// uses it to attach the card without charging. First charge fires when the
+// trial ends. Card data never touches us.
 signupRouter.post(
   '/',
   asyncHandler(async (req, res) => {
@@ -94,9 +96,11 @@ signupRouter.post(
       const subscription = await stripe.subscriptions.create({
         customer: customer.id,
         items: [{ price: priceId }],
-        // No free trial — charge immediately. `default_incomplete` returns an
-        // Invoice with a confirmation_secret we finish on the client via
-        // Stripe Elements (handles 3DS/SCA).
+        trial_period_days: TRIAL_DAYS,
+        // Combined with a trial, `default_incomplete` creates a
+        // `pending_setup_intent` (no invoice yet, no charge). Client confirms
+        // the SetupIntent to attach the card; Stripe charges when the trial
+        // ends.
         payment_behavior: 'default_incomplete',
         payment_settings: {
           save_default_payment_method: 'on_subscription',
@@ -105,37 +109,42 @@ signupRouter.post(
           // which is confusing for a monthly SaaS subscription.
           payment_method_types: ['card'],
         },
-        // Newer Stripe API (dahlia) exposes the client_secret via
-        // `latest_invoice.confirmation_secret`; the old `payment_intent` path
-        // was removed.
-        expand: ['latest_invoice.confirmation_secret'],
+        // If the trial ends without a valid payment method, cancel instead of
+        // silently going past_due.
+        trial_settings: {
+          end_behavior: { missing_payment_method: 'cancel' },
+        },
+        expand: ['pending_setup_intent'],
         metadata: { clubId: club.id },
       });
       subscriptionId = subscription.id;
 
-      const invoice = subscription.latest_invoice as Stripe.Invoice | null;
-      const clientSecret = invoice?.confirmation_secret?.client_secret;
+      const setupIntent =
+        subscription.pending_setup_intent as Stripe.SetupIntent | null;
+      const clientSecret = setupIntent?.client_secret ?? null;
       if (!clientSecret) {
         throw new Error(
-          'Stripe did not return an invoice confirmation_secret. Check API version and expand params.',
+          'Stripe did not return a pending_setup_intent. Confirm the Price is recurring monthly and trial_period_days is set.',
         );
       }
 
+      const trialEndSec =
+        subscription.trial_end ??
+        Math.floor(Date.now() / 1000) + TRIAL_DAYS * 24 * 60 * 60;
+      const trialEnd = new Date(trialEndSec * 1000);
       const periodEndSec =
-        subscription.items.data[0]?.current_period_end ??
-        Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60;
+        subscription.items.data[0]?.current_period_end ?? trialEndSec;
       const periodEnd = new Date(periodEndSec * 1000);
 
-      // 3. Persist the subscription reference. Insert as `active` optimistically —
-      //    the client is about to confirm the PaymentIntent. If that fails, the
-      //    invoice.payment_failed webhook flips status to past_due.
+      // 3. Persist the subscription reference. During the trial the status
+      //    is `trialing` — webhooks flip to active/past_due later.
       await prisma.clubSubscription.create({
         data: {
           clubId: club.id,
           status: 'active',
           monthlyFee: MONTHLY_FEE,
           currency: 'EUR',
-          trialEndsAt: periodEnd,
+          trialEndsAt: trialEnd,
           currentPeriodEnd: periodEnd,
           stripeCustomerId: customer.id,
           stripeSubscriptionId: subscription.id,
@@ -148,10 +157,10 @@ signupRouter.post(
         club: { id: club.id, name: club.name, slug: club.slug },
         admin: { email, name: data.adminName },
         subscription: {
-          status: 'active' as const,
+          status: 'trialing' as const,
           monthlyFee: MONTHLY_FEE,
           currency: 'EUR',
-          trialEndsAt: periodEnd.toISOString(),
+          trialEndsAt: trialEnd.toISOString(),
           stripeSubscriptionId: subscription.id,
         },
         clientSecret,
