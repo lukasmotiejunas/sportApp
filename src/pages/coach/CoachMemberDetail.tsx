@@ -4,7 +4,6 @@ import {
   CreditCard,
   Mail,
   Phone,
-  ShieldAlert,
   Trophy,
 } from "lucide-react";
 import { useStore } from "../../store/useStore";
@@ -13,7 +12,6 @@ import { Avatar } from "../../components/ui/Avatar";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { formatDateShort, todayIso } from "../../utils/dates";
 import { formatCurrency, formatResult } from "../../utils/format";
-import type { PaymentStatus } from "../../types";
 
 const paymentTone = {
   paid: "success",
@@ -23,8 +21,6 @@ const paymentTone = {
 
 const paymentLabel = { paid: "Apmokėta", overdue: "Vėluoja", pending: "Laukiama" } as const;
 
-const paymentActions: PaymentStatus[] = ["paid", "overdue", "pending"];
-
 export default function CoachMemberDetail() {
   const { id = "" } = useParams();
   const member = useStore((s) => s.members.find((m) => m.id === id));
@@ -32,8 +28,6 @@ export default function CoachMemberDetail() {
   const results = useStore((s) => s.leaderboardResults);
   const categories = useStore((s) => s.leaderboardCategories);
   const membershipPlans = useStore((s) => s.membershipPlans);
-  const setPaymentStatus = useStore((s) => s.setPaymentStatus);
-  const push = useStore((s) => s.pushToast);
 
   if (!member) {
     return (
@@ -95,40 +89,6 @@ export default function CoachMemberDetail() {
                 {formatCurrency(plan?.monthlyFee ?? 0)} / mėn.
               </StatusBadge>
             </div>
-          </div>
-          <div className="flex flex-col items-stretch gap-1 sm:w-64">
-            <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">
-              Keisti mokėjimo būseną
-            </p>
-            <div className="flex flex-wrap gap-1">
-              {paymentActions.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => {
-                    setPaymentStatus(member.id, s);
-                    push({
-                      kind: "success",
-                      message: `Mokėjimo būsena pakeista į „${paymentLabel[s]}“.`,
-                    });
-                  }}
-                  className={
-                    "chip transition-colors " +
-                    (member.paymentStatus === s
-                      ? "bg-ink-900 text-white dark:bg-lime-400 dark:text-ink-950"
-                      : "bg-ink-100 text-ink-700 hover:bg-ink-200 dark:bg-ink-800 dark:text-ink-200 dark:hover:bg-ink-700")
-                  }
-                >
-                  {paymentLabel[s]}
-                </button>
-              ))}
-            </div>
-            {member.paymentStatus === "overdue" && (
-              <p className="mt-2 flex items-start gap-1 text-[11px] text-red-600">
-                <ShieldAlert className="mt-0.5 h-3 w-3" />
-                Šiam nariui registracija išjungta.
-              </p>
-            )}
           </div>
         </div>
       </section>
