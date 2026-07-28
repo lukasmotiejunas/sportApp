@@ -229,3 +229,42 @@ meRouter.post(
     });
   }),
 );
+
+// POST /me/subscription/resume — undo a scheduled cancellation. Only valid
+// while the subscription is still active (cancel_at_period_end=true but the
+// period hasn't ended yet); Stripe rejects the call once the sub is deleted.
+meRouter.post(
+  '/subscription/resume',
+  asyncHandler(async (req, res) => {
+    if (!req.user?.memberId) {
+      throw new HttpError(403, 'Šis endpointas prieinamas tik nariams.');
+    }
+
+    const member = await prisma.member.findUnique({
+      where: { id: req.user.memberId },
+      include: { club: { select: { stripeConnectAccountId: true } } },
+    });
+    if (!member) throw new HttpError(404, 'Narys nerastas.');
+    if (!member.stripeSubscriptionId || !member.club.stripeConnectAccountId) {
+      throw new HttpError(400, 'Aktyvi Stripe prenumerata nerasta.');
+    }
+
+    const stripe = getStripe();
+    const subscription = await stripe.subscriptions.update(
+      member.stripeSubscriptionId,
+      { cancel_at_period_end: false },
+      { stripeAccount: member.club.stripeConnectAccountId },
+    );
+
+    const item = subscription.items?.data?.[0];
+    const periodEnd = item?.current_period_end
+      ? new Date(item.current_period_end * 1000)
+      : null;
+
+    res.json({
+      cancelAtPeriodEnd: subscription.cancel_at_period_end,
+      currentPeriodEnd: periodEnd ? periodEnd.toISOString().slice(0, 10) : null,
+      subscriptionStatus: subscription.status,
+    });
+  }),
+);

@@ -105,6 +105,8 @@ export type CancelSubscriptionResponse = {
 };
 export const cancelMySubscriptionApi = () =>
   api.post<CancelSubscriptionResponse>('/me/subscription/cancel');
+export const resumeMySubscriptionApi = () =>
+  api.post<CancelSubscriptionResponse>('/me/subscription/resume');
 
 // --- Admin Stripe payments overview ---
 export type ClubPaymentInvoice = {

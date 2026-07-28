@@ -4,6 +4,7 @@ import {
   CreditCard,
   ExternalLink,
   FileText,
+  RotateCcw,
   ShieldCheck,
   XCircle,
 } from "lucide-react";
@@ -17,6 +18,7 @@ import { formatDateShort } from "../../utils/dates";
 import {
   cancelMySubscriptionApi,
   fetchMyBillingApi,
+  resumeMySubscriptionApi,
   type MyBillingResponse,
 } from "../../api/endpoints";
 import { ApiError } from "../../api/client";
@@ -49,6 +51,7 @@ export default function MemberPayments() {
   const [error, setError] = useState<string | null>(null);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [resuming, setResuming] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -99,6 +102,30 @@ export default function MemberPayments() {
     }
   };
 
+  const doResume = async () => {
+    setResuming(true);
+    try {
+      await resumeMySubscriptionApi();
+      const fresh = await fetchMyBillingApi();
+      setBilling(fresh);
+      await refreshMyBilling();
+      push({
+        kind: "success",
+        message: "Narystė atnaujinta — prenumerata tęsis toliau.",
+      });
+    } catch (err) {
+      push({
+        kind: "error",
+        message:
+          err instanceof ApiError
+            ? err.message
+            : "Nepavyko atnaujinti narystės.",
+      });
+    } finally {
+      setResuming(false);
+    }
+  };
+
   if (!plan) {
     return (
       <div>
@@ -141,19 +168,32 @@ export default function MemberPayments() {
       />
 
       {billing?.hasSubscription && billing.cancelAtPeriodEnd && (
-        <div className="mt-4 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-          <div>
-            <p className="font-display text-sm font-bold">
-              Narystė sustabdyta
-            </p>
-            <p className="mt-0.5">
-              Prieiga prie treniruočių ir registracijos galios iki{" "}
-              <strong>
-                {dueDateIso ? formatDateShort(dueDateIso) : "einamojo laikotarpio pabaigos"}
-              </strong>
-              . Po to prenumerata bus atšaukta ir mokėjimai nebus nurašomi.
-            </p>
+        <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <div className="flex-1">
+              <p className="font-display text-sm font-bold">
+                Narystė sustabdyta
+              </p>
+              <p className="mt-0.5">
+                Prieiga prie treniruočių ir registracijos galios iki{" "}
+                <strong>
+                  {dueDateIso ? formatDateShort(dueDateIso) : "einamojo laikotarpio pabaigos"}
+                </strong>
+                . Po to prenumerata bus atšaukta ir mokėjimai nebus nurašomi.
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 flex justify-end">
+            <button
+              type="button"
+              onClick={doResume}
+              disabled={resuming}
+              className="btn-primary h-9 px-3 text-sm"
+            >
+              <RotateCcw className="h-4 w-4" />
+              {resuming ? "Atnaujinama…" : "Atnaujinti narystę"}
+            </button>
           </div>
         </div>
       )}
