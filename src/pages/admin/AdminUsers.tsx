@@ -107,9 +107,6 @@ export default function AdminUsers() {
         <Link to="/admin/coaches/new" className="btn-primary">
           <UserPlus className="h-4 w-4" /> Pridėti trenerį
         </Link>
-        <Link to="/admin/members/new" className="btn-outline">
-          <UserPlus className="h-4 w-4" /> Pridėti narį
-        </Link>
         <button type="button" className="btn-ghost ml-auto" onClick={load}>
           <RefreshCw className="h-4 w-4" /> Atnaujinti
         </button>

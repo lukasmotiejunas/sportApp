@@ -25,7 +25,6 @@ const items = [
   { to: "/admin/subscription", label: "Prenumerata", icon: Receipt, end: false },
   { to: "/admin/profile", label: "Profilis", icon: UserCog, end: false },
   { to: "/admin/coaches/new", label: "Pridėti trenerį", icon: UserPlus },
-  { to: "/admin/members/new", label: "Pridėti narį", icon: UserPlus },
 ];
 
 export function AdminLayout() {
