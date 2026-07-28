@@ -8,9 +8,6 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
-  CreditCard,
-  Target,
-  Trophy,
   Zap,
 } from "lucide-react";
 import { useStore, useCurrentMember } from "../../store/useStore";
@@ -81,7 +78,12 @@ export default function MemberHome() {
       {/* Hero */}
       <section className="hero-gradient rounded-3xl p-5 text-white shadow-pop">
         <div className="flex items-center gap-3">
-          <Avatar name={member.name} color={member.avatarColor} size="lg" photoUrl={member.photoUrl} />
+          <Avatar
+            name={member.name}
+            color={member.avatarColor}
+            size="lg"
+            photoUrl={member.photoUrl}
+          />
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold uppercase tracking-widest text-lime-300">
               Sveiki, {member.name.split(" ")[0]}
@@ -219,60 +221,6 @@ export default function MemberHome() {
           </Link>
         </section>
       )}
-
-      {/* Quick actions — hidden on mobile since bottom nav duplicates these */}
-      <section className="hidden grid-cols-2 gap-3 md:grid">
-        <Link
-          to="/member/trainings"
-          className="surface flex items-center gap-3 p-4 hover:shadow-card"
-        >
-          <span className="grid h-9 w-9 place-items-center rounded-xl bg-ink-100 text-ink-800 dark:bg-ink-800 dark:text-ink-100">
-            <CalendarCheck2 className="h-4 w-4" />
-          </span>
-          <div>
-            <p className="text-sm font-semibold">Naršyti treniruotes</p>
-            <p className="text-xs text-ink-500">{upcoming.length} artėjančios</p>
-          </div>
-        </Link>
-        <Link
-          to="/member/leaderboards"
-          className="surface flex items-center gap-3 p-4 hover:shadow-card"
-        >
-          <span className="grid h-9 w-9 place-items-center rounded-xl bg-ink-100 text-ink-800 dark:bg-ink-800 dark:text-ink-100">
-            <Trophy className="h-4 w-4" />
-          </span>
-          <div>
-            <p className="text-sm font-semibold">Rezultatų lentelės</p>
-            <p className="text-xs text-ink-500">{categories.length} rungtys</p>
-          </div>
-        </Link>
-        <Link
-          to="/member/payments"
-          className="surface flex items-center gap-3 p-4 hover:shadow-card"
-        >
-          <span className="grid h-9 w-9 place-items-center rounded-xl bg-ink-100 text-ink-800 dark:bg-ink-800 dark:text-ink-100">
-            <CreditCard className="h-4 w-4" />
-          </span>
-          <div>
-            <p className="text-sm font-semibold">Mokėjimai</p>
-            <p className="text-xs text-ink-500">
-              {plan?.name ?? "Narystė"}
-            </p>
-          </div>
-        </Link>
-        <Link
-          to="/member/profile"
-          className="surface flex items-center gap-3 p-4 hover:shadow-card"
-        >
-          <span className="grid h-9 w-9 place-items-center rounded-xl bg-ink-100 text-ink-800 dark:bg-ink-800 dark:text-ink-100">
-            <Target className="h-4 w-4" />
-          </span>
-          <div>
-            <p className="text-sm font-semibold">Profilis</p>
-            <p className="text-xs text-ink-500">Nustatymai</p>
-          </div>
-        </Link>
-      </section>
 
       <TrainingCalendar
         open={calendarOpen}
