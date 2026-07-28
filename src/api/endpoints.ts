@@ -98,6 +98,34 @@ export type MyBillingResponse = {
 };
 export const fetchMyBillingApi = () => api.get<MyBillingResponse>('/me/billing');
 
+// --- Admin Stripe payments overview ---
+export type ClubPaymentInvoice = {
+  id: string;
+  customerId: string | null;
+  memberId: string | null;
+  memberName: string | null;
+  memberEmail: string | null;
+  number: string | null;
+  amount: number;
+  currency: string;
+  status: string;
+  paidAt: string | null;
+  createdDate: string;
+  hostedInvoiceUrl: string | null;
+  periodStart: string | null;
+  periodEnd: string | null;
+};
+export type ClubPaymentsResponse = {
+  connected: boolean;
+  mtdRevenue: number;
+  mtdCount: number;
+  totalRevenue: number;
+  currency: string;
+  invoices: ClubPaymentInvoice[];
+};
+export const fetchClubPaymentsApi = () =>
+  api.get<ClubPaymentsResponse>('/connect/payments');
+
 // --- Trainings ---
 export const createTrainingApi = (training: Partial<TrainingSession> & { id: string }) =>
   api.post<TrainingSession>('/trainings', training);

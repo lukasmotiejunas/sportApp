@@ -145,3 +145,135 @@ connectRouter.post(
     res.json({ url: link.url });
   }),
 );
+
+// GET /connect/payments — real Stripe payment history for the club's
+// connected account. Returns MTD/lifetime revenue + recent invoices joined to
+// our Member rows via `stripeCustomerId` (set at subscription creation time).
+connectRouter.get(
+  '/payments',
+  asyncHandler(async (req, res) => {
+    const clubId = requireClubId(req);
+    const club = await prisma.club.findUnique({ where: { id: clubId } });
+    if (!club) throw new HttpError(404, 'Klubas nerastas.');
+
+    if (!club.stripeConnectAccountId) {
+      res.json({
+        connected: false,
+        mtdRevenue: 0,
+        mtdCount: 0,
+        totalRevenue: 0,
+        currency: 'eur',
+        invoices: [],
+      });
+      return;
+    }
+
+    const stripe = getStripe();
+    const acct = club.stripeConnectAccountId;
+
+    // Fetch a reasonable slice of recent invoices. auto-pagination avoids
+    // truncation while keeping the request cheap for typical club sizes.
+    const invoices: Array<{
+      id: string;
+      customerId: string | null;
+      memberId: string | null;
+      memberName: string | null;
+      memberEmail: string | null;
+      number: string | null;
+      amount: number;
+      currency: string;
+      status: string;
+      paidAt: string | null;
+      createdDate: string;
+      hostedInvoiceUrl: string | null;
+      periodStart: string | null;
+      periodEnd: string | null;
+    }> = [];
+
+    const raw = await stripe.invoices.list(
+      { limit: 100 },
+      { stripeAccount: acct },
+    );
+
+    const customerIds = Array.from(
+      new Set(
+        raw.data
+          .map((i) => (typeof i.customer === 'string' ? i.customer : null))
+          .filter((v): v is string => !!v),
+      ),
+    );
+
+    const membersByCustomer =
+      customerIds.length > 0
+        ? await prisma.member.findMany({
+            where: { clubId, stripeCustomerId: { in: customerIds } },
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              stripeCustomerId: true,
+            },
+          })
+        : [];
+    const memberByCustomer = new Map(
+      membersByCustomer.map((m) => [m.stripeCustomerId!, m]),
+    );
+
+    let mtdRevenueCents = 0;
+    let mtdCount = 0;
+    let totalRevenueCents = 0;
+    let currency = 'eur';
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    for (const inv of raw.data) {
+      if (inv.status === 'paid' && inv.amount_paid) {
+        totalRevenueCents += inv.amount_paid;
+        const paidAtTs = inv.status_transitions?.paid_at ?? inv.created;
+        if (paidAtTs && new Date(paidAtTs * 1000) >= monthStart) {
+          mtdRevenueCents += inv.amount_paid;
+          mtdCount += 1;
+        }
+      }
+      if (inv.currency) currency = inv.currency;
+
+      const customerId =
+        typeof inv.customer === 'string' ? inv.customer : null;
+      const linked = customerId ? memberByCustomer.get(customerId) : undefined;
+
+      invoices.push({
+        id: inv.id,
+        customerId,
+        memberId: linked?.id ?? null,
+        memberName: linked?.name ?? null,
+        memberEmail: linked?.email ?? null,
+        number: inv.number ?? null,
+        amount: ((inv.amount_paid || inv.amount_due) as number) / 100,
+        currency: inv.currency,
+        status: inv.status ?? 'draft',
+        paidAt: inv.status_transitions?.paid_at
+          ? new Date(inv.status_transitions.paid_at * 1000)
+              .toISOString()
+              .slice(0, 10)
+          : null,
+        createdDate: new Date(inv.created * 1000).toISOString().slice(0, 10),
+        hostedInvoiceUrl: inv.hosted_invoice_url ?? null,
+        periodStart: inv.period_start
+          ? new Date(inv.period_start * 1000).toISOString().slice(0, 10)
+          : null,
+        periodEnd: inv.period_end
+          ? new Date(inv.period_end * 1000).toISOString().slice(0, 10)
+          : null,
+      });
+    }
+
+    res.json({
+      connected: true,
+      mtdRevenue: mtdRevenueCents / 100,
+      mtdCount,
+      totalRevenue: totalRevenueCents / 100,
+      currency,
+      invoices,
+    });
+  }),
+);

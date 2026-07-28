@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
-import { CircleDollarSign, Search } from "lucide-react";
+import { CircleDollarSign, ExternalLink, Search } from "lucide-react";
 import { useStore } from "../../store/useStore";
 import { PageTitle } from "../../components/layout/PageTitle";
 import { StatusBadge } from "../../components/ui/StatusBadge";
@@ -8,106 +8,161 @@ import { Avatar } from "../../components/ui/Avatar";
 import { DashboardMetricCard } from "../../components/dashboard/DashboardMetricCard";
 import { formatCurrency } from "../../utils/format";
 import { formatDateShort } from "../../utils/dates";
-import type { PaymentStatus } from "../../types";
 import { FilterChip } from "../../components/ui/FilterChip";
+import {
+  fetchClubPaymentsApi,
+  type ClubPaymentInvoice,
+  type ClubPaymentsResponse,
+} from "../../api/endpoints";
+import { ApiError } from "../../api/client";
 
-const filters: { id: "all" | PaymentStatus; label: string }[] = [
+type InvoiceFilter = "all" | "paid" | "open" | "uncollectible";
+
+const filters: { id: InvoiceFilter; label: string }[] = [
   { id: "all", label: "Visi" },
   { id: "paid", label: "Apmokėta" },
-  { id: "overdue", label: "Vėluoja" },
-  { id: "pending", label: "Laukiama" },
+  { id: "open", label: "Laukiama" },
+  { id: "uncollectible", label: "Nesumokėta" },
 ];
 
-const paymentTone = {
+const invoiceTone: Record<string, "success" | "warning" | "danger" | "info"> = {
   paid: "success",
-  overdue: "danger",
-  pending: "warning",
-} as const;
+  open: "warning",
+  uncollectible: "danger",
+  void: "info",
+  draft: "info",
+};
 
-const paymentLabel = {
+const invoiceLabel: Record<string, string> = {
   paid: "Apmokėta",
-  overdue: "Vėluoja",
-  pending: "Laukiama",
-} as const;
+  open: "Laukiama",
+  uncollectible: "Nesumokėta",
+  void: "Anuliuota",
+  draft: "Juodraštis",
+};
 
 export default function AdminPayments() {
   const members = useStore((s) => s.members);
-  const plans = useStore((s) => s.membershipPlans);
-  const setPaymentStatus = useStore((s) => s.setPaymentStatus);
-  const push = useStore((s) => s.pushToast);
+  const [data, setData] = useState<ClubPaymentsResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<"all" | PaymentStatus>("all");
+  const [filter, setFilter] = useState<InvoiceFilter>("all");
 
-  const rows = members
-    .filter((m) => (filter === "all" ? true : m.paymentStatus === filter))
-    .filter((m) => m.name.toLowerCase().includes(search.toLowerCase()));
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetchClubPaymentsApi()
+      .then((resp) => {
+        if (!cancelled) setData(resp);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(
+            err instanceof ApiError
+              ? err.message
+              : "Nepavyko įkelti mokėjimų.",
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  const counts = useMemo(() => {
-    return members.reduce(
-      (acc, m) => {
-        acc[m.paymentStatus] += 1;
-        return acc;
-      },
-      { paid: 0, overdue: 0, pending: 0 } as Record<PaymentStatus, number>,
-    );
+  const memberById = useMemo(() => {
+    const map = new Map<string, (typeof members)[number]>();
+    members.forEach((m) => map.set(m.id, m));
+    return map;
   }, [members]);
 
-  const monthlyRevenue = members
-    .filter((m) => m.paymentStatus === "paid")
-    .reduce(
-      (s, m) =>
-        s + (plans.find((p) => p.id === m.membershipPlanId)?.monthlyFee ?? 0),
-      0,
-    );
-  const expected = members.reduce(
-    (s, m) =>
-      s + (plans.find((p) => p.id === m.membershipPlanId)?.monthlyFee ?? 0),
-    0,
-  );
-  const completion = Math.round((monthlyRevenue / Math.max(expected, 1)) * 100);
+  const rows: ClubPaymentInvoice[] = useMemo(() => {
+    const list = data?.invoices ?? [];
+    return list
+      .filter((inv) => (filter === "all" ? true : inv.status === filter))
+      .filter((inv) => {
+        if (!search.trim()) return true;
+        const q = search.toLowerCase();
+        const local = inv.memberId
+          ? memberById.get(inv.memberId)?.name.toLowerCase() ?? ""
+          : "";
+        return (
+          (inv.memberName ?? "").toLowerCase().includes(q) ||
+          (inv.memberEmail ?? "").toLowerCase().includes(q) ||
+          local.includes(q) ||
+          (inv.number ?? "").toLowerCase().includes(q)
+        );
+      });
+  }, [data, filter, search, memberById]);
+
+  const counts = useMemo(() => {
+    const acc = { paid: 0, open: 0, uncollectible: 0, other: 0 };
+    (data?.invoices ?? []).forEach((inv) => {
+      if (inv.status === "paid") acc.paid += 1;
+      else if (inv.status === "open") acc.open += 1;
+      else if (inv.status === "uncollectible") acc.uncollectible += 1;
+      else acc.other += 1;
+    });
+    return acc;
+  }, [data]);
 
   const pieData = [
     { name: "Apmokėta", value: counts.paid, color: "#10b981" },
-    { name: "Vėluoja", value: counts.overdue, color: "#ef4444" },
-    { name: "Laukiama", value: counts.pending, color: "#f59e0b" },
+    { name: "Nesumokėta", value: counts.uncollectible, color: "#ef4444" },
+    { name: "Laukiama", value: counts.open, color: "#f59e0b" },
   ];
+
+  const notConnected = !loading && data && !data.connected;
 
   return (
     <div>
       <PageTitle
         eyebrow="Administratorius"
         title="Mokėjimai"
-        description="Klubo narių narystės mokesčių apžvalga ir būsenų valdymas."
+        description="Realūs Stripe atsiskaitymai jūsų klubo prijungtoje sąskaitoje."
       />
+
+      {error && (
+        <div className="mb-3 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
+          {error}
+        </div>
+      )}
+
+      {notConnected && (
+        <div className="mb-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+          Klubas dar neprijungtas prie Stripe. Užbaikite prijungimą Prenumeratos
+          skyriuje, kad matytumėte realius mokėjimus.
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <DashboardMetricCard
           icon={CircleDollarSign}
-          label="Apmokėta"
-          value={String(counts.paid)}
+          label="Šio mėn. pajamos"
+          value={formatCurrency(data?.mtdRevenue ?? 0)}
           tone="accent"
         />
         <DashboardMetricCard
           icon={CircleDollarSign}
-          label="Vėluoja"
-          value={String(counts.overdue)}
-          tone="danger"
+          label="Šio mėn. mokėjimai"
+          value={String(data?.mtdCount ?? 0)}
+          tone="info"
         />
       </div>
 
       <div className="mt-4 grid gap-3 lg:grid-cols-3">
         <section className="surface p-4 lg:col-span-1">
           <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">
-            Mėnesio pajamos
+            Bendras srautas
           </p>
           <p className="mt-1 font-display text-3xl font-bold tabular-nums">
-            {formatCurrency(monthlyRevenue)}
+            {formatCurrency(data?.totalRevenue ?? 0)}
           </p>
           <p className="text-sm text-ink-500">
-            iš {formatCurrency(expected)} tikėtinų
-          </p>
-          <p className="mt-2 text-sm font-semibold text-lime-700 dark:text-lime-300">
-            {completion}% užbaigtumas
+            Iš viso apmokėta iki šiol
           </p>
           <div className="mt-3 h-40">
             <ResponsiveContainer>
@@ -153,7 +208,7 @@ export default function AdminPayments() {
               <input
                 type="search"
                 className="input pl-9"
-                placeholder="Ieškoti nario"
+                placeholder="Ieškoti nario ar sąskaitos"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 aria-label="Ieškoti nario"
@@ -172,154 +227,155 @@ export default function AdminPayments() {
             </div>
           </div>
 
-          <div className="hidden md:block">
-            <table className="w-full text-sm">
-              <thead className="text-left text-xs uppercase tracking-wider text-ink-500">
-                <tr>
-                  <th className="py-2">Narys</th>
-                  <th className="py-2">Planas</th>
-                  <th className="py-2">Suma</th>
-                  <th className="py-2">Būsena</th>
-                  <th className="py-2 text-right">Veiksmai</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
-                {rows.map((m) => {
-                  const plan = plans.find((p) => p.id === m.membershipPlanId);
+          {loading && !data ? (
+            <div className="py-8 text-center text-sm text-ink-500">
+              Kraunama…
+            </div>
+          ) : rows.length === 0 ? (
+            <div className="py-8 text-center text-sm text-ink-500">
+              {data?.invoices.length === 0
+                ? "Kol kas nėra Stripe sąskaitų."
+                : "Nieko nerasta pagal filtrus."}
+            </div>
+          ) : (
+            <>
+              <div className="hidden md:block">
+                <table className="w-full text-sm">
+                  <thead className="text-left text-xs uppercase tracking-wider text-ink-500">
+                    <tr>
+                      <th className="py-2">Narys</th>
+                      <th className="py-2">Sąskaita</th>
+                      <th className="py-2">Data</th>
+                      <th className="py-2">Suma</th>
+                      <th className="py-2">Būsena</th>
+                      <th className="py-2 text-right">Nuoroda</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
+                    {rows.map((inv) => {
+                      const linked = inv.memberId
+                        ? memberById.get(inv.memberId)
+                        : undefined;
+                      const displayName =
+                        linked?.name ?? inv.memberName ?? "—";
+                      const displayEmail =
+                        linked?.email ?? inv.memberEmail ?? "";
+                      const tone = invoiceTone[inv.status] ?? "info";
+                      const label = invoiceLabel[inv.status] ?? inv.status;
+                      return (
+                        <tr key={inv.id}>
+                          <td className="py-3">
+                            <div className="flex items-center gap-2">
+                              {linked ? (
+                                <Avatar
+                                  name={linked.name}
+                                  color={linked.avatarColor}
+                                  size="sm"
+                                  photoUrl={linked.photoUrl}
+                                />
+                              ) : (
+                                <div className="grid h-8 w-8 place-items-center rounded-full bg-ink-100 text-xs font-semibold text-ink-500 dark:bg-ink-800">
+                                  ?
+                                </div>
+                              )}
+                              <div>
+                                <p className="text-sm font-semibold">
+                                  {displayName}
+                                </p>
+                                {displayEmail && (
+                                  <p className="text-[11px] text-ink-500">
+                                    {displayEmail}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 text-ink-600 dark:text-ink-300">
+                            {inv.number ?? "—"}
+                          </td>
+                          <td className="py-3 text-ink-600 dark:text-ink-300">
+                            {formatDateShort(inv.paidAt ?? inv.createdDate)}
+                          </td>
+                          <td className="py-3 font-semibold tabular-nums">
+                            {formatCurrency(
+                              inv.amount,
+                              inv.currency.toUpperCase(),
+                            )}
+                          </td>
+                          <td className="py-3">
+                            <StatusBadge tone={tone} dot>
+                              {label}
+                            </StatusBadge>
+                          </td>
+                          <td className="py-3 text-right">
+                            {inv.hostedInvoiceUrl && (
+                              <a
+                                href={inv.hostedInvoiceUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="btn-ghost inline-flex h-8 px-2 text-xs"
+                                aria-label="Atidaryti sąskaitą Stripe"
+                              >
+                                <ExternalLink className="h-3.5 w-3.5" />
+                              </a>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <ul className="divide-y divide-ink-100 md:hidden dark:divide-ink-800">
+                {rows.map((inv) => {
+                  const linked = inv.memberId
+                    ? memberById.get(inv.memberId)
+                    : undefined;
+                  const displayName =
+                    linked?.name ?? inv.memberName ?? "—";
+                  const tone = invoiceTone[inv.status] ?? "info";
+                  const label = invoiceLabel[inv.status] ?? inv.status;
                   return (
-                    <tr key={m.id}>
-                      <td className="py-3">
-                        <div className="flex items-center gap-2">
+                    <li key={inv.id} className="py-3">
+                      <div className="flex items-start gap-3">
+                        {linked ? (
                           <Avatar
-                            name={m.name}
-                            color={m.avatarColor}
+                            name={linked.name}
+                            color={linked.avatarColor}
                             size="sm"
-                            photoUrl={m.photoUrl}
+                            photoUrl={linked.photoUrl}
                           />
-                          <div>
-                            <p className="text-sm font-semibold">{m.name}</p>
-                            <p className="text-[11px] text-ink-500">
-                              {m.email}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-3 text-ink-600 dark:text-ink-300">
-                        {plan?.name ?? "—"}
-                      </td>
-                      <td className="py-3 font-semibold tabular-nums">
-                        {plan ? formatCurrency(plan.monthlyFee) : "—"}
-                      </td>
-                      <td className="py-3">
-                        <StatusBadge tone={paymentTone[m.paymentStatus]} dot>
-                          {paymentLabel[m.paymentStatus]}
-                        </StatusBadge>
-                      </td>
-                      <td className="py-3 text-right">
-                        {m.stripeSubscriptionId ? (
-                          <span
-                            className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-ink-400"
-                            title="Būseną automatiškai valdo Stripe pagal narystės mokėjimus"
-                          >
-                            Stripe automatiškai
-                          </span>
                         ) : (
-                          <div className="flex justify-end gap-1">
-                            <button
-                              className="btn-ghost h-8 px-2 text-xs"
-                              onClick={() => {
-                                setPaymentStatus(m.id, "paid");
-                                push({
-                                  kind: "success",
-                                  message: `${m.name} pažymėtas kaip apmokėjęs.`,
-                                });
-                              }}
-                              disabled={m.paymentStatus === "paid"}
-                            >
-                              Pažymėti apmokėtu
-                            </button>
-                            <button
-                              className="btn-ghost h-8 px-2 text-xs text-red-600"
-                              onClick={() => {
-                                setPaymentStatus(m.id, "overdue");
-                                push({
-                                  kind: "warning",
-                                  message: `${m.name} pažymėtas kaip vėluojantis.`,
-                                });
-                              }}
-                              disabled={m.paymentStatus === "overdue"}
-                            >
-                              Vėluoja
-                            </button>
+                          <div className="grid h-8 w-8 place-items-center rounded-full bg-ink-100 text-xs font-semibold text-ink-500 dark:bg-ink-800">
+                            ?
                           </div>
                         )}
-                      </td>
-                    </tr>
+                        <div className="flex-1 min-w-0">
+                          <p className="truncate text-sm font-semibold">
+                            {displayName}
+                          </p>
+                          <p className="text-xs text-ink-500">
+                            {inv.number ?? "Sąskaita"} ·{" "}
+                            {formatDateShort(inv.paidAt ?? inv.createdDate)}
+                          </p>
+                          <p className="text-xs text-ink-500">
+                            {formatCurrency(
+                              inv.amount,
+                              inv.currency.toUpperCase(),
+                            )}
+                          </p>
+                        </div>
+                        <StatusBadge tone={tone} dot>
+                          {label}
+                        </StatusBadge>
+                      </div>
+                    </li>
                   );
                 })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile */}
-          <ul className="divide-y divide-ink-100 md:hidden dark:divide-ink-800">
-            {rows.map((m) => {
-              const plan = plans.find((p) => p.id === m.membershipPlanId);
-              return (
-                <li key={m.id} className="py-3">
-                  <div className="flex items-start gap-3">
-                    <Avatar name={m.name} color={m.avatarColor} size="sm" photoUrl={m.photoUrl} />
-                    <div className="flex-1 min-w-0">
-                      <p className="truncate text-sm font-semibold">{m.name}</p>
-                      <p className="text-xs text-ink-500">
-                        {plan ? `${plan.name} · ${formatCurrency(plan.monthlyFee)}` : "Be plano"}
-                      </p>
-                      <p className="text-xs text-ink-500">
-                        Iki {formatDateShort(m.paymentDueDate)}
-                      </p>
-                    </div>
-                    <StatusBadge tone={paymentTone[m.paymentStatus]} dot>
-                      {paymentLabel[m.paymentStatus]}
-                    </StatusBadge>
-                  </div>
-                  {m.stripeSubscriptionId ? (
-                    <p className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-ink-400">
-                      Būseną valdo Stripe
-                    </p>
-                  ) : (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      <button
-                        className="btn-ghost h-8 px-2 text-xs"
-                        onClick={() => {
-                          setPaymentStatus(m.id, "paid");
-                          push({
-                            kind: "success",
-                            message: `${m.name} pažymėtas kaip apmokėjęs.`,
-                          });
-                        }}
-                        disabled={m.paymentStatus === "paid"}
-                      >
-                        Pažymėti kaip apmokėtą
-                      </button>
-                      <button
-                        className="btn-ghost h-8 px-2 text-xs text-red-600"
-                        onClick={() => {
-                          setPaymentStatus(m.id, "overdue");
-                          push({
-                            kind: "warning",
-                            message: `${m.name} pažymėtas kaip vėluojantis.`,
-                          });
-                        }}
-                        disabled={m.paymentStatus === "overdue"}
-                      >
-                        Vėluoja
-                      </button>
-                    </div>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
+              </ul>
+            </>
+          )}
         </section>
       </div>
     </div>
