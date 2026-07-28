@@ -1,8 +1,17 @@
 import type { LeaderboardCategory } from '../types';
 
 export function formatCurrency(value: number, currency = 'EUR'): string {
-  const symbol = currency === 'EUR' ? '€' : currency === 'USD' ? '$' : currency;
-  return `${symbol}${value.toFixed(0)}`;
+  try {
+    return value.toLocaleString('lt-LT', {
+      style: 'currency',
+      currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  } catch {
+    const symbol = currency === 'EUR' ? '€' : currency === 'USD' ? '$' : currency;
+    return `${symbol}${value.toFixed(2)}`;
+  }
 }
 
 export function formatSeconds(totalSeconds: number): string {
