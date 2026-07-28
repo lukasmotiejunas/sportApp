@@ -35,9 +35,7 @@ export default function MemberProfile() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
-  const handlePhotoChange = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
@@ -208,54 +206,6 @@ export default function MemberProfile() {
         )}
       </section>
 
-      <section className="surface mb-4 p-4">
-        <h2 className="mb-3 font-display text-base font-bold">Nustatymai</h2>
-        <div className="space-y-2">
-          <PrefRow
-            icon={Mail}
-            title="El. pašto pranešimai"
-            description="Priminimai apie treniruotes ir mokėjimų naujienos."
-            value={member.notificationPreferences.email}
-            onChange={() =>
-              updateMember(member.id, {
-                notificationPreferences: {
-                  ...member.notificationPreferences,
-                  email: !member.notificationPreferences.email,
-                },
-              })
-            }
-          />
-          <PrefRow
-            icon={Phone}
-            title="SMS pranešimai"
-            description="Trumpieji pranešimai prieš jūsų treniruotes."
-            value={member.notificationPreferences.sms}
-            onChange={() =>
-              updateMember(member.id, {
-                notificationPreferences: {
-                  ...member.notificationPreferences,
-                  sms: !member.notificationPreferences.sms,
-                },
-              })
-            }
-          />
-          <PrefRow
-            icon={Bell}
-            title="Programėlės pranešimai"
-            description="Gyvi atnaujinimai ir rezultatų lentelės pokyčiai."
-            value={member.notificationPreferences.push}
-            onChange={() =>
-              updateMember(member.id, {
-                notificationPreferences: {
-                  ...member.notificationPreferences,
-                  push: !member.notificationPreferences.push,
-                },
-              })
-            }
-          />
-        </div>
-      </section>
-
       <section className="surface p-4">
         <h2 className="mb-3 font-display text-base font-bold">Paskyra</h2>
         <div className="grid gap-2 sm:grid-cols-2">
@@ -359,4 +309,3 @@ function Switch({
     </button>
   );
 }
-
