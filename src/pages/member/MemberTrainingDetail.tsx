@@ -112,14 +112,16 @@ export default function MemberTrainingDetail() {
   };
 
   const primary = () => {
+    // Within 1 hour of start (or after start): everything's frozen. No new
+    // registrations, no waitlist joining, no cancellations. Just a status.
+    if (cancelLocked) {
+      return (
+        <button className="btn-outline flex-1" disabled>
+          Registracija uždaryta — iki treniruotės liko mažiau nei valanda
+        </button>
+      );
+    }
     if (isRegistered) {
-      if (cancelLocked) {
-        return (
-          <button className="btn-outline flex-1" disabled>
-            Iki treniruotės liko mažiau nei valanda — atšaukti nebegalima
-          </button>
-        );
-      }
       return (
         <button
           className="btn-danger flex-1"

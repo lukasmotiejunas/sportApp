@@ -212,6 +212,20 @@ trainingsRouter.post(
     if (training.status !== 'open') {
       throw new HttpError(409, 'Registracija į šią treniruotę uždaryta.');
     }
+    // Registration cutoff: no new sign-ups (including waitlist) within 1h of
+    // start. Same rule applies to cancellations elsewhere in this file.
+    {
+      const startAt = new Date(
+        `${training.date.toISOString().slice(0, 10)}T${training.startTime}:00`,
+      );
+      const minutesToStart = (startAt.getTime() - Date.now()) / 60000;
+      if (minutesToStart < 60) {
+        throw new HttpError(
+          409,
+          'Registracija uždaryta — iki treniruotės liko mažiau nei valanda.',
+        );
+      }
+    }
     if (member.paymentStatus === 'overdue') {
       throw new HttpError(409, 'Narystės mokėjimas vėluoja.');
     }
