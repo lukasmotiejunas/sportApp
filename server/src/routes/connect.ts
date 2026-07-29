@@ -16,7 +16,12 @@ connectRouter.use(requireRole('admin'));
 // non-localhost host regardless of what the proxy header says.
 function appBaseUrl(req: { protocol: string; get: (h: string) => string | undefined }): string {
   const fromEnv = process.env.APP_URL?.replace(/\/$/, '');
-  if (fromEnv) return fromEnv;
+  if (fromEnv) {
+    // Tolerate values pasted without a scheme (common mistake in Vercel UI).
+    // Stripe rejects anything that isn't http:// or https:// outright.
+    if (/^https?:\/\//i.test(fromEnv)) return fromEnv;
+    return `https://${fromEnv}`;
+  }
   const host = req.get('host') ?? 'localhost:4000';
   const isLocal =
     host.startsWith('localhost') || host.startsWith('127.0.0.1');
