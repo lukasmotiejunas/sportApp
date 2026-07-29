@@ -286,6 +286,22 @@ trainingsRouter.delete(
     });
     if (!training) throw new HttpError(404, 'Treniruotė nerasta');
 
+    // Once the session has started, cancelling doesn't help anyone — block it
+    // so members can't retroactively free up their spot / claim a credit back.
+    // Admins / coaches acting on someone else's behalf are covered by this too.
+    // Same-day comparison uses the training's date + start time.
+    if (req.user?.role === 'member') {
+      const startAt = new Date(
+        `${training.date.toISOString().slice(0, 10)}T${training.startTime}:00`,
+      );
+      if (startAt.getTime() <= Date.now()) {
+        throw new HttpError(
+          409,
+          'Treniruotė jau prasidėjo — registracijos atšaukti nebegalima.',
+        );
+      }
+    }
+
     // Deleting a real registration means we should also refund the credit
     // (only for credit-plan members). Do this in a transaction so we don't
     // double-refund.

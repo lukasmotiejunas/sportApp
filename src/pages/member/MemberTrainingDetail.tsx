@@ -65,6 +65,11 @@ export default function MemberTrainingDetail() {
   const isOverdue = member.paymentStatus === "overdue";
   const isCancelled = training.status === "cancelled";
   const isClosed = training.status === "closed";
+  // Combine YYYY-MM-DD + HH:MM into a real Date to check if the session has
+  // already begun. Once it has, cancelling doesn't refund a credit / free up
+  // the slot for anyone useful — block it entirely.
+  const hasStarted =
+    new Date(`${training.date}T${training.startTime}`).getTime() <= Date.now();
 
   const doRegister = () => {
     const res = register(training.id, member.id);
@@ -91,6 +96,13 @@ export default function MemberTrainingDetail() {
 
   const primary = () => {
     if (isRegistered) {
+      if (hasStarted) {
+        return (
+          <button className="btn-outline flex-1" disabled>
+            Treniruotė prasidėjo — registracijos atšaukti nebegalima
+          </button>
+        );
+      }
       return (
         <button
           className="btn-danger flex-1"
