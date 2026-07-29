@@ -71,7 +71,10 @@ type State = {
   patchAuthUser: (patch: Partial<AuthUser>) => void;
 
   // Member actions
-  registerForTraining: (trainingId: string, memberId: string) => { ok: boolean; error?: string };
+  registerForTraining: (
+    trainingId: string,
+    memberId: string,
+  ) => { ok: boolean; error?: string; waitlisted?: boolean };
   cancelRegistration: (trainingId: string, memberId: string) => void;
   updateMember: (id: string, patch: Partial<Member>) => void;
   refreshMyBilling: () => Promise<void>;
@@ -324,21 +327,30 @@ export const useStore = create<State>()(
                 'Nebeturite treniruočių kreditų. Papildykite planą, kad galėtumėte registruotis.',
             };
           }
-          if (t.registrations.some((r) => r.memberId === memberId)) {
+          if (
+            t.registrations.some(
+              (r) =>
+                r.memberId === memberId &&
+                (r.status === 'registered' || r.status === 'waitlisted'),
+            )
+          ) {
             return { ok: false, error: 'Jau užsiregistravote.' };
           }
-          if (t.registrations.length >= t.capacity) {
-            return { ok: false, error: 'Ši treniruotė užpildyta.' };
-          }
+          const activeCount = t.registrations.filter(
+            (r) => r.status === 'registered',
+          ).length;
+          const goToWaitlist = activeCount >= t.capacity;
           const isCreditsPlan = plan?.planType === 'credits';
-          // Seed a TrainingPlan for this member from the session's shared
-          // plan if one exists and none has been created yet. Mirrors the
-          // server behaviour so the UI updates immediately.
+          // Only seed the per-member training plan on real registration
+          // (waitlist entries stay plan-less until they get promoted).
           const hasPlanAlready = state.trainingPlans.some(
             (p) => p.trainingSessionId === trainingId && p.memberId === memberId,
           );
           const seededPlan =
-            t.defaultPlan && t.defaultPlan.trim().length > 0 && !hasPlanAlready
+            !goToWaitlist &&
+            t.defaultPlan &&
+            t.defaultPlan.trim().length > 0 &&
+            !hasPlanAlready
               ? {
                   id: 'plan-' + Math.random().toString(36).slice(2, 10),
                   memberId,
@@ -359,24 +371,31 @@ export const useStore = create<State>()(
                     ...x,
                     registrations: [
                       ...x.registrations,
-                      { memberId, registeredAt: new Date().toISOString() },
+                      {
+                        memberId,
+                        registeredAt: new Date().toISOString(),
+                        status: goToWaitlist
+                          ? ('waitlisted' as const)
+                          : ('registered' as const),
+                      },
                     ],
                   }
                 : x,
             ),
-            members: isCreditsPlan
-              ? state.members.map((mem) =>
-                  mem.id === memberId
-                    ? {
-                        ...mem,
-                        creditsRemaining: Math.max(
-                          0,
-                          (mem.creditsRemaining ?? 0) - 1,
-                        ),
-                      }
-                    : mem,
-                )
-              : state.members,
+            members:
+              isCreditsPlan && !goToWaitlist
+                ? state.members.map((mem) =>
+                    mem.id === memberId
+                      ? {
+                          ...mem,
+                          creditsRemaining: Math.max(
+                            0,
+                            (mem.creditsRemaining ?? 0) - 1,
+                          ),
+                        }
+                      : mem,
+                  )
+                : state.members,
             trainingPlans: seededPlan
               ? [...state.trainingPlans, seededPlan]
               : state.trainingPlans,
@@ -391,11 +410,14 @@ export const useStore = create<State>()(
               });
             })
             .catch(onSyncError('Nepavyko užsiregistruoti.'));
-          return { ok: true };
+          return { ok: true, waitlisted: goToWaitlist };
         },
 
         cancelRegistration: (trainingId, memberId) => {
           const state = get();
+          const training = state.trainingSessions.find((t) => t.id === trainingId);
+          const entry = training?.registrations.find((r) => r.memberId === memberId);
+          const wasRegistered = entry?.status === 'registered';
           const member = state.members.find((m) => m.id === memberId);
           const memberPlan = state.membershipPlans.find(
             (p) => p.id === member?.membershipPlanId,
@@ -407,19 +429,29 @@ export const useStore = create<State>()(
                 ? { ...t, registrations: t.registrations.filter((r) => r.memberId !== memberId) }
                 : t,
             ),
-            members: isCreditsPlan
-              ? state.members.map((mem) =>
-                  mem.id === memberId
-                    ? {
-                        ...mem,
-                        creditsRemaining: (mem.creditsRemaining ?? 0) + 1,
-                      }
-                    : mem,
-                )
-              : state.members,
+            members:
+              isCreditsPlan && wasRegistered
+                ? state.members.map((mem) =>
+                    mem.id === memberId
+                      ? {
+                          ...mem,
+                          creditsRemaining: (mem.creditsRemaining ?? 0) + 1,
+                        }
+                      : mem,
+                  )
+                : state.members,
           });
           apiEndpoints
             .cancelRegistrationApi(trainingId, memberId)
+            .then((updated) => {
+              // Server may have promoted a waitlister — refresh with the
+              // authoritative session state.
+              set({
+                trainingSessions: get().trainingSessions.map((t) =>
+                  t.id === trainingId ? updated : t,
+                ),
+              });
+            })
             .catch(onSyncError('Nepavyko atšaukti registracijos.'));
         },
 

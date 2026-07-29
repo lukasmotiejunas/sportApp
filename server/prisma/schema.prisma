@@ -38,6 +38,7 @@ enum RegistrationStatus {
   cancelled
   attended
   no_show
+  waitlisted
 }
 
 enum PlanStatus {

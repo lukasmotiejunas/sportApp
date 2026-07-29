@@ -44,7 +44,20 @@ export default function CoachTrainingDetail() {
   }
   const coach = coaches.find((c) => c.id === training.coachId);
 
+  const activeCount = training.registrations.filter(
+    (r) => r.status === 'registered',
+  ).length;
+  const waitlistCount = training.registrations.filter(
+    (r) => r.status === 'waitlisted',
+  ).length;
+
   const rows = training.registrations
+    .filter((r) => r.status === 'registered' || r.status === 'waitlisted')
+    .sort((a, b) => {
+      // Registered first, then waitlisted in queue order.
+      if (a.status !== b.status) return a.status === 'registered' ? -1 : 1;
+      return a.registeredAt.localeCompare(b.registeredAt);
+    })
     .map((r) => {
       const m = members.find((x) => x.id === r.memberId);
       if (!m) return null;
@@ -93,7 +106,7 @@ export default function CoachTrainingDetail() {
           <p className="font-display text-lg font-bold">{coach?.name ?? 'Nenurodyta'}</p>
           <p className="text-xs text-ink-500">{coach?.specialty}</p>
           <hr className="my-3 border-ink-100 dark:border-ink-800" />
-          <CapacityProgress registered={training.registrations.length} capacity={training.capacity} />
+          <CapacityProgress registered={activeCount} capacity={training.capacity} />
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <StatusBadge tone={training.status === 'open' ? 'accent' : training.status === 'closed' ? 'warning' : 'danger'} dot>
               {statusLabel[training.status]}
@@ -140,7 +153,8 @@ export default function CoachTrainingDetail() {
           <div>
             <h2 className="font-display text-lg font-bold">Dalyviai</h2>
             <p className="text-xs text-ink-500">
-              Užsiregistravę {training.registrations.length} iš {training.capacity}.
+              Užsiregistravę {activeCount} iš {training.capacity}
+              {waitlistCount > 0 && ` · ${waitlistCount} laukiančiųjų sąraše`}.
             </p>
           </div>
           <div className="relative">
@@ -157,7 +171,7 @@ export default function CoachTrainingDetail() {
 
         {filtered.length === 0 ? (
           <div className="p-6 text-center text-sm text-ink-500">
-            {training.registrations.length === 0 ? 'Kol kas niekas neužsiregistravo.' : 'Atitikmenų nerasta.'}
+            {rows.length === 0 ? 'Kol kas niekas neužsiregistravo.' : 'Atitikmenų nerasta.'}
           </div>
         ) : (
           <ul className="divide-y divide-ink-100 dark:divide-ink-800">
@@ -171,6 +185,11 @@ export default function CoachTrainingDetail() {
                       <StatusBadge tone={paymentTone[row.m.paymentStatus]} dot>
                         {paymentLabel[row.m.paymentStatus]}
                       </StatusBadge>
+                      {row.r.status === 'waitlisted' && (
+                        <StatusBadge tone="warning" dot>
+                          Laukiančiųjų sąraše
+                        </StatusBadge>
+                      )}
                     </div>
                     <p className="text-xs text-ink-500">
                       Užsiregistravo {new Date(row.r.registeredAt).toLocaleDateString()}

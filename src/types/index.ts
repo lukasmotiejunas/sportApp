@@ -153,9 +153,17 @@ export type CoachStaff = {
   specialty: string;
 };
 
+export type RegistrationStatus =
+  | 'registered'
+  | 'cancelled'
+  | 'attended'
+  | 'no_show'
+  | 'waitlisted';
+
 export type TrainingRegistration = {
   memberId: string;
   registeredAt: string;
+  status: RegistrationStatus;
 };
 
 export type TrainingSession = {

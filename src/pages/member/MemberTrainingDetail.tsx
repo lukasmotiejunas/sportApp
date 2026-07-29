@@ -55,28 +55,45 @@ export default function MemberTrainingDetail() {
     );
   }
 
-  const registered = training.registrations
+  const activeRegs = training.registrations.filter(
+    (r) => r.status === "registered",
+  );
+  const waitlistRegs = training.registrations
+    .filter((r) => r.status === "waitlisted")
+    .sort((a, b) => a.registeredAt.localeCompare(b.registeredAt));
+  const registered = activeRegs
     .map((r) => members.find((m) => m.id === r.memberId))
     .filter(Boolean) as typeof members;
-  const isRegistered = training.registrations.some(
-    (r) => r.memberId === member.id,
+  const myEntry = training.registrations.find(
+    (r) =>
+      r.memberId === member.id &&
+      (r.status === "registered" || r.status === "waitlisted"),
   );
-  const isFull = training.registrations.length >= training.capacity;
+  const isRegistered = myEntry?.status === "registered";
+  const isWaitlisted = myEntry?.status === "waitlisted";
+  const waitlistPosition = isWaitlisted
+    ? waitlistRegs.findIndex((r) => r.memberId === member.id) + 1
+    : 0;
+  const isFull = activeRegs.length >= training.capacity;
   const isOverdue = member.paymentStatus === "overdue";
   const isCancelled = training.status === "cancelled";
   const isClosed = training.status === "closed";
-  // Combine YYYY-MM-DD + HH:MM into a real Date to check if the session has
-  // already begun. Once it has, cancelling doesn't refund a credit / free up
-  // the slot for anyone useful — block it entirely.
-  const hasStarted =
-    new Date(`${training.date}T${training.startTime}`).getTime() <= Date.now();
+  // Members can no longer cancel a real registration once less than 1h
+  // remains before start (server enforces the same rule).
+  const minutesToStart =
+    (new Date(`${training.date}T${training.startTime}`).getTime() -
+      Date.now()) /
+    60000;
+  const cancelLocked = minutesToStart < 60;
 
   const doRegister = () => {
     const res = register(training.id, member.id);
     if (res.ok) {
       push({
         kind: "success",
-        message: "Puiku — registracija į treniruotę patvirtinta.",
+        message: res.waitlisted
+          ? "Įrašėme į laukiančiųjų sąrašą — pranešime, jei atsilaisvins vieta."
+          : "Puiku — registracija į treniruotę patvirtinta.",
       });
     } else {
       push({
@@ -96,10 +113,10 @@ export default function MemberTrainingDetail() {
 
   const primary = () => {
     if (isRegistered) {
-      if (hasStarted) {
+      if (cancelLocked) {
         return (
           <button className="btn-outline flex-1" disabled>
-            Treniruotė prasidėjo — registracijos atšaukti nebegalima
+            Iki treniruotės liko mažiau nei valanda — atšaukti nebegalima
           </button>
         );
       }
@@ -109,6 +126,17 @@ export default function MemberTrainingDetail() {
           onClick={() => setConfirmCancel(true)}
         >
           <XCircle className="h-4 w-4" /> Atšaukti registraciją
+        </button>
+      );
+    }
+    if (isWaitlisted) {
+      return (
+        <button
+          className="btn-outline flex-1"
+          onClick={() => setConfirmCancel(true)}
+        >
+          <XCircle className="h-4 w-4" /> Palikti laukiančiųjų sąrašą (pozicija{" "}
+          {waitlistPosition})
         </button>
       );
     }
@@ -135,8 +163,8 @@ export default function MemberTrainingDetail() {
       );
     if (isFull) {
       return (
-        <button className="btn-outline flex-1" disabled>
-          Užpildyta · stoti į laukiančiųjų sąrašą (prototipas)
+        <button className="btn-accent flex-1" onClick={doRegister}>
+          Užpildyta · stoti į laukiančiųjų sąrašą
         </button>
       );
     }
@@ -163,12 +191,17 @@ export default function MemberTrainingDetail() {
                 Esate užsiregistravę
               </StatusBadge>
             )}
+            {isWaitlisted && (
+              <StatusBadge tone="warning" dot>
+                Laukiančiųjų sąraše (pozicija {waitlistPosition})
+              </StatusBadge>
+            )}
             {isCancelled && (
               <StatusBadge tone="danger" dot>
                 Atšaukta
               </StatusBadge>
             )}
-            {isFull && !isRegistered && !isCancelled && (
+            {isFull && !isRegistered && !isWaitlisted && !isCancelled && (
               <StatusBadge tone="danger" dot>
                 Treniruotė užpildyta
               </StatusBadge>
@@ -199,7 +232,7 @@ export default function MemberTrainingDetail() {
 
           <div className="mt-4">
             <CapacityProgress
-              registered={training.registrations.length}
+              registered={activeRegs.length}
               capacity={training.capacity}
             />
           </div>

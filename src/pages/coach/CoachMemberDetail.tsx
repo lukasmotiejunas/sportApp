@@ -41,12 +41,16 @@ export default function CoachMemberDetail() {
   const upcoming = trainings.filter(
     (t) =>
       t.date >= todayIso() &&
-      t.registrations.some((r) => r.memberId === member.id),
+      t.registrations.some(
+        (r) => r.memberId === member.id && r.status === "registered",
+      ),
   );
   const past = trainings.filter(
     (t) =>
       t.date < todayIso() &&
-      t.registrations.some((r) => r.memberId === member.id),
+      t.registrations.some(
+        (r) => r.memberId === member.id && r.status === "registered",
+      ),
   );
   const bests = categories
     .map((c) => {

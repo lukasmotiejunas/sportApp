@@ -89,7 +89,8 @@ export default function CoachTrainings() {
             <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
               {filtered.map((t) => {
                 const coach = coaches.find((c) => c.id === t.coachId);
-                const pct = Math.round((t.registrations.length / t.capacity) * 100);
+                const activeCount = t.registrations.filter((r) => r.status === 'registered').length;
+                const pct = Math.round((activeCount / t.capacity) * 100);
                 return (
                   <tr key={t.id} className="bg-white hover:bg-ink-50 dark:bg-ink-900 dark:hover:bg-ink-800/60">
                     <td className="px-4 py-3">
@@ -102,7 +103,7 @@ export default function CoachTrainings() {
                     </td>
                     <td className="px-4 py-3">
                       <StatusBadge tone={pct >= 100 ? 'danger' : pct >= 90 ? 'warning' : 'success'}>
-                        {t.registrations.length}/{t.capacity}
+                        {activeCount}/{t.capacity}
                       </StatusBadge>
                     </td>
                     <td className="px-4 py-3">

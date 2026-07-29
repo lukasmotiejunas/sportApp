@@ -122,6 +122,7 @@ export function serializeTraining(
     registrations: t.registrations.map((r) => ({
       memberId: r.memberId,
       registeredAt: r.registeredAt.toISOString(),
+      status: r.status,
     })),
     status: t.status,
     defaultPlan: t.defaultPlan ?? '',

@@ -215,19 +215,28 @@ trainingsRouter.post(
     if (member.paymentStatus === 'overdue') {
       throw new HttpError(409, 'Narystės mokėjimas vėluoja.');
     }
-    if (training.registrations.some((r) => r.memberId === memberId)) {
+    // Registered / waitlisted rows both count as "you're already in" here.
+    if (
+      training.registrations.some(
+        (r) =>
+          r.memberId === memberId &&
+          (r.status === 'registered' || r.status === 'waitlisted'),
+      )
+    ) {
       throw new HttpError(409, 'Jau užsiregistravote.');
     }
-    if (training.registrations.length >= training.capacity) {
-      throw new HttpError(409, 'Ši treniruotė užpildyta.');
-    }
+
+    const activeCount = training.registrations.filter(
+      (r) => r.status === 'registered',
+    ).length;
+    const isFull = activeCount >= training.capacity;
 
     const planType = member.membershipPlan?.planType ?? 'monthly';
 
     if (planType === 'credits') {
-      // Credit plans: block if the member has no credits left. Also block
-      // members whose plan was never paid for (creditsRemaining is null and
-      // the plan has a fee).
+      // Credit-plan members must have a balance to *register*. For the waitlist
+      // we still require credits so we don't stack no-credit members who'd get
+      // skipped on promotion; simplest to enforce upfront.
       const balance = member.creditsRemaining ?? 0;
       if (balance <= 0) {
         throw new HttpError(
@@ -235,16 +244,17 @@ trainingsRouter.post(
           'Nebeturite treniruočių kreditų. Papildykite planą, kad galėtumėte registruotis.',
         );
       }
-    } else {
-      // Monthly plan — enforce weekly cap. Count non-cancelled registrations
-      // this ISO week. `null` on the plan means unlimited.
+    } else if (!isFull) {
+      // Monthly plan weekly cap — only enforced for actual registration.
+      // Waitlist entries don't consume the weekly cap; the cap re-checks at
+      // promotion time.
       const cap = member.membershipPlan?.trainingsPerWeek ?? null;
       if (cap !== null) {
         const { start, end } = isoWeekRange(training.date);
         const takenThisWeek = await prisma.trainingRegistration.count({
           where: {
             memberId,
-            status: { not: 'cancelled' },
+            status: 'registered',
             session: {
               clubId,
               date: { gte: start, lt: end },
@@ -260,35 +270,35 @@ trainingsRouter.post(
       }
     }
 
+    const status = isFull ? 'waitlisted' : 'registered';
+
     await prisma.trainingRegistration.create({
-      data: { trainingSessionId: trainingId, memberId },
+      data: { trainingSessionId: trainingId, memberId, status },
     });
 
-    // Deduct one credit on successful registration.
-    if (planType === 'credits') {
-      await prisma.member.update({
-        where: { id: memberId },
-        data: { creditsRemaining: { decrement: 1 } },
-      });
-    }
-
-    // Seed a per-member TrainingPlan from the session's shared plan. Skip if
-    // one already exists for this (member, session) — a coach may have created
-    // it earlier. Published so the member sees it immediately.
-    if (training.defaultPlan && training.defaultPlan.trim().length > 0) {
-      const existingPlan = await prisma.trainingPlan.findFirst({
-        where: { trainingSessionId: trainingId, memberId },
-      });
-      if (!existingPlan) {
-        await prisma.trainingPlan.create({
-          data: {
-            memberId,
-            trainingSessionId: trainingId,
-            title: training.title,
-            planBody: training.defaultPlan,
-            status: 'published',
-          },
+    if (status === 'registered') {
+      // Deduct one credit + seed per-member plan on real registration only.
+      if (planType === 'credits') {
+        await prisma.member.update({
+          where: { id: memberId },
+          data: { creditsRemaining: { decrement: 1 } },
         });
+      }
+      if (training.defaultPlan && training.defaultPlan.trim().length > 0) {
+        const existingPlan = await prisma.trainingPlan.findFirst({
+          where: { trainingSessionId: trainingId, memberId },
+        });
+        if (!existingPlan) {
+          await prisma.trainingPlan.create({
+            data: {
+              memberId,
+              trainingSessionId: trainingId,
+              title: training.title,
+              planBody: training.defaultPlan,
+              status: 'published',
+            },
+          });
+        }
       }
     }
 
@@ -311,29 +321,38 @@ trainingsRouter.delete(
     });
     if (!training) throw new HttpError(404, 'Treniruotė nerasta');
 
-    // Once the session has started, cancelling doesn't help anyone — block it
-    // so members can't retroactively free up their spot / claim a credit back.
-    // Admins / coaches acting on someone else's behalf are covered by this too.
-    // Same-day comparison uses the training's date + start time.
-    if (req.user?.role === 'member') {
+    // Find the registration first so we know if it was 'registered' or
+    // 'waitlisted' before deleting. Only proper registrations trigger
+    // promotion + credit refund; leaving the waitlist is always a no-op.
+    const existing = await prisma.trainingRegistration.findFirst({
+      where: { trainingSessionId: trainingId, memberId },
+    });
+
+    // Members can't cancel within an hour of the session start. This applies
+    // to 'registered' rows only — waitlist rows can be dropped anytime since
+    // they're not attending yet.
+    if (
+      req.user?.role === 'member' &&
+      existing?.status === 'registered'
+    ) {
       const startAt = new Date(
         `${training.date.toISOString().slice(0, 10)}T${training.startTime}:00`,
       );
-      if (startAt.getTime() <= Date.now()) {
+      const minutesToStart = (startAt.getTime() - Date.now()) / 60000;
+      if (minutesToStart < 60) {
         throw new HttpError(
           409,
-          'Treniruotė jau prasidėjo — registracijos atšaukti nebegalima.',
+          'Iki treniruotės liko mažiau nei valanda — registracijos atšaukti nebegalima.',
         );
       }
     }
 
-    // Deleting a real registration means we should also refund the credit
-    // (only for credit-plan members). Do this in a transaction so we don't
-    // double-refund.
     const removed = await prisma.trainingRegistration.deleteMany({
       where: { trainingSessionId: trainingId, memberId },
     });
-    if (removed.count > 0) {
+
+    if (removed.count > 0 && existing?.status === 'registered') {
+      // Refund the credit for the leaving member.
       const member = await prisma.member.findFirst({
         where: { id: memberId, clubId },
         include: { membershipPlan: true },
@@ -344,6 +363,10 @@ trainingsRouter.delete(
           data: { creditsRemaining: { increment: 1 } },
         });
       }
+
+      // Promote the oldest eligible waitlist entry. Loop so if a candidate
+      // is out of credits we skip to the next.
+      await promoteFromWaitlist(trainingId, clubId);
     }
 
     const updated = await prisma.trainingSession.findUnique({
@@ -354,3 +377,67 @@ trainingsRouter.delete(
     res.json(serializeTraining(updated));
   }),
 );
+
+// Promote the oldest eligible waitlisted registration to 'registered'.
+// Skips credit-plan members with no credit remaining and tries the next one.
+// No-op if no eligible waitlister found.
+async function promoteFromWaitlist(
+  trainingId: string,
+  clubId: string,
+): Promise<void> {
+  const training = await prisma.trainingSession.findUnique({
+    where: { id: trainingId },
+  });
+  if (!training) return;
+
+  const queue = await prisma.trainingRegistration.findMany({
+    where: { trainingSessionId: trainingId, status: 'waitlisted' },
+    orderBy: { registeredAt: 'asc' },
+  });
+
+  for (const entry of queue) {
+    const candidate = await prisma.member.findFirst({
+      where: { id: entry.memberId, clubId },
+      include: { membershipPlan: true },
+    });
+    if (!candidate) continue;
+    if (candidate.paymentStatus === 'overdue') continue;
+
+    const planType = candidate.membershipPlan?.planType ?? 'monthly';
+    if (planType === 'credits' && (candidate.creditsRemaining ?? 0) <= 0) {
+      continue;
+    }
+
+    // Passed all checks — promote.
+    await prisma.trainingRegistration.update({
+      where: { id: entry.id },
+      data: { status: 'registered' },
+    });
+
+    if (planType === 'credits') {
+      await prisma.member.update({
+        where: { id: candidate.id },
+        data: { creditsRemaining: { decrement: 1 } },
+      });
+    }
+
+    if (training.defaultPlan && training.defaultPlan.trim().length > 0) {
+      const existing = await prisma.trainingPlan.findFirst({
+        where: { trainingSessionId: trainingId, memberId: candidate.id },
+      });
+      if (!existing) {
+        await prisma.trainingPlan.create({
+          data: {
+            memberId: candidate.id,
+            trainingSessionId: trainingId,
+            title: training.title,
+            planBody: training.defaultPlan,
+            status: 'published',
+          },
+        });
+      }
+    }
+
+    return;
+  }
+}

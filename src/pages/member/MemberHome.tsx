@@ -47,7 +47,9 @@ export default function MemberHome() {
     .sort((a, b) => (a.date + a.startTime).localeCompare(b.date + b.startTime));
   const next =
     upcoming.find((t) =>
-      t.registrations.some((r) => r.memberId === member.id),
+      t.registrations.some(
+        (r) => r.memberId === member.id && r.status === "registered",
+      ),
     ) ?? upcoming[0];
 
   const dayLabels = ["Pr", "An", "Tr", "Kt", "Pn", "Št", "Sk"];
@@ -58,7 +60,9 @@ export default function MemberHome() {
     const iso = addDays(mondayIso, i);
     const sessionsOnDay = trainings.filter((t) => t.date === iso);
     const registered = sessionsOnDay.some((t) =>
-      t.registrations.some((r) => r.memberId === member.id),
+      t.registrations.some(
+        (r) => r.memberId === member.id && r.status === "registered",
+      ),
     );
     const isFuture = iso > today;
     const attended = registered && !isFuture;
@@ -205,7 +209,9 @@ export default function MemberHome() {
                 Kita treniruotė
               </h2>
             </div>
-            {next.registrations.some((r) => r.memberId === member.id) ? (
+            {next.registrations.some(
+              (r) => r.memberId === member.id && r.status === "registered",
+            ) ? (
               <StatusBadge tone="accent" dot>
                 Užsiregistravęs
               </StatusBadge>
@@ -275,7 +281,9 @@ function TrainingCalendar({
         (t) => t.date === iso && t.status !== "cancelled",
       );
       const registered = sessionsOnDay.some((t) =>
-        t.registrations.some((r) => r.memberId === memberId),
+        t.registrations.some(
+          (r) => r.memberId === memberId && r.status === "registered",
+        ),
       );
       const isPast = iso < today;
       const attended = registered && !(iso > today);

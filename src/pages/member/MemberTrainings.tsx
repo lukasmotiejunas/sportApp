@@ -69,10 +69,15 @@ export default function MemberTrainings() {
         <div className="space-y-3">
           {filtered.map((t) => {
             const coach = coaches.find((c) => c.id === t.coachId);
-            const registered = t.registrations
+            const activeRegs = t.registrations.filter(
+              (r) => r.status === "registered",
+            );
+            const registered = activeRegs
               .map((r) => members.find((m) => m.id === r.memberId))
               .filter(Boolean) as typeof members;
-            const isRegistered = t.registrations.some((r) => r.memberId === member.id);
+            const isRegistered = t.registrations.some(
+              (r) => r.memberId === member.id && r.status === "registered",
+            );
             return (
               <TrainingCard
                 key={t.id}

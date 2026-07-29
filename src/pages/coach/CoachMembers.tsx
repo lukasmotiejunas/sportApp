@@ -26,10 +26,20 @@ export default function CoachMembers() {
   const enriched = useMemo(() => {
     return members.map((m) => {
       const upcoming = trainings.filter(
-        (t) => t.date >= new Date().toISOString().slice(0, 10) && t.registrations.some((r) => r.memberId === m.id),
+        (t) =>
+          t.date >= new Date().toISOString().slice(0, 10) &&
+          t.registrations.some(
+            (r) => r.memberId === m.id && r.status === 'registered',
+          ),
       ).length;
       const lastAttended = trainings
-        .filter((t) => t.date < new Date().toISOString().slice(0, 10) && t.registrations.some((r) => r.memberId === m.id))
+        .filter(
+          (t) =>
+            t.date < new Date().toISOString().slice(0, 10) &&
+            t.registrations.some(
+              (r) => r.memberId === m.id && r.status === 'registered',
+            ),
+        )
         .sort((a, b) => b.date.localeCompare(a.date))[0];
       const bestResult = results
         .filter((r) => r.memberId === m.id)
