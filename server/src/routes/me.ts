@@ -34,9 +34,18 @@ meRouter.get(
 
     const stripe = getStripe();
 
-    // Credit-plan reconciliation: catch successful PaymentIntents that our
-    // webhook missed (common in dev). Idempotent — each PI is stamped with
-    // `credited: 'true'` on Stripe as soon as we apply it.
+    // Credit-plan reconciliation + payment-history collection. We fetch the
+    // customer's PaymentIntents once and use the result for both:
+    //   (a) crediting any succeeded PIs whose webhook we missed
+    //   (b) building an invoice-like list for the member's payment history
+    let creditIntents: Array<{
+      id: string;
+      amount: number;
+      currency: string;
+      status: string;
+      created: string;
+      description: string | null;
+    }> = [];
     if (
       member.membershipPlan?.planType === 'credits' &&
       stripeAccount &&
@@ -49,14 +58,35 @@ meRouter.get(
         let addTotal = 0;
         const claimed: string[] = [];
         for (const pi of list.data) {
-          if (pi.status !== 'succeeded') continue;
           if (pi.metadata?.planType !== 'credits') continue;
           if (pi.metadata?.memberId !== member.id) continue;
-          if (pi.metadata?.credited === 'true') continue;
           const n = Number(pi.metadata?.creditCount);
-          if (!Number.isFinite(n) || n <= 0) continue;
-          addTotal += Math.floor(n);
-          claimed.push(pi.id);
+          if (pi.status === 'succeeded') {
+            if (
+              pi.metadata?.credited !== 'true' &&
+              Number.isFinite(n) &&
+              n > 0
+            ) {
+              addTotal += Math.floor(n);
+              claimed.push(pi.id);
+            }
+          }
+          // Track for payment history regardless of claim state.
+          if (
+            pi.status === 'succeeded' ||
+            pi.status === 'processing' ||
+            pi.status === 'requires_action' ||
+            pi.status === 'canceled'
+          ) {
+            creditIntents.push({
+              id: pi.id,
+              amount: (pi.amount ?? 0) / 100,
+              currency: pi.currency,
+              status: pi.status,
+              created: new Date(pi.created * 1000).toISOString().slice(0, 10),
+              description: Number.isFinite(n) && n > 0 ? `${n} treniruočių paketas` : null,
+            });
+          }
         }
         if (addTotal > 0) {
           member = await prisma.member.update({
@@ -96,7 +126,21 @@ meRouter.get(
           member.paymentDueDate?.toISOString().slice(0, 10) ?? null,
         cancelAtPeriodEnd: false,
         upcomingInvoice: null,
-        invoices: [],
+        // Credit-plan PaymentIntents rendered as invoice-like entries so the
+        // "Mokėjimų istorija" section can show them.
+        invoices: creditIntents.map((pi) => ({
+          id: pi.id,
+          number: pi.description,
+          amount: pi.amount,
+          currency: pi.currency,
+          status: pi.status === 'succeeded' ? 'paid' : pi.status,
+          paidAt: pi.status === 'succeeded' ? pi.created : null,
+          createdDate: pi.created,
+          hostedInvoiceUrl: null,
+          invoicePdf: null,
+          periodStart: null,
+          periodEnd: null,
+        })),
         defaultPaymentMethod: null,
         member: serializeMember(member),
       });
@@ -372,6 +416,119 @@ meRouter.post(
       stripeAccount: acct,
       amount: price,
       creditCount: credits,
+    });
+  }),
+);
+
+// POST /me/subscribe — start a Stripe subscription for a monthly plan.
+// Used when a credit-plan member wants to switch to recurring, or an unpaid
+// member wants to pick a plan for the first time. Returns clientSecret to
+// confirm the initial invoice via Stripe Elements.
+const subscribeSchema = z.object({ membershipPlanId: z.string().min(1) });
+meRouter.post(
+  '/subscribe',
+  asyncHandler(async (req, res) => {
+    if (!req.user?.memberId) {
+      throw new HttpError(403, 'Šis endpointas prieinamas tik nariams.');
+    }
+    const { membershipPlanId } = subscribeSchema.parse(req.body);
+
+    const member = await prisma.member.findUnique({
+      where: { id: req.user.memberId },
+      include: {
+        club: {
+          select: { stripeConnectAccountId: true, stripeAccountReady: true },
+        },
+      },
+    });
+    if (!member) throw new HttpError(404, 'Narys nerastas.');
+    if (!member.club.stripeAccountReady || !member.club.stripeConnectAccountId) {
+      throw new HttpError(400, 'Klubas dar nepriima mokėjimų.');
+    }
+    const plan = await prisma.membershipPlan.findFirst({
+      where: { id: membershipPlanId, clubId: member.clubId },
+    });
+    if (!plan) throw new HttpError(404, 'Planas nerastas.');
+    if (plan.planType !== 'monthly') {
+      throw new HttpError(400, 'Šis endpointas skirtas tik mėnesiniams planams.');
+    }
+    if (!plan.stripePriceId) {
+      throw new HttpError(400, 'Planas dar nesinchronizuotas su Stripe.');
+    }
+
+    const stripe = getStripe();
+    const acct = member.club.stripeConnectAccountId;
+
+    // Reuse existing Stripe Customer if we have one; otherwise create.
+    let customerId = member.stripeCustomerId;
+    if (!customerId) {
+      const customer = await stripe.customers.create(
+        {
+          email: member.email,
+          name: member.name,
+          metadata: { memberId: member.id, clubId: member.clubId },
+        },
+        { stripeAccount: acct },
+      );
+      customerId = customer.id;
+    }
+
+    // If the member has an existing subscription (e.g. was on a monthly plan
+    // already), cancel it first so we don't stack two subscriptions.
+    if (member.stripeSubscriptionId) {
+      await stripe.subscriptions
+        .cancel(member.stripeSubscriptionId, undefined, { stripeAccount: acct })
+        .catch(() => {});
+    }
+
+    const subscription = await stripe.subscriptions.create(
+      {
+        customer: customerId,
+        items: [{ price: plan.stripePriceId }],
+        payment_behavior: 'default_incomplete',
+        payment_settings: {
+          save_default_payment_method: 'on_subscription',
+          payment_method_types: ['card'],
+        },
+        application_fee_percent: LUMO_APPLICATION_FEE_PERCENT(),
+        expand: ['latest_invoice.confirmation_secret'],
+        metadata: {
+          memberId: member.id,
+          clubId: member.clubId,
+          planId: plan.id,
+        },
+      },
+      { stripeAccount: acct },
+    );
+    const invoice = subscription.latest_invoice as
+      | { confirmation_secret?: { client_secret?: string } }
+      | null;
+    const clientSecret = invoice?.confirmation_secret?.client_secret ?? null;
+    if (!clientSecret) {
+      throw new HttpError(
+        500,
+        'Nepavyko paruošti mokėjimo — patikrinkite Stripe konfigūraciją.',
+      );
+    }
+
+    // Optimistic DB update: set the new plan and subscription. Webhook flips
+    // paymentStatus to `paid` after the card is confirmed. Credits are wiped
+    // since the member is no longer on a credit plan.
+    await prisma.member.update({
+      where: { id: member.id },
+      data: {
+        stripeCustomerId: customerId,
+        stripeSubscriptionId: subscription.id,
+        membershipPlanId: plan.id,
+        creditsRemaining: null,
+      },
+    });
+
+    res.json({
+      clientSecret,
+      stripeAccount: acct,
+      amount: Number(plan.monthlyFee),
+      planName: plan.name,
     });
   }),
 );

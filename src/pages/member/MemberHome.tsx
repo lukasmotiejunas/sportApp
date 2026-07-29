@@ -92,8 +92,22 @@ export default function MemberHome() {
               Pasiruošę judėti šiandien?
             </h1>
             <p className="mt-1 text-sm text-white/70">
-              {plan?.name ?? "Bėgimo klubas"} ·{" "}
-              {formatCurrency(plan?.monthlyFee ?? 49)}/mėn.
+              {plan?.planType === "credits" ? (
+                <>
+                  {plan.name} ·{" "}
+                  <strong className="text-white">
+                    {member.creditsRemaining ?? 0}
+                  </strong>{" "}
+                  {(member.creditsRemaining ?? 0) === 1
+                    ? "treniruotė liko"
+                    : "treniruočių liko"}
+                </>
+              ) : (
+                <>
+                  {plan?.name ?? "Bėgimo klubas"} ·{" "}
+                  {formatCurrency(plan?.monthlyFee ?? 49)}/mėn.
+                </>
+              )}
             </p>
           </div>
         </div>

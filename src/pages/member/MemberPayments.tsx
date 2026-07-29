@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import {
   AlertTriangle,
+  ArrowRight,
+  CalendarClock,
   CreditCard,
   ExternalLink,
   FileText,
@@ -29,8 +31,10 @@ import {
   fetchMyBillingApi,
   purchaseCreditsApi,
   resumeMySubscriptionApi,
+  subscribeToPlanApi,
   type MyBillingResponse,
   type PurchaseCreditsResponse,
+  type SubscribeResponse,
 } from "../../api/endpoints";
 import { ApiError } from "../../api/client";
 
@@ -282,69 +286,69 @@ export default function MemberPayments() {
         </div>
       )}
 
-      <section className="surface mt-4 p-4">
-        <div className="mb-3 flex items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">
-              Dabartinis planas
-            </p>
-            <p className="font-display text-lg font-bold">{plan.name}</p>
-            <p className="text-sm text-ink-500">
-              {isCreditsPlan
-                ? `Vienkartinis paketas · ${plan.creditCount ?? 0} treniruotės`
-                : billing?.hasSubscription
+      {!isCreditsPlan && (
+        <section className="surface mt-4 p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">
+                Dabartinis planas
+              </p>
+              <p className="font-display text-lg font-bold">{plan.name}</p>
+              <p className="text-sm text-ink-500">
+                {billing?.hasSubscription
                   ? billing.cancelAtPeriodEnd
                     ? `Bus nutraukta ${dueDateIso ? formatDateShort(dueDateIso) : ""}`
                     : "Automatinis mėnesinis atsiskaitymas"
                   : "Mokamas rankiniu būdu"}
-            </p>
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="font-display text-2xl font-bold tabular-nums">
+                {formatCurrency(plan.monthlyFee)}
+              </p>
+              <p className="text-xs text-ink-500">per mėnesį</p>
+            </div>
           </div>
-          <div className="text-right">
-            <p className="font-display text-2xl font-bold tabular-nums">
-              {formatCurrency(plan.monthlyFee)}
-            </p>
-            <p className="text-xs text-ink-500">
-              {isCreditsPlan ? "už paketą" : "per mėnesį"}
-            </p>
-          </div>
-        </div>
 
-        {pm && (
-          <div className="mb-3 flex items-center gap-2 rounded-xl border border-ink-100 bg-ink-50 px-3 py-2 text-sm dark:border-ink-800 dark:bg-ink-800/60">
-            <CreditCard className="h-4 w-4 text-ink-500" />
-            <span className="font-semibold uppercase">{pm.brand}</span>
-            <span className="text-ink-500">•••• {pm.last4}</span>
-          </div>
-        )}
+          {pm && (
+            <div className="mb-3 flex items-center gap-2 rounded-xl border border-ink-100 bg-ink-50 px-3 py-2 text-sm dark:border-ink-800 dark:bg-ink-800/60">
+              <CreditCard className="h-4 w-4 text-ink-500" />
+              <span className="font-semibold uppercase">{pm.brand}</span>
+              <span className="text-ink-500">•••• {pm.last4}</span>
+            </div>
+          )}
 
-        <ul className="grid gap-2 sm:grid-cols-2">
-          <li className="flex items-center gap-2 rounded-xl bg-ink-50 p-2.5 text-sm dark:bg-ink-800/60">
-            <ShieldCheck className="h-4 w-4 text-emerald-500" /> Neribotos
-            registracijos į treniruotes
-          </li>
-          <li className="flex items-center gap-2 rounded-xl bg-ink-50 p-2.5 text-sm dark:bg-ink-800/60">
-            <ShieldCheck className="h-4 w-4 text-emerald-500" /> Asmeniniai
-            trenerio parengti planai
-          </li>
-          <li className="flex items-center gap-2 rounded-xl bg-ink-50 p-2.5 text-sm dark:bg-ink-800/60">
-            <ShieldCheck className="h-4 w-4 text-emerald-500" /> Visa prieiga
-            prie rezultatų lentelių
-          </li>
-        </ul>
+          <ul className="grid gap-2 sm:grid-cols-2">
+            <li className="flex items-center gap-2 rounded-xl bg-ink-50 p-2.5 text-sm dark:bg-ink-800/60">
+              <ShieldCheck className="h-4 w-4 text-emerald-500" /> Neribotos
+              registracijos į treniruotes
+            </li>
+            <li className="flex items-center gap-2 rounded-xl bg-ink-50 p-2.5 text-sm dark:bg-ink-800/60">
+              <ShieldCheck className="h-4 w-4 text-emerald-500" /> Asmeniniai
+              trenerio parengti planai
+            </li>
+            <li className="flex items-center gap-2 rounded-xl bg-ink-50 p-2.5 text-sm dark:bg-ink-800/60">
+              <ShieldCheck className="h-4 w-4 text-emerald-500" /> Visa prieiga
+              prie rezultatų lentelių
+            </li>
+          </ul>
 
-        {!isCreditsPlan && billing?.hasSubscription && !billing.cancelAtPeriodEnd && (
-          <div className="mt-4 flex justify-end border-t border-ink-100 pt-4 dark:border-ink-800">
-            <button
-              type="button"
-              onClick={() => setCancelOpen(true)}
-              className="btn-ghost h-9 px-3 text-sm text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-500/10"
-            >
-              <XCircle className="h-4 w-4" />
-              Sustabdyti narystę
-            </button>
-          </div>
-        )}
-      </section>
+          {billing?.hasSubscription && !billing.cancelAtPeriodEnd && (
+            <div className="mt-4 flex justify-end border-t border-ink-100 pt-4 dark:border-ink-800">
+              <button
+                type="button"
+                onClick={() => setCancelOpen(true)}
+                className="btn-ghost h-9 px-3 text-sm text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-500/10"
+              >
+                <XCircle className="h-4 w-4" />
+                Sustabdyti narystę
+              </button>
+            </div>
+          )}
+        </section>
+      )}
+
+      {isCreditsPlan && <SwitchToMonthlyCard onSwitched={onCreditsPaid} />}
 
       <section className="mt-4">
         <h2 className="mb-2 font-display text-base font-bold">
@@ -361,20 +365,17 @@ export default function MemberPayments() {
           <div className="surface p-6 text-center text-sm text-ink-500">
             Kraunama…
           </div>
-        ) : !billing?.hasSubscription ? (
+        ) : !billing || billing.invoices.length === 0 ? (
           <div className="surface p-6 text-center">
             <FileText className="mx-auto mb-3 h-8 w-8 text-ink-400" />
             <p className="font-display text-base font-bold">
-              Automatinių mokėjimų dar nėra
+              Kol kas mokėjimų nėra
             </p>
             <p className="mt-1 text-sm text-ink-500">
-              Kai klubas įjungs Stripe atsiskaitymus, čia matysite kiekvieną
-              nuskaičiuotą mokėjimą su sąskaita faktūra.
+              {isCreditsPlan
+                ? "Kai apmokėsite treniruočių paketą, čia matysite mokėjimų istoriją."
+                : "Kai apmokėsite pirmą narystės mėnesį, čia matysite mokėjimų istoriją."}
             </p>
-          </div>
-        ) : billing.invoices.length === 0 ? (
-          <div className="surface p-6 text-center text-sm text-ink-500">
-            Kol kas nėra jokių sąskaitų.
           </div>
         ) : (
           <div className="surface divide-y divide-ink-100 dark:divide-ink-800">
@@ -584,5 +585,142 @@ function BuyCreditsForm({
         </button>
       </div>
     </form>
+  );
+}
+
+// Card shown to credit-plan members offering to switch to any of the club's
+// monthly plans. Clicking a plan creates a fresh Subscription on the club's
+// connected account and opens Stripe Elements to confirm the first invoice.
+function SwitchToMonthlyCard({ onSwitched }: { onSwitched: () => void }) {
+  const plans = useStore((s) => s.membershipPlans);
+  const push = useStore((s) => s.pushToast);
+  const monthly = plans.filter((p) => p.planType === "monthly");
+  const [intent, setIntent] = useState<SubscribeResponse | null>(null);
+  const [pending, setPending] = useState<string | null>(null);
+
+  if (monthly.length === 0) return null;
+
+  const start = async (planId: string) => {
+    setPending(planId);
+    try {
+      const resp = await subscribeToPlanApi(planId);
+      setIntent(resp);
+    } catch (err) {
+      push({
+        kind: "error",
+        message:
+          err instanceof ApiError
+            ? err.message
+            : "Nepavyko paruošti mokėjimo.",
+      });
+    } finally {
+      setPending(null);
+    }
+  };
+
+  return (
+    <>
+      <section className="surface mt-4 p-4">
+        <div className="mb-3 flex items-start gap-3">
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-lime-400/15 text-lime-600 dark:text-lime-300">
+            <CalendarClock className="h-4 w-4" />
+          </div>
+          <div>
+            <h2 className="font-display text-base font-bold">
+              Norite lankytis reguliariai?
+            </h2>
+            <p className="mt-0.5 text-sm text-ink-500">
+              Perjunkite į mėnesinį planą ir gaukite neribotą ar didesnį
+              treniruočių limitą kas mėnesį.
+            </p>
+          </div>
+        </div>
+        <ul className="grid gap-2 sm:grid-cols-2">
+          {monthly.map((p) => (
+            <li
+              key={p.id}
+              className="flex items-center justify-between rounded-2xl border border-ink-100 p-3 dark:border-ink-800"
+            >
+              <div className="min-w-0">
+                <p className="text-sm font-semibold">{p.name}</p>
+                <p className="text-xs text-ink-500">
+                  {formatCurrency(p.monthlyFee, p.currency)} / mėn.
+                  {p.trainingsPerWeek !== null && (
+                    <> · {p.trainingsPerWeek} treniruotės / sav.</>
+                  )}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => start(p.id)}
+                disabled={!p.stripePriceId || pending !== null}
+                className="btn-primary h-9 px-3 text-xs"
+                title={
+                  p.stripePriceId
+                    ? undefined
+                    : "Šis planas dar nesinchronizuotas su Stripe."
+                }
+              >
+                {pending === p.id ? "Ruošiama…" : "Perjungti"}
+                {pending !== p.id && <ArrowRight className="h-3.5 w-3.5" />}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <SwitchModal
+        intent={intent}
+        onClose={() => setIntent(null)}
+        onSuccess={() => {
+          setIntent(null);
+          onSwitched();
+        }}
+      />
+    </>
+  );
+}
+
+function SwitchModal({
+  intent,
+  onClose,
+  onSuccess,
+}: {
+  intent: SubscribeResponse | null;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const promise = intent ? getConnectedStripe(intent.stripeAccount) : null;
+
+  return (
+    <Modal
+      open={!!intent}
+      onClose={onClose}
+      title={
+        <span className="flex items-center gap-2">
+          <CalendarClock className="h-5 w-5 text-lime-600" />
+          Aktyvuoti mėnesinį planą
+        </span>
+      }
+      description={
+        intent
+          ? `${intent.planName} — ${formatCurrency(intent.amount)} / mėn. Pirmasis mokėjimas nurašomas iš karto.`
+          : ""
+      }
+    >
+      {!intent ? null : !promise ? (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          Trūksta „VITE_STRIPE_PUBLISHABLE_KEY" aplinkos kintamojo. Praneškite
+          klubo administratoriui.
+        </div>
+      ) : (
+        <Elements
+          stripe={promise}
+          options={{ clientSecret: intent.clientSecret }}
+        >
+          <BuyCreditsForm onCancel={onClose} onSuccess={onSuccess} />
+        </Elements>
+      )}
+    </Modal>
   );
 }

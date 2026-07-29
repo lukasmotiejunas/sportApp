@@ -119,6 +119,15 @@ export type PurchaseCreditsResponse = {
 export const purchaseCreditsApi = () =>
   api.post<PurchaseCreditsResponse>('/me/credits/purchase');
 
+export type SubscribeResponse = {
+  clientSecret: string;
+  stripeAccount: string;
+  amount: number;
+  planName: string;
+};
+export const subscribeToPlanApi = (membershipPlanId: string) =>
+  api.post<SubscribeResponse>('/me/subscribe', { membershipPlanId });
+
 // --- Admin Stripe payments overview ---
 export type ClubPaymentInvoice = {
   id: string;
