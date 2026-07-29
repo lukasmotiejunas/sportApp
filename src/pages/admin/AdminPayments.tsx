@@ -5,6 +5,7 @@ import { useStore } from "../../store/useStore";
 import { PageTitle } from "../../components/layout/PageTitle";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { Avatar } from "../../components/ui/Avatar";
+import { ConnectSection } from "../../components/admin/ConnectSection";
 import { DashboardMetricCard } from "../../components/dashboard/DashboardMetricCard";
 import { formatCurrency } from "../../utils/format";
 import { formatDateShort } from "../../utils/dates";
@@ -124,6 +125,8 @@ export default function AdminPayments() {
         title="Mokėjimai"
         description="Realūs Stripe atsiskaitymai jūsų klubo prijungtoje sąskaitoje."
       />
+
+      <ConnectSection />
 
       {error && (
         <div className="mb-3 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">

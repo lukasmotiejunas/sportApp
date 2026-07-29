@@ -68,6 +68,32 @@ export async function syncClubPlans(clubId: string): Promise<void> {
   }
 }
 
+// Reconciles the cached `stripeAccountReady` flag with the live Stripe
+// account. Cheap to call and self-healing when the account.updated webhook
+// was missed (test-mode / misconfigured endpoint / dev environment).
+async function reconcileStripeReady(clubId: string): Promise<void> {
+  const club = await prisma.club.findUnique({
+    where: { id: clubId },
+    select: {
+      stripeConnectAccountId: true,
+      stripeAccountReady: true,
+    },
+  });
+  if (!club?.stripeConnectAccountId) return;
+  try {
+    const acct = await getStripe().accounts.retrieve(club.stripeConnectAccountId);
+    const ready = !!(acct.charges_enabled && acct.payouts_enabled);
+    if (ready !== club.stripeAccountReady) {
+      await prisma.club.update({
+        where: { id: clubId },
+        data: { stripeAccountReady: ready },
+      });
+    }
+  } catch {
+    // Non-fatal — fall through with whatever we have.
+  }
+}
+
 membershipPlansRouter.get(
   '/',
   asyncHandler(async (req, res) => {
@@ -136,11 +162,14 @@ membershipPlansRouter.post(
 );
 
 // Admin-only: manually resync any plans that don't have a Stripe Price yet.
+// Also reconciles the cached `stripeAccountReady` flag so a stale flag
+// (missed webhook, etc.) doesn't prevent the sync.
 membershipPlansRouter.post(
   '/sync',
   requireRole('admin', 'super_admin'),
   asyncHandler(async (req, res) => {
     const clubId = requireClubId(req);
+    await reconcileStripeReady(clubId);
     await syncClubPlans(clubId);
     const plans = await prisma.membershipPlan.findMany({
       where: { clubId },

@@ -14,7 +14,6 @@ import { PageTitle } from "../../components/layout/PageTitle";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { EmptyState } from "../../components/ui/EmptyState";
-import { ConnectSection } from "../../components/admin/ConnectSection";
 import { useStore } from "../../store/useStore";
 import { ApiError } from "../../api/client";
 import {
@@ -271,8 +270,6 @@ export default function AdminSubscription() {
               <PaymentsTable payments={payments} />
             )}
           </section>
-
-          <ConnectSection />
 
           <DangerZone
             canDelete={sub.status === "cancelled"}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Check,
   Clock,
@@ -26,24 +26,40 @@ export default function AdminPlans() {
 
   const needsSync = plans.some((p) => !p.stripePriceId && p.monthlyFee > 0);
 
-  const sync = async () => {
+  const sync = async (silent = false) => {
     setSyncing(true);
     try {
       const updated = await api.post<MembershipPlan[]>(
         "/membership-plans/sync",
       );
       useStore.setState({ membershipPlans: updated });
-      push({ kind: "success", message: "Planai sinchronizuoti su Stripe." });
+      if (!silent) {
+        push({ kind: "success", message: "Planai sinchronizuoti su Stripe." });
+      }
     } catch (err) {
-      push({
-        kind: "error",
-        message:
-          err instanceof Error ? err.message : "Nepavyko sinchronizuoti.",
-      });
+      if (!silent) {
+        push({
+          kind: "error",
+          message:
+            err instanceof Error ? err.message : "Nepavyko sinchronizuoti.",
+        });
+      }
     } finally {
       setSyncing(false);
     }
   };
+
+  // Auto-sync once on mount if any plan is missing a Stripe Price — this
+  // covers the common case where a plan was created before the club finished
+  // Stripe Connect onboarding. Silent so success/failure doesn't spam a toast.
+  const autoTriedRef = useRef(false);
+  useEffect(() => {
+    if (autoTriedRef.current) return;
+    if (!needsSync) return;
+    autoTriedRef.current = true;
+    void sync(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [needsSync]);
 
   const [planType, setPlanType] = useState<PlanType>("monthly");
   const [name, setName] = useState("");
@@ -272,7 +288,7 @@ export default function AdminPlans() {
           {needsSync && (
             <button
               type="button"
-              onClick={sync}
+              onClick={() => sync()}
               disabled={syncing}
               className="btn-ghost h-9 px-3 text-xs"
               title="Iš naujo bandyti sukurti Stripe kainas"
