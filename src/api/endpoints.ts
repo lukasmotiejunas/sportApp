@@ -28,6 +28,8 @@ export type CreateMembershipPlanInput = {
   name: string;
   monthlyFee: number;
   currency?: string;
+  planType?: 'monthly' | 'credits';
+  creditCount?: number | null;
   trainingsPerWeek?: number | null;
 };
 export const createMembershipPlanApi = (input: CreateMembershipPlanInput) =>
@@ -107,6 +109,15 @@ export const cancelMySubscriptionApi = () =>
   api.post<CancelSubscriptionResponse>('/me/subscription/cancel');
 export const resumeMySubscriptionApi = () =>
   api.post<CancelSubscriptionResponse>('/me/subscription/resume');
+
+export type PurchaseCreditsResponse = {
+  clientSecret: string;
+  stripeAccount: string;
+  amount: number;
+  creditCount: number;
+};
+export const purchaseCreditsApi = () =>
+  api.post<PurchaseCreditsResponse>('/me/credits/purchase');
 
 // --- Admin Stripe payments overview ---
 export type ClubPaymentInvoice = {

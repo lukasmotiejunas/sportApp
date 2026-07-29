@@ -52,6 +52,9 @@ export function serializeMembershipPlan(p: MembershipPlan) {
     name: p.name,
     monthlyFee: toNumber(p.monthlyFee),
     currency: p.currency,
+    planType: p.planType,
+    // Only set for credit-pack plans. null for monthly plans.
+    creditCount: p.creditCount ?? null,
     // null = unlimited weekly trainings.
     trainingsPerWeek: p.trainingsPerWeek ?? null,
     // null = not yet mirrored on club's Stripe Connect account.
@@ -95,6 +98,8 @@ export function serializeMember(m: Member) {
     // Presence signals that payment status is auto-driven by Stripe webhooks —
     // the admin's manual paid/overdue toggle should be disabled for this member.
     stripeSubscriptionId: m.stripeSubscriptionId ?? null,
+    // Only relevant for credit-pack plan members. null = not applicable.
+    creditsRemaining: m.creditsRemaining ?? null,
   };
 }
 

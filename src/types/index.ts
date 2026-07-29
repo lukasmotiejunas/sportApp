@@ -98,11 +98,19 @@ export type MembershipPlan = {
   name: string;
   monthlyFee: number;
   currency: string;
-  // null = unlimited weekly trainings; otherwise 1..N cap.
+  planType: PlanType;
+  // Only meaningful for credit-pack plans (planType='credits'). Total
+  // trainings included when purchased. null for monthly plans.
+  creditCount: number | null;
+  // null = unlimited weekly trainings; otherwise 1..N cap. Only used for
+  // monthly plans.
   trainingsPerWeek: number | null;
   // null = plan not yet mirrored to the club's Stripe Connect account.
   stripePriceId: string | null;
 };
+
+// monthly = recurring subscription. credits = one-time pack of N trainings.
+export type PlanType = 'monthly' | 'credits';
 
 export type Gender = 'male' | 'female' | 'unspecified';
 
@@ -132,6 +140,9 @@ export type Member = {
   // connected account. Presence disables the admin's manual paid/overdue
   // toggle for this member (Stripe drives status via webhooks).
   stripeSubscriptionId?: string | null;
+  // For credit-pack plan members. null = not applicable (monthly plan or no
+  // plan). Any integer >= 0 = trainings still available to register for.
+  creditsRemaining?: number | null;
 };
 
 export type CoachStaff = {

@@ -103,6 +103,8 @@ type State = {
     name: string;
     monthlyFee: number;
     currency?: string;
+    planType?: 'monthly' | 'credits';
+    creditCount?: number | null;
     trainingsPerWeek?: number | null;
   }) => Promise<{ ok: boolean; error?: string }>;
   removeMembershipPlan: (id: string) => void;
@@ -311,12 +313,24 @@ export const useStore = create<State>()(
           if (m.paymentStatus === 'overdue') {
             return { ok: false, error: 'Narystės mokėjimas vėluoja.' };
           }
+          const plan = state.membershipPlans.find((p) => p.id === m.membershipPlanId);
+          if (
+            plan?.planType === 'credits' &&
+            (m.creditsRemaining ?? 0) <= 0
+          ) {
+            return {
+              ok: false,
+              error:
+                'Nebeturite treniruočių kreditų. Papildykite planą, kad galėtumėte registruotis.',
+            };
+          }
           if (t.registrations.some((r) => r.memberId === memberId)) {
             return { ok: false, error: 'Jau užsiregistravote.' };
           }
           if (t.registrations.length >= t.capacity) {
             return { ok: false, error: 'Ši treniruotė užpildyta.' };
           }
+          const isCreditsPlan = plan?.planType === 'credits';
           // Optimistic update, then persist to the server (which re-validates).
           set({
             trainingSessions: state.trainingSessions.map((x) =>
@@ -330,6 +344,19 @@ export const useStore = create<State>()(
                   }
                 : x,
             ),
+            members: isCreditsPlan
+              ? state.members.map((mem) =>
+                  mem.id === memberId
+                    ? {
+                        ...mem,
+                        creditsRemaining: Math.max(
+                          0,
+                          (mem.creditsRemaining ?? 0) - 1,
+                        ),
+                      }
+                    : mem,
+                )
+              : state.members,
           });
           apiEndpoints
             .registerForTrainingApi(trainingId, memberId)
@@ -345,12 +372,28 @@ export const useStore = create<State>()(
         },
 
         cancelRegistration: (trainingId, memberId) => {
+          const state = get();
+          const member = state.members.find((m) => m.id === memberId);
+          const memberPlan = state.membershipPlans.find(
+            (p) => p.id === member?.membershipPlanId,
+          );
+          const isCreditsPlan = memberPlan?.planType === 'credits';
           set({
-            trainingSessions: get().trainingSessions.map((t) =>
+            trainingSessions: state.trainingSessions.map((t) =>
               t.id === trainingId
                 ? { ...t, registrations: t.registrations.filter((r) => r.memberId !== memberId) }
                 : t,
             ),
+            members: isCreditsPlan
+              ? state.members.map((mem) =>
+                  mem.id === memberId
+                    ? {
+                        ...mem,
+                        creditsRemaining: (mem.creditsRemaining ?? 0) + 1,
+                      }
+                    : mem,
+                )
+              : state.members,
           });
           apiEndpoints
             .cancelRegistrationApi(trainingId, memberId)

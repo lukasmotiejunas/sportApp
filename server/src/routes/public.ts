@@ -83,7 +83,13 @@ publicRouter.post(
     }
 
     let planForStripe:
-      | { id: string; stripePriceId: string | null; monthlyFee: number }
+      | {
+          id: string;
+          stripePriceId: string | null;
+          monthlyFee: number;
+          planType: 'monthly' | 'credits';
+          creditCount: number | null;
+        }
       | null = null;
     if (data.membershipPlanId) {
       const plan = await prisma.membershipPlan.findFirst({
@@ -96,6 +102,8 @@ publicRouter.post(
         id: plan.id,
         stripePriceId: plan.stripePriceId,
         monthlyFee: Number(plan.monthlyFee),
+        planType: plan.planType,
+        creditCount: plan.creditCount,
       };
     }
 
@@ -126,9 +134,9 @@ publicRouter.post(
     });
 
     // If the club has a verified Connect account AND the chosen plan is
-    // synced to Stripe AND the fee is > 0, create a Customer + incomplete
-    // Subscription on the connected account. The client finishes payment via
-    // Stripe Elements against that connected account.
+    // synced to Stripe AND the fee is > 0, create a Customer + payment on
+    // the connected account. Monthly plan → Subscription; credit plan →
+    // one-time PaymentIntent.
     let clientSecret: string | null = null;
     let paymentRequired = false;
     if (
@@ -149,37 +157,70 @@ publicRouter.post(
           },
           { stripeAccount: acct },
         );
-        const subscription = await stripe.subscriptions.create(
-          {
-            customer: customer.id,
-            items: [{ price: planForStripe.stripePriceId }],
-            payment_behavior: 'default_incomplete',
-            payment_settings: {
-              save_default_payment_method: 'on_subscription',
-              payment_method_types: ['card'],
-            },
-            application_fee_percent: LUMO_APPLICATION_FEE_PERCENT(),
-            expand: ['latest_invoice.confirmation_secret'],
-            metadata: { memberId: member.id, clubId: club.id },
-          },
-          { stripeAccount: acct },
-        );
-        const invoice = subscription.latest_invoice as Stripe.Invoice | null;
-        clientSecret = invoice?.confirmation_secret?.client_secret ?? null;
 
-        await prisma.member.update({
-          where: { id: member.id },
-          data: {
-            stripeCustomerId: customer.id,
-            stripeSubscriptionId: subscription.id,
-          },
-        });
+        if (planForStripe.planType === 'credits') {
+          // One-time payment for a credit pack. The webhook grants credits on
+          // payment_intent.succeeded (see webhooksConnect.ts).
+          const applicationFee = Math.round(
+            (planForStripe.monthlyFee * 100 * LUMO_APPLICATION_FEE_PERCENT()) /
+              100,
+          );
+          const intent = await stripe.paymentIntents.create(
+            {
+              customer: customer.id,
+              amount: Math.round(planForStripe.monthlyFee * 100),
+              currency: 'eur',
+              automatic_payment_methods: { enabled: true },
+              application_fee_amount: applicationFee,
+              metadata: {
+                memberId: member.id,
+                clubId: club.id,
+                planId: planForStripe.id,
+                planType: 'credits',
+                creditCount: String(planForStripe.creditCount ?? 0),
+              },
+            },
+            { stripeAccount: acct },
+          );
+          clientSecret = intent.client_secret ?? null;
+
+          await prisma.member.update({
+            where: { id: member.id },
+            data: { stripeCustomerId: customer.id },
+          });
+        } else {
+          const subscription = await stripe.subscriptions.create(
+            {
+              customer: customer.id,
+              items: [{ price: planForStripe.stripePriceId }],
+              payment_behavior: 'default_incomplete',
+              payment_settings: {
+                save_default_payment_method: 'on_subscription',
+                payment_method_types: ['card'],
+              },
+              application_fee_percent: LUMO_APPLICATION_FEE_PERCENT(),
+              expand: ['latest_invoice.confirmation_secret'],
+              metadata: { memberId: member.id, clubId: club.id },
+            },
+            { stripeAccount: acct },
+          );
+          const invoice = subscription.latest_invoice as Stripe.Invoice | null;
+          clientSecret = invoice?.confirmation_secret?.client_secret ?? null;
+
+          await prisma.member.update({
+            where: { id: member.id },
+            data: {
+              stripeCustomerId: customer.id,
+              stripeSubscriptionId: subscription.id,
+            },
+          });
+        }
       } catch (err) {
         // Do NOT undo the member — admin can still see them as pending. Log
         // and return without a client secret so the frontend shows the "no
         // payment yet" success path.
         // eslint-disable-next-line no-console
-        console.error('Stripe subscription create failed:', err);
+        console.error('Stripe payment create failed:', err);
         clientSecret = null;
         paymentRequired = false;
       }

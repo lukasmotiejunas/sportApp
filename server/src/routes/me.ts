@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../prisma.js';
 import { asyncHandler, HttpError } from '../middleware/errorHandler.js';
-import { getStripe } from '../stripe.js';
+import { getStripe, LUMO_APPLICATION_FEE_PERCENT } from '../stripe.js';
 import { serializeMember } from '../serialize.js';
 
 export const meRouter = Router();
@@ -226,6 +226,94 @@ meRouter.post(
       cancelAtPeriodEnd: subscription.cancel_at_period_end,
       currentPeriodEnd: periodEnd ? periodEnd.toISOString().slice(0, 10) : null,
       subscriptionStatus: subscription.status,
+    });
+  }),
+);
+
+// POST /me/credits/purchase — top up the current credit-plan member's balance.
+// Creates a one-time PaymentIntent on the club's connected account; the
+// webhook grants credits on payment_intent.succeeded.
+meRouter.post(
+  '/credits/purchase',
+  asyncHandler(async (req, res) => {
+    if (!req.user?.memberId) {
+      throw new HttpError(403, 'Šis endpointas prieinamas tik nariams.');
+    }
+    const member = await prisma.member.findUnique({
+      where: { id: req.user.memberId },
+      include: {
+        club: {
+          select: { stripeConnectAccountId: true, stripeAccountReady: true },
+        },
+        membershipPlan: true,
+      },
+    });
+    if (!member) throw new HttpError(404, 'Narys nerastas.');
+    if (!member.membershipPlan) {
+      throw new HttpError(400, 'Priskirto plano nėra.');
+    }
+    if (member.membershipPlan.planType !== 'credits') {
+      throw new HttpError(400, 'Šis planas nėra kreditų paketas.');
+    }
+    if (!member.club.stripeAccountReady || !member.club.stripeConnectAccountId) {
+      throw new HttpError(400, 'Klubas dar nepriima mokėjimų.');
+    }
+    const price = Number(member.membershipPlan.monthlyFee);
+    if (!Number.isFinite(price) || price <= 0) {
+      throw new HttpError(400, 'Plano kaina netinkama.');
+    }
+    const credits = member.membershipPlan.creditCount ?? 0;
+    if (credits <= 0) {
+      throw new HttpError(400, 'Plane nenurodytas kreditų kiekis.');
+    }
+
+    const stripe = getStripe();
+    const acct = member.club.stripeConnectAccountId;
+
+    // Reuse the existing Stripe Customer if we have one; otherwise create.
+    let customerId = member.stripeCustomerId;
+    if (!customerId) {
+      const customer = await stripe.customers.create(
+        {
+          email: member.email,
+          name: member.name,
+          metadata: { memberId: member.id, clubId: member.clubId },
+        },
+        { stripeAccount: acct },
+      );
+      customerId = customer.id;
+      await prisma.member.update({
+        where: { id: member.id },
+        data: { stripeCustomerId: customer.id },
+      });
+    }
+
+    const applicationFee = Math.round(
+      (price * 100 * LUMO_APPLICATION_FEE_PERCENT()) / 100,
+    );
+    const intent = await stripe.paymentIntents.create(
+      {
+        customer: customerId,
+        amount: Math.round(price * 100),
+        currency: 'eur',
+        automatic_payment_methods: { enabled: true },
+        application_fee_amount: applicationFee,
+        metadata: {
+          memberId: member.id,
+          clubId: member.clubId,
+          planId: member.membershipPlan.id,
+          planType: 'credits',
+          creditCount: String(credits),
+        },
+      },
+      { stripeAccount: acct },
+    );
+
+    res.json({
+      clientSecret: intent.client_secret,
+      stripeAccount: acct,
+      amount: price,
+      creditCount: credits,
     });
   }),
 );

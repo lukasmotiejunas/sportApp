@@ -6,6 +6,7 @@ import {
   Infinity as InfinityIcon,
   Plus,
   RefreshCw,
+  Ticket,
   Trash2,
 } from "lucide-react";
 import { PageTitle } from "../../components/layout/PageTitle";
@@ -14,7 +15,7 @@ import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { useStore } from "../../store/useStore";
 import { formatCurrency } from "../../utils/format";
 import { api } from "../../api/client";
-import type { MembershipPlan } from "../../types";
+import type { MembershipPlan, PlanType } from "../../types";
 
 export default function AdminPlans() {
   const plans = useStore((s) => s.membershipPlans);
@@ -44,11 +45,13 @@ export default function AdminPlans() {
     }
   };
 
+  const [planType, setPlanType] = useState<PlanType>("monthly");
   const [name, setName] = useState("");
   const [fee, setFee] = useState("");
   const [currency, setCurrency] = useState("EUR");
   const [unlimited, setUnlimited] = useState(true);
   const [trainingsPerWeek, setTrainingsPerWeek] = useState("3");
+  const [creditCount, setCreditCount] = useState("5");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [toDelete, setToDelete] = useState<MembershipPlan | null>(null);
@@ -66,10 +69,19 @@ export default function AdminPlans() {
       return;
     }
     let cap: number | null = null;
-    if (!unlimited) {
+    let credits: number | null = null;
+    if (planType === "credits") {
+      credits = Number(creditCount);
+      if (!Number.isInteger(credits) || credits < 1 || credits > 999) {
+        setError("Kreditų kiekis turi būti sveikas skaičius nuo 1 iki 999.");
+        return;
+      }
+    } else if (!unlimited) {
       cap = Number(trainingsPerWeek);
       if (!Number.isInteger(cap) || cap < 1 || cap > 10) {
-        setError("Treniruočių per savaitę limitas turi būti sveikas skaičius nuo 1 iki 10.");
+        setError(
+          "Treniruočių per savaitę limitas turi būti sveikas skaičius nuo 1 iki 10.",
+        );
         return;
       }
     }
@@ -78,6 +90,8 @@ export default function AdminPlans() {
       name: name.trim(),
       monthlyFee,
       currency: currency.trim() || "EUR",
+      planType,
+      creditCount: credits,
       trainingsPerWeek: cap,
     });
     setSubmitting(false);
@@ -88,85 +102,160 @@ export default function AdminPlans() {
       setCurrency("EUR");
       setUnlimited(true);
       setTrainingsPerWeek("3");
+      setCreditCount("5");
+      setPlanType("monthly");
     } else {
       setError(res.error ?? "Nepavyko sukurti plano.");
     }
   };
+
+  const priceLabel = planType === "credits" ? "Paketo kaina" : "Kaina / mėn.";
 
   return (
     <div className="max-w-3xl">
       <PageTitle
         eyebrow="Administratorius"
         title="Narystės planai"
-        description="Kurkite planus ir nustatykite kainas. Planas priskiriamas nariui, o mokėjimai skaičiuojami pagal plano kainą."
+        description="Kurkite mėnesinius planus arba treniruočių paketus (nuperkate kartą, gaunate iš anksto nustatytą kiekį treniruočių)."
       />
 
       <section className="surface mb-4 p-4">
         <h2 className="mb-3 flex items-center gap-2 font-display text-base font-bold">
           <Plus className="h-4 w-4 text-ink-500" /> Naujas planas
         </h2>
-        <form onSubmit={create} className="grid gap-4 sm:grid-cols-[1fr_140px_120px]">
-          <FormField
-            label="Pavadinimas"
-            required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="pvz. Neribotas bėgimo klubas"
-          />
-          <FormField
-            label="Kaina / mėn."
-            required
-            type="number"
-            min="0"
-            step="0.01"
-            value={fee}
-            onChange={(e) => setFee(e.target.value)}
-            placeholder="49"
-          />
-          <FormField
-            label="Valiuta"
-            value={currency}
-            onChange={(e) => setCurrency(e.target.value)}
-            placeholder="EUR"
-          />
 
-          <div className="sm:col-span-3">
-            <label className="label">Treniruotės per savaitę</label>
-            <div className="flex items-center gap-3">
-              <label className="inline-flex items-center gap-2 text-sm text-ink-700 dark:text-ink-200">
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 rounded border-ink-300 text-ink-900 focus:ring-ink-900"
-                  checked={unlimited}
-                  onChange={(e) => setUnlimited(e.target.checked)}
-                />
-                Neribotai
-              </label>
-              <input
-                type="number"
-                min="1"
-                max="10"
-                step="1"
-                disabled={unlimited}
-                value={trainingsPerWeek}
-                onChange={(e) => setTrainingsPerWeek(e.target.value)}
-                className="input h-11 w-28 disabled:opacity-40"
-                placeholder="3"
-              />
-              <span className="text-xs text-ink-500">
-                {unlimited
-                  ? "Narys galės registruotis į visas treniruotes."
-                  : "Nuo 1 iki 10 treniruočių savaitėje."}
-              </span>
+        <form onSubmit={create} className="space-y-4">
+          <div>
+            <label className="label">Plano tipas</label>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setPlanType("monthly")}
+                className={
+                  "flex items-start gap-3 rounded-2xl border p-3 text-left transition-colors " +
+                  (planType === "monthly"
+                    ? "border-ink-900 bg-ink-900/5 dark:border-lime-400 dark:bg-lime-400/10"
+                    : "border-ink-200 hover:border-ink-400 dark:border-ink-700")
+                }
+              >
+                <CreditCard className="mt-0.5 h-4 w-4 text-ink-600 dark:text-ink-300" />
+                <div>
+                  <p className="text-sm font-semibold">Mėnesinis</p>
+                  <p className="text-xs text-ink-500">
+                    Automatinis atsiskaitymas kas mėnesį.
+                  </p>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPlanType("credits")}
+                className={
+                  "flex items-start gap-3 rounded-2xl border p-3 text-left transition-colors " +
+                  (planType === "credits"
+                    ? "border-ink-900 bg-ink-900/5 dark:border-lime-400 dark:bg-lime-400/10"
+                    : "border-ink-200 hover:border-ink-400 dark:border-ink-700")
+                }
+              >
+                <Ticket className="mt-0.5 h-4 w-4 text-ink-600 dark:text-ink-300" />
+                <div>
+                  <p className="text-sm font-semibold">Treniruočių paketas</p>
+                  <p className="text-xs text-ink-500">
+                    Vienkartinis mokėjimas už N treniruočių.
+                  </p>
+                </div>
+              </button>
             </div>
           </div>
 
+          <div className="grid gap-4 sm:grid-cols-[1fr_160px_120px]">
+            <FormField
+              label="Pavadinimas"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={
+                planType === "credits"
+                  ? "pvz. 5 treniruočių paketas"
+                  : "pvz. Neribotas bėgimo klubas"
+              }
+            />
+            <FormField
+              label={priceLabel}
+              required
+              type="number"
+              min="0"
+              step="0.01"
+              value={fee}
+              onChange={(e) => setFee(e.target.value)}
+              placeholder="49"
+            />
+            <FormField
+              label="Valiuta"
+              value={currency}
+              onChange={(e) => setCurrency(e.target.value)}
+              placeholder="EUR"
+            />
+          </div>
+
+          {planType === "credits" ? (
+            <div>
+              <label className="label">Treniruočių pakete</label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="number"
+                  min="1"
+                  max="999"
+                  step="1"
+                  value={creditCount}
+                  onChange={(e) => setCreditCount(e.target.value)}
+                  className="input h-11 w-28"
+                  placeholder="5"
+                />
+                <span className="text-xs text-ink-500">
+                  Narys galės užsiregistruoti į tiek treniruočių, kiek jų yra
+                  pakete. Kiekviena registracija sumažina likutį vienetu.
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <label className="label">Treniruotės per savaitę</label>
+              <div className="flex items-center gap-3">
+                <label className="inline-flex items-center gap-2 text-sm text-ink-700 dark:text-ink-200">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-ink-300 text-ink-900 focus:ring-ink-900"
+                    checked={unlimited}
+                    onChange={(e) => setUnlimited(e.target.checked)}
+                  />
+                  Neribotai
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="10"
+                  step="1"
+                  disabled={unlimited}
+                  value={trainingsPerWeek}
+                  onChange={(e) => setTrainingsPerWeek(e.target.value)}
+                  className="input h-11 w-28 disabled:opacity-40"
+                  placeholder="3"
+                />
+                <span className="text-xs text-ink-500">
+                  {unlimited
+                    ? "Narys galės registruotis į visas treniruotes."
+                    : "Nuo 1 iki 10 treniruočių savaitėje."}
+                </span>
+              </div>
+            </div>
+          )}
+
           {error && (
-            <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 sm:col-span-3">
+            <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
               {error}
             </div>
           )}
-          <div className="sm:col-span-3">
+          <div>
             <button type="submit" className="btn-primary" disabled={submitting}>
               <Plus className="h-4 w-4" />
               {submitting ? "Kuriama…" : "Sukurti planą"}
@@ -188,13 +277,17 @@ export default function AdminPlans() {
               className="btn-ghost h-9 px-3 text-xs"
               title="Iš naujo bandyti sukurti Stripe kainas"
             >
-              <RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
+              <RefreshCw
+                className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`}
+              />
               {syncing ? "Sinchronizuojama…" : "Sinchronizuoti su Stripe"}
             </button>
           )}
         </div>
         {plans.length === 0 ? (
-          <p className="p-4 text-sm text-ink-500">Planų dar nėra. Sukurkite pirmą aukščiau.</p>
+          <p className="p-4 text-sm text-ink-500">
+            Planų dar nėra. Sukurkite pirmą aukščiau.
+          </p>
         ) : (
           <ul className="divide-y divide-ink-100 dark:divide-ink-800">
             {plans.map((p) => (
@@ -204,9 +297,19 @@ export default function AdminPlans() {
                     {p.name}
                   </p>
                   <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-500">
-                    <span>{formatCurrency(p.monthlyFee)} / mėn.</span>
+                    <span>
+                      {formatCurrency(p.monthlyFee, p.currency)}
+                      {p.planType === "credits"
+                        ? " · vienkartinis"
+                        : " / mėn."}
+                    </span>
                     <span className="inline-flex items-center gap-1">
-                      {p.trainingsPerWeek === null ? (
+                      {p.planType === "credits" ? (
+                        <>
+                          <Ticket className="h-3 w-3" />
+                          {p.creditCount ?? 0} treniruotės pakete
+                        </>
+                      ) : p.trainingsPerWeek === null ? (
                         <>
                           <InfinityIcon className="h-3 w-3" />
                           Neribotai treniruočių / sav.

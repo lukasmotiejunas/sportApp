@@ -4,10 +4,18 @@ import {
   CreditCard,
   ExternalLink,
   FileText,
+  Plus,
   RotateCcw,
   ShieldCheck,
+  Ticket,
   XCircle,
 } from "lucide-react";
+import {
+  Elements,
+  PaymentElement,
+  useElements,
+  useStripe,
+} from "@stripe/react-stripe-js";
 import { useStore, useCurrentMember } from "../../store/useStore";
 import { PageTitle } from "../../components/layout/PageTitle";
 import { PaymentStatusBanner } from "../../components/payments/PaymentStatusBanner";
@@ -15,11 +23,14 @@ import { StatusBadge } from "../../components/ui/StatusBadge";
 import { Modal } from "../../components/ui/Modal";
 import { formatCurrency } from "../../utils/format";
 import { formatDateShort } from "../../utils/dates";
+import { getConnectedStripe } from "../../utils/stripe";
 import {
   cancelMySubscriptionApi,
   fetchMyBillingApi,
+  purchaseCreditsApi,
   resumeMySubscriptionApi,
   type MyBillingResponse,
+  type PurchaseCreditsResponse,
 } from "../../api/endpoints";
 import { ApiError } from "../../api/client";
 
@@ -52,6 +63,8 @@ export default function MemberPayments() {
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [resuming, setResuming] = useState(false);
+  const [creditsIntent, setCreditsIntent] = useState<PurchaseCreditsResponse | null>(null);
+  const [creditsLoading, setCreditsLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -100,6 +113,35 @@ export default function MemberPayments() {
     } finally {
       setCancelling(false);
     }
+  };
+
+  const openBuyCredits = async () => {
+    setCreditsLoading(true);
+    try {
+      const intent = await purchaseCreditsApi();
+      setCreditsIntent(intent);
+    } catch (err) {
+      push({
+        kind: "error",
+        message:
+          err instanceof ApiError
+            ? err.message
+            : "Nepavyko paruošti mokėjimo.",
+      });
+    } finally {
+      setCreditsLoading(false);
+    }
+  };
+
+  const onCreditsPaid = async () => {
+    setCreditsIntent(null);
+    const fresh = await fetchMyBillingApi().catch(() => null);
+    if (fresh) setBilling(fresh);
+    await refreshMyBilling();
+    push({
+      kind: "success",
+      message: "Kreditai pridėti — galite registruotis į treniruotes.",
+    });
   };
 
   const doResume = async () => {
@@ -152,6 +194,9 @@ export default function MemberPayments() {
   const dueDateIso = billing?.currentPeriodEnd ?? member.paymentDueDate;
   const upcomingAmount = billing?.upcomingInvoice?.amount ?? plan.monthlyFee;
   const pm = billing?.defaultPaymentMethod;
+  const isCreditsPlan = plan.planType === "credits";
+  const creditsRemaining =
+    billing?.member?.creditsRemaining ?? member.creditsRemaining ?? 0;
 
   return (
     <div>
@@ -161,11 +206,50 @@ export default function MemberPayments() {
         eyebrow="Narystė"
       />
 
-      <PaymentStatusBanner
-        status={status}
-        amount={formatCurrency(upcomingAmount)}
-        dueDate={dueDateIso ? formatDateShort(dueDateIso) : "—"}
-      />
+      {isCreditsPlan ? (
+        <section
+          className={
+            "rounded-3xl border p-5 shadow-pop " +
+            (creditsRemaining > 0
+              ? "border-lime-400/30 bg-lime-400/10 text-lime-900 dark:text-lime-100"
+              : "border-red-200 bg-red-50 text-red-900 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-100")
+          }
+        >
+          <div className="flex items-start gap-4">
+            <div className="grid h-12 w-12 place-items-center rounded-2xl bg-white/70 dark:bg-white/10">
+              <Ticket className="h-6 w-6" />
+            </div>
+            <div className="flex-1">
+              <p className="text-xs font-semibold uppercase tracking-widest opacity-70">
+                Likę treniruočių kreditai
+              </p>
+              <p className="mt-0.5 font-display text-3xl font-bold tabular-nums">
+                {creditsRemaining}
+              </p>
+              <p className="mt-1 text-sm opacity-90">
+                {creditsRemaining > 0
+                  ? "Kiekviena registracija į treniruotę sunaudoja vieną kreditą."
+                  : "Nebeturite kreditų — papildykite, kad galėtumėte registruotis."}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={openBuyCredits}
+              disabled={creditsLoading}
+              className="btn-primary h-10 self-center px-3 text-sm"
+            >
+              <Plus className="h-4 w-4" />
+              {creditsLoading ? "Ruošiama…" : "Papildyti"}
+            </button>
+          </div>
+        </section>
+      ) : (
+        <PaymentStatusBanner
+          status={status}
+          amount={formatCurrency(upcomingAmount)}
+          dueDate={dueDateIso ? formatDateShort(dueDateIso) : "—"}
+        />
+      )}
 
       {billing?.hasSubscription && billing.cancelAtPeriodEnd && (
         <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
@@ -206,18 +290,22 @@ export default function MemberPayments() {
             </p>
             <p className="font-display text-lg font-bold">{plan.name}</p>
             <p className="text-sm text-ink-500">
-              {billing?.hasSubscription
-                ? billing.cancelAtPeriodEnd
-                  ? `Bus nutraukta ${dueDateIso ? formatDateShort(dueDateIso) : ""}`
-                  : "Automatinis mėnesinis atsiskaitymas"
-                : "Mokamas rankiniu būdu"}
+              {isCreditsPlan
+                ? `Vienkartinis paketas · ${plan.creditCount ?? 0} treniruotės`
+                : billing?.hasSubscription
+                  ? billing.cancelAtPeriodEnd
+                    ? `Bus nutraukta ${dueDateIso ? formatDateShort(dueDateIso) : ""}`
+                    : "Automatinis mėnesinis atsiskaitymas"
+                  : "Mokamas rankiniu būdu"}
             </p>
           </div>
           <div className="text-right">
             <p className="font-display text-2xl font-bold tabular-nums">
               {formatCurrency(plan.monthlyFee)}
             </p>
-            <p className="text-xs text-ink-500">per mėnesį</p>
+            <p className="text-xs text-ink-500">
+              {isCreditsPlan ? "už paketą" : "per mėnesį"}
+            </p>
           </div>
         </div>
 
@@ -244,7 +332,7 @@ export default function MemberPayments() {
           </li>
         </ul>
 
-        {billing?.hasSubscription && !billing.cancelAtPeriodEnd && (
+        {!isCreditsPlan && billing?.hasSubscription && !billing.cancelAtPeriodEnd && (
           <div className="mt-4 flex justify-end border-t border-ink-100 pt-4 dark:border-ink-800">
             <button
               type="button"
@@ -379,6 +467,122 @@ export default function MemberPayments() {
           kai baigsis apmokėtas laikotarpis.
         </div>
       </Modal>
+
+      <BuyCreditsModal
+        intent={creditsIntent}
+        onClose={() => setCreditsIntent(null)}
+        onPaid={onCreditsPaid}
+        planName={plan.name}
+      />
     </div>
+  );
+}
+
+function BuyCreditsModal({
+  intent,
+  onClose,
+  onPaid,
+  planName,
+}: {
+  intent: PurchaseCreditsResponse | null;
+  onClose: () => void;
+  onPaid: () => void;
+  planName: string;
+}) {
+  const promise = intent ? getConnectedStripe(intent.stripeAccount) : null;
+
+  return (
+    <Modal
+      open={!!intent}
+      onClose={onClose}
+      title={
+        <span className="flex items-center gap-2">
+          <Ticket className="h-5 w-5 text-lime-600" />
+          Papildyti paketą
+        </span>
+      }
+      description={
+        intent
+          ? `${planName} — ${formatCurrency(intent.amount)} už ${intent.creditCount} treniruotes.`
+          : ""
+      }
+    >
+      {!intent ? null : !promise ? (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          Trūksta „VITE_STRIPE_PUBLISHABLE_KEY" aplinkos kintamojo. Praneškite
+          klubo administratoriui.
+        </div>
+      ) : (
+        <Elements
+          stripe={promise}
+          options={{ clientSecret: intent.clientSecret }}
+        >
+          <BuyCreditsForm onCancel={onClose} onSuccess={onPaid} />
+        </Elements>
+      )}
+    </Modal>
+  );
+}
+
+function BuyCreditsForm({
+  onSuccess,
+  onCancel,
+}: {
+  onSuccess: () => void;
+  onCancel: () => void;
+}) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!stripe || !elements) return;
+    setError(null);
+    setSubmitting(true);
+    const { error: err, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      confirmParams: { return_url: window.location.origin + "/member/payments" },
+      redirect: "if_required",
+    });
+    if (err) {
+      setError(err.message ?? "Nepavyko apmokėti kortelės.");
+      setSubmitting(false);
+      return;
+    }
+    if (paymentIntent && paymentIntent.status === "succeeded") {
+      onSuccess();
+      return;
+    }
+    setSubmitting(false);
+  };
+
+  return (
+    <form onSubmit={submit} className="space-y-4">
+      <PaymentElement />
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+      <div className="flex justify-end gap-2">
+        <button
+          type="button"
+          className="btn-ghost"
+          onClick={onCancel}
+          disabled={submitting}
+        >
+          Atšaukti
+        </button>
+        <button
+          type="submit"
+          className="btn-primary"
+          disabled={!stripe || !elements || submitting}
+        >
+          {submitting ? "Tvirtinama…" : "Apmokėti"}
+        </button>
+      </div>
+    </form>
   );
 }

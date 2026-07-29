@@ -8,9 +8,10 @@ import { getStripe } from '../stripe.js';
 
 export const membershipPlansRouter = Router();
 
-// Creates a Stripe Product + recurring monthly Price on the club's connected
-// account and persists the ids on the plan row. No-op if the club isn't
-// Connect-ready yet — the plan is synced later by `syncClubPlans`.
+// Creates a Stripe Product + Price on the club's connected account and
+// persists the ids on the plan row. Monthly plans get a recurring Price;
+// credit plans get a one-time Price. No-op if the club isn't Connect-ready
+// yet — the plan is synced later by `syncClubPlans`.
 async function ensureStripePriceForPlan(planId: string): Promise<void> {
   const plan = await prisma.membershipPlan.findUnique({
     where: { id: planId },
@@ -24,7 +25,14 @@ async function ensureStripePriceForPlan(planId: string): Promise<void> {
 
   const stripe = getStripe();
   const product = await stripe.products.create(
-    { name: plan.name, metadata: { planId: plan.id } },
+    {
+      name: plan.name,
+      metadata: {
+        planId: plan.id,
+        planType: plan.planType,
+        creditCount: plan.creditCount?.toString() ?? '',
+      },
+    },
     { stripeAccount: acct },
   );
   const price = await stripe.prices.create(
@@ -32,7 +40,10 @@ async function ensureStripePriceForPlan(planId: string): Promise<void> {
       product: product.id,
       unit_amount: Math.round(Number(plan.monthlyFee) * 100),
       currency: plan.currency.toLowerCase(),
-      recurring: { interval: 'month' },
+      // Credit packs are one-time; monthly plans recur.
+      ...(plan.planType === 'credits'
+        ? {}
+        : { recurring: { interval: 'month' as const } }),
     },
     { stripeAccount: acct },
   );
@@ -69,13 +80,23 @@ membershipPlansRouter.get(
   }),
 );
 
-const createPlanSchema = z.object({
-  name: z.string().min(1),
-  monthlyFee: z.number().nonnegative(),
-  currency: z.string().min(1).max(8).optional(),
-  // null / undefined = unlimited. 1..10 = weekly cap.
-  trainingsPerWeek: z.number().int().min(1).max(10).nullable().optional(),
-});
+const createPlanSchema = z
+  .object({
+    name: z.string().min(1),
+    monthlyFee: z.number().nonnegative(),
+    currency: z.string().min(1).max(8).optional(),
+    planType: z.enum(['monthly', 'credits']).optional(),
+    // Required when planType='credits'. Number of trainings in the pack.
+    creditCount: z.number().int().min(1).max(999).nullable().optional(),
+    // null / undefined = unlimited. 1..10 = weekly cap (monthly plans only).
+    trainingsPerWeek: z.number().int().min(1).max(10).nullable().optional(),
+  })
+  .refine(
+    (v) =>
+      v.planType !== 'credits' ||
+      (typeof v.creditCount === 'number' && v.creditCount >= 1),
+    { message: 'creditCount is required when planType is credits' },
+  );
 
 // Admin-only: create a membership plan.
 membershipPlansRouter.post(
@@ -84,13 +105,19 @@ membershipPlansRouter.post(
   asyncHandler(async (req, res) => {
     const clubId = requireClubId(req);
     const data = createPlanSchema.parse(req.body);
+    const planType = data.planType ?? 'monthly';
     const plan = await prisma.membershipPlan.create({
       data: {
         clubId,
         name: data.name,
         monthlyFee: data.monthlyFee,
         currency: data.currency ?? 'EUR',
-        trainingsPerWeek: data.trainingsPerWeek ?? null,
+        planType,
+        creditCount: planType === 'credits' ? data.creditCount ?? null : null,
+        // Credit plans don't use a weekly cap — availability is limited by the
+        // remaining credits balance instead.
+        trainingsPerWeek:
+          planType === 'credits' ? null : data.trainingsPerWeek ?? null,
       },
     });
 

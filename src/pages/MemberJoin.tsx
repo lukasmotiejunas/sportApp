@@ -9,9 +9,9 @@ import {
   Infinity as InfinityIcon,
   Lock,
   Sparkles,
+  Ticket,
   User,
 } from "lucide-react";
-import { loadStripe, type Stripe } from "@stripe/stripe-js";
 import {
   Elements,
   PaymentElement,
@@ -27,19 +27,7 @@ import {
 import { ApiError } from "../api/client";
 import type { MembershipPlan } from "../types";
 
-const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ?? "";
-
-// One Stripe.js instance per connected account. Cached across renders so the
-// Elements iframe isn't torn down on state changes.
-const connectedStripeCache = new Map<string, Promise<Stripe | null>>();
-function getConnectedStripe(stripeAccount: string): Promise<Stripe | null> | null {
-  if (!publishableKey) return null;
-  const cached = connectedStripeCache.get(stripeAccount);
-  if (cached) return cached;
-  const p = loadStripe(publishableKey, { stripeAccount });
-  connectedStripeCache.set(stripeAccount, p);
-  return p;
-}
+import { getConnectedStripe } from "../utils/stripe";
 
 type Step = "form" | "payment" | "success";
 
@@ -340,11 +328,15 @@ export default function MemberJoin() {
           <div className="rounded-2xl border border-lime-400/30 bg-lime-400/10 p-5 text-sm">
             <p className="font-display text-base font-bold text-lime-200">
               {chosenPlan
-                ? `Pasirinktas planas: ${chosenPlan.name} — ${formatMoney(chosenPlan.monthlyFee, chosenPlan.currency)} / mėn.`
+                ? chosenPlan.planType === "credits"
+                  ? `Pasirinktas paketas: ${chosenPlan.name} — ${formatMoney(chosenPlan.monthlyFee, chosenPlan.currency)} už ${chosenPlan.creditCount ?? 0} treniruotes`
+                  : `Pasirinktas planas: ${chosenPlan.name} — ${formatMoney(chosenPlan.monthlyFee, chosenPlan.currency)} / mėn.`
                 : "Pasirinkite narystės planą aukščiau."}
             </p>
             <p className="mt-1.5 text-white/70">
-              Kitame žingsnyje pridėsite mokėjimo kortelę. Kortelė bus automatiškai apmokestinama kas mėnesį, kol atšauksite prenumeratą.
+              {chosenPlan?.planType === "credits"
+                ? "Kitame žingsnyje apmokėsite paketą vieną kartą. Kai treniruotės pasibaigs, galėsite įsigyti naują paketą iš savo profilio."
+                : "Kitame žingsnyje pridėsite mokėjimo kortelę. Kortelė bus automatiškai apmokestinama kas mėnesį, kol atšauksite prenumeratą."}
             </p>
           </div>
 
@@ -413,8 +405,13 @@ function PaymentStep(props: {
           </h1>
           {plan && (
             <p className="mt-2 text-sm text-white/70">
-              {plan.name} — <strong className="text-white">{formatMoney(plan.monthlyFee, plan.currency)}</strong> / mėn.
-              Mokestis kartojasi kas mėnesį, kol atšauksite prenumeratą.
+              {plan.name} —{" "}
+              <strong className="text-white">
+                {formatMoney(plan.monthlyFee, plan.currency)}
+              </strong>{" "}
+              {plan.planType === "credits"
+                ? `už ${plan.creditCount ?? 0} treniruotes. Vienkartinis mokėjimas — jokio automatinio pratęsimo.`
+                : "/ mėn. Mokestis kartojasi kas mėnesį, kol atšauksite prenumeratą."}
             </p>
           )}
         </div>
@@ -585,10 +582,16 @@ function PlanCard({
         <div className="min-w-0">
           <p className="font-display text-base font-bold text-white">{plan.name}</p>
           <p className="mt-0.5 text-xs text-white/60">
-            {formatMoney(plan.monthlyFee, plan.currency)} / mėn.
+            {formatMoney(plan.monthlyFee, plan.currency)}
+            {plan.planType === "credits" ? " · vienkartinis" : " / mėn."}
           </p>
           <p className="mt-2 inline-flex items-center gap-1 text-xs text-white/70">
-            {plan.trainingsPerWeek === null ? (
+            {plan.planType === "credits" ? (
+              <>
+                <Ticket className="h-3 w-3 text-lime-300" />
+                {plan.creditCount ?? 0} treniruotės pakete
+              </>
+            ) : plan.trainingsPerWeek === null ? (
               <>
                 <InfinityIcon className="h-3 w-3 text-lime-300" />
                 Neribotai treniruočių / sav.

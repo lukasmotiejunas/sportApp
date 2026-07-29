@@ -148,6 +148,33 @@ webhooksConnectRouter.post(
         break;
       }
 
+      case 'payment_intent.succeeded': {
+        // Credit-pack purchases arrive as one-time PaymentIntents. The public
+        // signup route puts memberId + creditCount into metadata; the buy-more
+        // endpoint does the same. Add the credits to the member's balance and
+        // mark them as paid so training registration is unblocked.
+        const pi = event.data.object as Stripe.PaymentIntent;
+        const meta = pi.metadata ?? {};
+        if (meta.planType !== 'credits' || !meta.memberId) break;
+        const add = Number(meta.creditCount);
+        if (!Number.isFinite(add) || add <= 0) break;
+
+        const member = await prisma.member.findUnique({
+          where: { id: meta.memberId },
+        });
+        if (!member) break;
+
+        await prisma.member.update({
+          where: { id: member.id },
+          data: {
+            creditsRemaining: (member.creditsRemaining ?? 0) + Math.floor(add),
+            paymentStatus: 'paid',
+            lastPaymentDate: new Date(),
+          },
+        });
+        break;
+      }
+
       default:
         break;
     }

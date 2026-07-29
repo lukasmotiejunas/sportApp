@@ -217,33 +217,55 @@ trainingsRouter.post(
       throw new HttpError(409, 'Ši treniruotė užpildyta.');
     }
 
-    // Weekly cap enforcement — count all non-cancelled registrations for this
-    // member in the ISO week of the target training's date. `null` on the plan
-    // means unlimited.
-    const cap = member.membershipPlan?.trainingsPerWeek ?? null;
-    if (cap !== null) {
-      const { start, end } = isoWeekRange(training.date);
-      const takenThisWeek = await prisma.trainingRegistration.count({
-        where: {
-          memberId,
-          status: { not: 'cancelled' },
-          session: {
-            clubId,
-            date: { gte: start, lt: end },
-          },
-        },
-      });
-      if (takenThisWeek >= cap) {
+    const planType = member.membershipPlan?.planType ?? 'monthly';
+
+    if (planType === 'credits') {
+      // Credit plans: block if the member has no credits left. Also block
+      // members whose plan was never paid for (creditsRemaining is null and
+      // the plan has a fee).
+      const balance = member.creditsRemaining ?? 0;
+      if (balance <= 0) {
         throw new HttpError(
           409,
-          `Viršijote savaitės limitą (${cap} treniruotės). Pabandykite kitą savaitę arba rinkitės didesnį planą.`,
+          'Nebeturite treniruočių kreditų. Papildykite planą, kad galėtumėte registruotis.',
         );
+      }
+    } else {
+      // Monthly plan — enforce weekly cap. Count non-cancelled registrations
+      // this ISO week. `null` on the plan means unlimited.
+      const cap = member.membershipPlan?.trainingsPerWeek ?? null;
+      if (cap !== null) {
+        const { start, end } = isoWeekRange(training.date);
+        const takenThisWeek = await prisma.trainingRegistration.count({
+          where: {
+            memberId,
+            status: { not: 'cancelled' },
+            session: {
+              clubId,
+              date: { gte: start, lt: end },
+            },
+          },
+        });
+        if (takenThisWeek >= cap) {
+          throw new HttpError(
+            409,
+            `Viršijote savaitės limitą (${cap} treniruotės). Pabandykite kitą savaitę arba rinkitės didesnį planą.`,
+          );
+        }
       }
     }
 
     await prisma.trainingRegistration.create({
       data: { trainingSessionId: trainingId, memberId },
     });
+
+    // Deduct one credit on successful registration.
+    if (planType === 'credits') {
+      await prisma.member.update({
+        where: { id: memberId },
+        data: { creditsRemaining: { decrement: 1 } },
+      });
+    }
 
     const updated = await prisma.trainingSession.findUnique({
       where: { id: trainingId },
@@ -264,9 +286,25 @@ trainingsRouter.delete(
     });
     if (!training) throw new HttpError(404, 'Treniruotė nerasta');
 
-    await prisma.trainingRegistration.deleteMany({
+    // Deleting a real registration means we should also refund the credit
+    // (only for credit-plan members). Do this in a transaction so we don't
+    // double-refund.
+    const removed = await prisma.trainingRegistration.deleteMany({
       where: { trainingSessionId: trainingId, memberId },
     });
+    if (removed.count > 0) {
+      const member = await prisma.member.findFirst({
+        where: { id: memberId, clubId },
+        include: { membershipPlan: true },
+      });
+      if (member?.membershipPlan?.planType === 'credits') {
+        await prisma.member.update({
+          where: { id: memberId },
+          data: { creditsRemaining: { increment: 1 } },
+        });
+      }
+    }
+
     const updated = await prisma.trainingSession.findUnique({
       where: { id: trainingId },
       include: withRegistrations,
