@@ -165,12 +165,22 @@ webhooksConnectRouter.post(
         });
         if (!member) break;
 
+        // If the purchase was for a *different* credit plan than the member
+        // currently has, switch them to it now. Balance is additive across
+        // plans (they get their remaining old credits + new pack).
+        const switchTo =
+          typeof meta.switchToPlanId === 'string' && meta.switchToPlanId
+            ? meta.switchToPlanId
+            : null;
         await prisma.member.update({
           where: { id: member.id },
           data: {
             creditsRemaining: (member.creditsRemaining ?? 0) + Math.floor(add),
             paymentStatus: 'paid',
             lastPaymentDate: new Date(),
+            ...(switchTo && switchTo !== member.membershipPlanId
+              ? { membershipPlanId: switchTo }
+              : {}),
           },
         });
         // Mark PI as claimed so on-read reconciliation never double-credits.

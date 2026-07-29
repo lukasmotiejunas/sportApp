@@ -116,8 +116,11 @@ export type PurchaseCreditsResponse = {
   amount: number;
   creditCount: number;
 };
-export const purchaseCreditsApi = () =>
-  api.post<PurchaseCreditsResponse>('/me/credits/purchase');
+export const purchaseCreditsApi = (membershipPlanId?: string) =>
+  api.post<PurchaseCreditsResponse>(
+    '/me/credits/purchase',
+    membershipPlanId ? { membershipPlanId } : undefined,
+  );
 
 export type SubscribeResponse = {
   clientSecret: string;

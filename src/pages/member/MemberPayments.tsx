@@ -68,7 +68,10 @@ export default function MemberPayments() {
   const [cancelling, setCancelling] = useState(false);
   const [resuming, setResuming] = useState(false);
   const [creditsIntent, setCreditsIntent] = useState<PurchaseCreditsResponse | null>(null);
-  const [creditsLoading, setCreditsLoading] = useState(false);
+  const [creditsLoading, setCreditsLoading] = useState<string | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const allPlans = useStore((s) => s.membershipPlans);
+  const creditPlans = allPlans.filter((p) => p.planType === "credits");
 
   useEffect(() => {
     let cancelled = false;
@@ -119,10 +122,21 @@ export default function MemberPayments() {
     }
   };
 
-  const openBuyCredits = async () => {
-    setCreditsLoading(true);
+  const openBuyCredits = () => {
+    // If there's only one credit plan (usually the current one), skip the
+    // picker and go straight to payment. Otherwise let the member choose.
+    if (creditPlans.length <= 1) {
+      void startPurchase(creditPlans[0]?.id);
+    } else {
+      setPickerOpen(true);
+    }
+  };
+
+  const startPurchase = async (planId: string | undefined) => {
+    setCreditsLoading(planId ?? "current");
+    setPickerOpen(false);
     try {
-      const intent = await purchaseCreditsApi();
+      const intent = await purchaseCreditsApi(planId);
       setCreditsIntent(intent);
     } catch (err) {
       push({
@@ -133,7 +147,7 @@ export default function MemberPayments() {
             : "Nepavyko paruošti mokėjimo.",
       });
     } finally {
-      setCreditsLoading(false);
+      setCreditsLoading(null);
     }
   };
 
@@ -239,11 +253,11 @@ export default function MemberPayments() {
             <button
               type="button"
               onClick={openBuyCredits}
-              disabled={creditsLoading}
+              disabled={creditsLoading !== null}
               className="btn-primary h-10 self-center px-3 text-sm"
             >
               <Plus className="h-4 w-4" />
-              {creditsLoading ? "Ruošiama…" : "Papildyti"}
+              {creditsLoading !== null ? "Ruošiama…" : "Papildyti"}
             </button>
           </div>
         </section>
@@ -469,11 +483,65 @@ export default function MemberPayments() {
         </div>
       </Modal>
 
+      <Modal
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        title={
+          <span className="flex items-center gap-2">
+            <Ticket className="h-5 w-5 text-lime-600" />
+            Pasirinkite paketą
+          </span>
+        }
+        description="Kiekvienas paketas apmokamas vienkartinai — jokio automatinio pratęsimo."
+      >
+        <ul className="space-y-2">
+          {creditPlans.map((p) => (
+            <li key={p.id}>
+              <button
+                type="button"
+                onClick={() => startPurchase(p.id)}
+                disabled={!p.stripePriceId || creditsLoading !== null}
+                title={
+                  p.stripePriceId
+                    ? undefined
+                    : "Šis paketas dar nesinchronizuotas su Stripe."
+                }
+                className={
+                  "flex w-full items-center justify-between rounded-2xl border p-3 text-left transition-colors " +
+                  (p.id === plan.id
+                    ? "border-lime-400 bg-lime-400/10"
+                    : "border-ink-200 hover:border-ink-400 dark:border-ink-700") +
+                  " disabled:opacity-40"
+                }
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold">{p.name}</p>
+                  <p className="text-xs text-ink-500">
+                    {p.creditCount ?? 0} treniruočių pakete
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="font-display text-sm font-bold tabular-nums">
+                    {formatCurrency(p.monthlyFee, p.currency)}
+                  </p>
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-ink-500">
+                    {creditsLoading === p.id ? "Ruošiama…" : "Pasirinkti"}
+                  </p>
+                </div>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </Modal>
+
       <BuyCreditsModal
         intent={creditsIntent}
         onClose={() => setCreditsIntent(null)}
         onPaid={onCreditsPaid}
-        planName={plan.name}
+        planName={
+          allPlans.find((p) => p.creditCount === creditsIntent?.creditCount)
+            ?.name ?? plan.name
+        }
       />
     </div>
   );

@@ -57,6 +57,7 @@ meRouter.get(
       if (list) {
         let addTotal = 0;
         const claimed: string[] = [];
+        let switchTo: string | null = null;
         for (const pi of list.data) {
           if (pi.metadata?.planType !== 'credits') continue;
           if (pi.metadata?.memberId !== member.id) continue;
@@ -69,6 +70,14 @@ meRouter.get(
             ) {
               addTotal += Math.floor(n);
               claimed.push(pi.id);
+              // Latest unclaimed switchTo wins (PIs are returned newest-first).
+              if (
+                !switchTo &&
+                typeof pi.metadata?.switchToPlanId === 'string' &&
+                pi.metadata.switchToPlanId
+              ) {
+                switchTo = pi.metadata.switchToPlanId;
+              }
             }
           }
           // Track for payment history regardless of claim state.
@@ -95,6 +104,9 @@ meRouter.get(
               creditsRemaining: (member.creditsRemaining ?? 0) + addTotal,
               paymentStatus: 'paid',
               lastPaymentDate: new Date(),
+              ...(switchTo && switchTo !== member.membershipPlanId
+                ? { membershipPlanId: switchTo }
+                : {}),
             },
             include: {
               club: { select: { stripeConnectAccountId: true } },
@@ -332,15 +344,22 @@ meRouter.post(
   }),
 );
 
-// POST /me/credits/purchase — top up the current credit-plan member's balance.
-// Creates a one-time PaymentIntent on the club's connected account; the
-// webhook grants credits on payment_intent.succeeded.
+const purchaseCreditsSchema = z
+  .object({ membershipPlanId: z.string().min(1).optional() })
+  .optional();
+
+// POST /me/credits/purchase — buy a credit pack. If `membershipPlanId` is
+// omitted, tops up the member's current plan. If provided, lets them switch
+// to a different credit plan (metadata.switchToPlanId flips membershipPlanId
+// on successful payment). Creates a one-time PaymentIntent on the club's
+// connected account; the webhook grants credits on payment_intent.succeeded.
 meRouter.post(
   '/credits/purchase',
   asyncHandler(async (req, res) => {
     if (!req.user?.memberId) {
       throw new HttpError(403, 'Šis endpointas prieinamas tik nariams.');
     }
+    const body = purchaseCreditsSchema.parse(req.body) ?? {};
     const member = await prisma.member.findUnique({
       where: { id: req.user.memberId },
       include: {
@@ -351,20 +370,29 @@ meRouter.post(
       },
     });
     if (!member) throw new HttpError(404, 'Narys nerastas.');
-    if (!member.membershipPlan) {
-      throw new HttpError(400, 'Priskirto plano nėra.');
-    }
-    if (member.membershipPlan.planType !== 'credits') {
-      throw new HttpError(400, 'Šis planas nėra kreditų paketas.');
-    }
     if (!member.club.stripeAccountReady || !member.club.stripeConnectAccountId) {
       throw new HttpError(400, 'Klubas dar nepriima mokėjimų.');
     }
-    const price = Number(member.membershipPlan.monthlyFee);
+
+    // Pick the target plan: explicit choice, or fall back to member's current.
+    let targetPlan = member.membershipPlan;
+    if (body.membershipPlanId) {
+      targetPlan = await prisma.membershipPlan.findFirst({
+        where: { id: body.membershipPlanId, clubId: member.clubId },
+      });
+      if (!targetPlan) throw new HttpError(404, 'Planas nerastas.');
+    }
+    if (!targetPlan) {
+      throw new HttpError(400, 'Priskirto plano nėra.');
+    }
+    if (targetPlan.planType !== 'credits') {
+      throw new HttpError(400, 'Šis planas nėra kreditų paketas.');
+    }
+    const price = Number(targetPlan.monthlyFee);
     if (!Number.isFinite(price) || price <= 0) {
       throw new HttpError(400, 'Plano kaina netinkama.');
     }
-    const credits = member.membershipPlan.creditCount ?? 0;
+    const credits = targetPlan.creditCount ?? 0;
     if (credits <= 0) {
       throw new HttpError(400, 'Plane nenurodytas kreditų kiekis.');
     }
@@ -403,9 +431,13 @@ meRouter.post(
         metadata: {
           memberId: member.id,
           clubId: member.clubId,
-          planId: member.membershipPlan.id,
+          planId: targetPlan.id,
           planType: 'credits',
           creditCount: String(credits),
+          // Set only when the member picked a plan different from their
+          // current one; webhook/reconciliation reads this to flip
+          // membershipPlanId on success.
+          switchToPlanId: targetPlan.id,
         },
       },
       { stripeAccount: acct },
