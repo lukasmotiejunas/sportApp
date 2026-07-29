@@ -311,9 +311,11 @@ function PersonalPlanPanel({ plan }: { plan?: TrainingPlan }) {
             {plan.title}
           </h3>
         </div>
-        <span className="shrink-0 text-[10px] font-semibold text-ink-500">
-          ~{plan.duration} min
-        </span>
+        {plan.duration > 0 && (
+          <span className="shrink-0 text-[10px] font-semibold text-ink-500">
+            ~{plan.duration} min
+          </span>
+        )}
       </div>
 
       {plan.coachNote && (

@@ -8,10 +8,12 @@ import { StatusBadge } from '../../components/ui/StatusBadge';
 import { FormField, TextareaField } from '../../components/ui/FormField';
 import type { TrainingPlan } from '../../types';
 import { formatDateShort, todayIso } from '../../utils/dates';
+import { useTrainingsBase } from '../../utils/roleContext';
 
 export default function CoachPlanEditor() {
   const { trainingId = '', memberId = '' } = useParams();
   const navigate = useNavigate();
+  const { base } = useTrainingsBase();
   const training = useStore((s) => s.trainingSessions.find((t) => t.id === trainingId));
   const member = useStore((s) => s.members.find((m) => m.id === memberId));
   const plans = useStore((s) => s.trainingPlans);
@@ -30,7 +32,7 @@ export default function CoachPlanEditor() {
     trainingSessionId: trainingId,
     memberId,
     title: training ? `${training.title} — ${member?.name.split(' ')[0]}` : 'Naujas planas',
-    duration: 60,
+    duration: 0,
     coachNote: '',
     plan: '',
     status: 'draft',
@@ -65,7 +67,7 @@ export default function CoachPlanEditor() {
       remove(existingPlan.id);
       push({ kind: 'info', message: 'Planas pašalintas.' });
     }
-    navigate(`/coach/trainings/${training.id}`);
+    navigate(`${base}/${training.id}`);
   };
 
   return (
@@ -74,7 +76,7 @@ export default function CoachPlanEditor() {
         eyebrow="Asmeninis planas"
         title={plan.title || 'Naujas planas'}
         description={`${training.title} · ${formatDateShort(training.date)} · ${training.startTime}`}
-        backTo={`/coach/trainings/${training.id}`}
+        backTo={`${base}/${training.id}`}
       />
 
       <section className="surface p-4">
@@ -89,32 +91,22 @@ export default function CoachPlanEditor() {
           </StatusBadge>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3">
           <FormField
             label="Plano pavadinimas"
             value={plan.title}
             onChange={(e) => setPlan({ ...plan, title: e.target.value })}
-            className="sm:col-span-2"
-          />
-          <FormField
-            label="Trukmė (min)"
-            type="number"
-            min={5}
-            value={plan.duration}
-            onChange={(e) => setPlan({ ...plan, duration: Number(e.target.value) })}
           />
           <TextareaField
             label="Trenerio užrašas nariui"
             value={plan.coachNote}
             onChange={(e) => setPlan({ ...plan, coachNote: e.target.value })}
-            className="sm:col-span-3"
             placeholder="Atsipalaidavę pečiai ir kontroliuojami pirmieji 30 metrų…"
           />
           <TextareaField
             label="Planas"
             value={plan.plan}
             onChange={(e) => setPlan({ ...plan, plan: e.target.value })}
-            className="sm:col-span-3"
             rows={12}
             placeholder="Aprašykite visą planą — apšilimą, pagrindinę dalį, atsipalaidavimą, pastabas…"
           />
@@ -130,7 +122,7 @@ export default function CoachPlanEditor() {
           )}
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link to={`/coach/trainings/${training.id}`} className="btn-ghost">
+          <Link to={`${base}/${training.id}`} className="btn-ghost">
             Grįžti į treniruotę
           </Link>
           <button type="button" className="btn-outline" onClick={saveDraft}>

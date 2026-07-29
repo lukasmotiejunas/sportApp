@@ -191,6 +191,10 @@ export default function App() {
           <Route path="trainings/new" element={<CoachTrainingForm mode="create" />} />
           <Route path="trainings/:id" element={<CoachTrainingDetail />} />
           <Route path="trainings/:id/edit" element={<CoachTrainingForm mode="edit" />} />
+          <Route
+            path="plans/:trainingId/:memberId"
+            element={<CoachPlanEditor />}
+          />
           <Route path="plans" element={<AdminPlans />} />
           <Route path="subscription" element={<AdminSubscription />} />
           <Route path="profile" element={<AdminProfile />} />

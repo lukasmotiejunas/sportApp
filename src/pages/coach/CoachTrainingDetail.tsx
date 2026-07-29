@@ -186,18 +186,23 @@ export default function CoachTrainingDetail() {
                     <StatusBadge tone="neutral">Nėra plano</StatusBadge>
                   )}
                 </div>
-                {!isAdmin && (
-                  <div className="flex items-center gap-1">
-                    <Link to={`/coach/members/${row.m.id}`} className="btn-ghost h-9 px-3 text-xs">Profilis</Link>
+                <div className="flex items-center gap-1">
+                  {!isAdmin && (
                     <Link
-                      to={`/coach/plans/${training.id}/${row.m.id}`}
-                      className="btn-primary h-9 px-3 text-xs"
+                      to={`/coach/members/${row.m.id}`}
+                      className="btn-ghost h-9 px-3 text-xs"
                     >
-                      <ClipboardEdit className="h-3.5 w-3.5" />
-                      {row.memberPlan ? 'Redaguoti planą' : 'Sukurti planą'}
+                      Profilis
                     </Link>
-                  </div>
-                )}
+                  )}
+                  <Link
+                    to={`${isAdmin ? "/admin" : "/coach"}/plans/${training.id}/${row.m.id}`}
+                    className="btn-primary h-9 px-3 text-xs"
+                  >
+                    <ClipboardEdit className="h-3.5 w-3.5" />
+                    {row.memberPlan ? "Redaguoti planą" : "Sukurti planą"}
+                  </Link>
+                </div>
               </li>
             ))}
           </ul>
