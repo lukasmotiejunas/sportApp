@@ -528,7 +528,7 @@ function PaymentForm({
           </div>
         </div>
         <div className="mt-5">
-          <PaymentElement />
+          <PaymentElement options={{ wallets: { link: "never", applePay: "never", googlePay: "never" } }} />
         </div>
       </section>
 

@@ -561,7 +561,7 @@ function BuyCreditsForm({
 
   return (
     <form onSubmit={submit} className="space-y-4">
-      <PaymentElement />
+      <PaymentElement options={{ wallets: { link: "never", applePay: "never", googlePay: "never" } }} />
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {error}
