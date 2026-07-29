@@ -19,7 +19,11 @@ export default function CoachTrainingForm({ mode }: Props) {
   const update = useStore((s) => s.updateTraining);
   const push = useStore((s) => s.pushToast);
 
-  const defaultCoachId = useStore((s) => s.currentCoachId);
+  const currentCoachId = useStore((s) => s.currentCoachId);
+  // Coaches use their own id by default; admins (no currentCoachId) fall back
+  // to the first coach in the club so the form submits with a valid value even
+  // when the dropdown isn't touched.
+  const defaultCoachId = currentCoachId || coaches[0]?.id || '';
 
   const initial = useMemo(
     () => ({
@@ -47,6 +51,7 @@ export default function CoachTrainingForm({ mode }: Props) {
     if (form.startTime >= form.endTime) e.endTime = 'Pabaigos laikas turi būti vėlesnis už pradžios.';
     if (form.capacity < 1) e.capacity = 'Talpa turi būti bent 1.';
     if (!form.description.trim()) e.description = 'Pridėkite trumpą aprašymą.';
+    if (!form.coachId) e.coachId = 'Pasirinkite trenerį. Prieš tai pridėkite bent vieną trenerį klube.';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -108,8 +113,20 @@ export default function CoachTrainingForm({ mode }: Props) {
               error={errors.description}
               className="sm:col-span-2"
             />
-            <SelectField label="Treneris" value={form.coachId} onChange={(e) => setForm({ ...form, coachId: e.target.value })}>
-              {coaches.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            <SelectField
+              label="Treneris"
+              value={form.coachId}
+              onChange={(e) => setForm({ ...form, coachId: e.target.value })}
+              error={errors.coachId}
+            >
+              {coaches.length === 0 && (
+                <option value="">— Nėra trenerių —</option>
+              )}
+              {coaches.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
             </SelectField>
             <FormField
               label="Vieta"
