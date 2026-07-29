@@ -19,9 +19,12 @@ meRouter.get(
       throw new HttpError(403, 'Šis endpointas prieinamas tik nariams.');
     }
 
-    const member = await prisma.member.findUnique({
+    let member = await prisma.member.findUnique({
       where: { id: req.user.memberId },
-      include: { club: { select: { stripeConnectAccountId: true } } },
+      include: {
+        club: { select: { stripeConnectAccountId: true } },
+        membershipPlan: true,
+      },
     });
     if (!member) throw new HttpError(404, 'Narys nerastas.');
 
@@ -29,7 +32,61 @@ meRouter.get(
     const subId = member.stripeSubscriptionId;
     const custId = member.stripeCustomerId;
 
-    // No Stripe link -> manually managed member. Return what we have from DB.
+    const stripe = getStripe();
+
+    // Credit-plan reconciliation: catch successful PaymentIntents that our
+    // webhook missed (common in dev). Idempotent — each PI is stamped with
+    // `credited: 'true'` on Stripe as soon as we apply it.
+    if (
+      member.membershipPlan?.planType === 'credits' &&
+      stripeAccount &&
+      custId
+    ) {
+      const list = await stripe.paymentIntents
+        .list({ customer: custId, limit: 20 }, { stripeAccount })
+        .catch(() => null);
+      if (list) {
+        let addTotal = 0;
+        const claimed: string[] = [];
+        for (const pi of list.data) {
+          if (pi.status !== 'succeeded') continue;
+          if (pi.metadata?.planType !== 'credits') continue;
+          if (pi.metadata?.memberId !== member.id) continue;
+          if (pi.metadata?.credited === 'true') continue;
+          const n = Number(pi.metadata?.creditCount);
+          if (!Number.isFinite(n) || n <= 0) continue;
+          addTotal += Math.floor(n);
+          claimed.push(pi.id);
+        }
+        if (addTotal > 0) {
+          member = await prisma.member.update({
+            where: { id: member.id },
+            data: {
+              creditsRemaining: (member.creditsRemaining ?? 0) + addTotal,
+              paymentStatus: 'paid',
+              lastPaymentDate: new Date(),
+            },
+            include: {
+              club: { select: { stripeConnectAccountId: true } },
+              membershipPlan: true,
+            },
+          });
+          // Stamp each PI as claimed so we can never double-credit.
+          for (const id of claimed) {
+            await stripe.paymentIntents
+              .update(
+                id,
+                { metadata: { credited: 'true' } },
+                { stripeAccount },
+              )
+              .catch(() => {});
+          }
+        }
+      }
+    }
+
+    // No Stripe subscription -> credit-plan or manually managed member. Return
+    // what we have (possibly just-reconciled above).
     if (!stripeAccount || !subId || !custId) {
       res.json({
         hasSubscription: false,
@@ -45,8 +102,6 @@ meRouter.get(
       });
       return;
     }
-
-    const stripe = getStripe();
 
     const [subscription, invoicesResp] = await Promise.all([
       stripe.subscriptions.retrieve(
@@ -112,7 +167,10 @@ meRouter.get(
       updatedMember = await prisma.member.update({
         where: { id: member.id },
         data: updates,
-        include: { club: { select: { stripeConnectAccountId: true } } },
+        include: {
+          club: { select: { stripeConnectAccountId: true } },
+          membershipPlan: true,
+        },
       });
     }
 
@@ -296,7 +354,7 @@ meRouter.post(
         customer: customerId,
         amount: Math.round(price * 100),
         currency: 'eur',
-        automatic_payment_methods: { enabled: true },
+        payment_method_types: ['card'],
         application_fee_amount: applicationFee,
         metadata: {
           memberId: member.id,

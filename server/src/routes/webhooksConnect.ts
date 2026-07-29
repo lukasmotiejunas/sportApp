@@ -156,6 +156,7 @@ webhooksConnectRouter.post(
         const pi = event.data.object as Stripe.PaymentIntent;
         const meta = pi.metadata ?? {};
         if (meta.planType !== 'credits' || !meta.memberId) break;
+        if (meta.credited === 'true') break; // already applied
         const add = Number(meta.creditCount);
         if (!Number.isFinite(add) || add <= 0) break;
 
@@ -172,6 +173,14 @@ webhooksConnectRouter.post(
             lastPaymentDate: new Date(),
           },
         });
+        // Mark PI as claimed so on-read reconciliation never double-credits.
+        await stripe.paymentIntents
+          .update(
+            pi.id,
+            { metadata: { credited: 'true' } },
+            { stripeAccount: accountId },
+          )
+          .catch(() => {});
         break;
       }
 
