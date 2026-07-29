@@ -196,7 +196,11 @@ export default function CoachTrainingDetail() {
                     </Link>
                   )}
                   <Link
-                    to={`${isAdmin ? "/admin" : "/coach"}/plans/${training.id}/${row.m.id}`}
+                    to={
+                      isAdmin
+                        ? `/admin/trainings/${training.id}/plans/${row.m.id}`
+                        : `/coach/plans/${training.id}/${row.m.id}`
+                    }
                     className="btn-primary h-9 px-3 text-xs"
                   >
                     <ClipboardEdit className="h-3.5 w-3.5" />
