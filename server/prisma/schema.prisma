@@ -231,6 +231,11 @@ model TrainingSession {
   registrationDeadline DateTime?
   goals                String[]
   whatToBring          String[]
+  // Shared training plan applied to every registered member. When a member
+  // registers, we auto-create a TrainingPlan row for them seeded with this
+  // text. The coach can then edit each member's plan individually without
+  // touching the shared template.
+  defaultPlan          String?
   status               TrainingStatus @default(open)
   registrations        TrainingRegistration[]
   trainingPlans        TrainingPlan[]

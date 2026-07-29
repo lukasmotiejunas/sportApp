@@ -124,6 +124,7 @@ export function serializeTraining(
       registeredAt: r.registeredAt.toISOString(),
     })),
     status: t.status,
+    defaultPlan: t.defaultPlan ?? '',
   };
 }
 

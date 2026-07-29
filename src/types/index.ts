@@ -171,6 +171,9 @@ export type TrainingSession = {
   registrationDeadline: string;
   goals: string[];
   whatToBring: string[];
+  // Shared plan copied to each registered member's TrainingPlan on register.
+  // Empty string when the coach didn't set one.
+  defaultPlan: string;
   registrations: TrainingRegistration[];
   status: 'open' | 'closed' | 'cancelled';
 };

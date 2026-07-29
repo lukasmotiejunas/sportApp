@@ -112,6 +112,7 @@ function buildTraining(
       ],
     whatToBring:
       overrides.whatToBring ?? ['Spygliai ar lengvi bėgimo bateliai', 'Vandens butelis', 'Putų volas (nebūtinas)'],
+    defaultPlan: overrides.defaultPlan ?? '',
     registrations: registeredMemberIds.map((id, i) => ({
       memberId: id,
       registeredAt: addDays(today, -1 - i),

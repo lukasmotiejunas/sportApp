@@ -122,30 +122,16 @@ export default function CoachTrainingDetail() {
         <section className="surface p-4 lg:col-span-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">Treniruotės aprašymas</p>
           <p className="mt-1 text-sm text-ink-700 dark:text-ink-200">{training.description}</p>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            <div>
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-500">Tikslai</p>
-              <ul className="space-y-1 text-sm">
-                {training.goals.map((g) => (
-                  <li key={g} className="flex items-start gap-2 text-ink-700 dark:text-ink-200">
-                    <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-lime-500" />
-                    {g}
-                  </li>
-                ))}
-              </ul>
+          {training.defaultPlan && (
+            <div className="mt-4">
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-500">
+                Bendras planas
+              </p>
+              <pre className="whitespace-pre-wrap font-sans text-sm text-ink-700 dark:text-ink-200">
+                {training.defaultPlan}
+              </pre>
             </div>
-            <div>
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-500">Ką atsinešti</p>
-              <ul className="space-y-1 text-sm">
-                {training.whatToBring.map((g) => (
-                  <li key={g} className="flex items-start gap-2 text-ink-700 dark:text-ink-200">
-                    <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-sky-500" />
-                    {g}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
+          )}
         </section>
       </div>
 

@@ -18,8 +18,12 @@ const trainingBaseSchema = z.object({
   coachId: z.string(),
   capacity: z.number().int().nonnegative(),
   registrationDeadline: z.string().optional(),
+  // Legacy fields — kept accepted for backwards compatibility, no longer
+  // shown in the UI. Payloads from new clients will omit them entirely.
   goals: z.array(z.string()).optional().default([]),
   whatToBring: z.array(z.string()).optional().default([]),
+  // Shared plan copied to every registered member's TrainingPlan on register.
+  defaultPlan: z.string().optional().default(''),
 });
 
 const updateTrainingSchema = trainingBaseSchema
@@ -101,6 +105,7 @@ trainingsRouter.post(
           : new Date(data.date),
         goals: data.goals,
         whatToBring: data.whatToBring,
+        defaultPlan: data.defaultPlan || null,
         status: 'open',
       },
       include: withRegistrations,
@@ -265,6 +270,26 @@ trainingsRouter.post(
         where: { id: memberId },
         data: { creditsRemaining: { decrement: 1 } },
       });
+    }
+
+    // Seed a per-member TrainingPlan from the session's shared plan. Skip if
+    // one already exists for this (member, session) — a coach may have created
+    // it earlier. Published so the member sees it immediately.
+    if (training.defaultPlan && training.defaultPlan.trim().length > 0) {
+      const existingPlan = await prisma.trainingPlan.findFirst({
+        where: { trainingSessionId: trainingId, memberId },
+      });
+      if (!existingPlan) {
+        await prisma.trainingPlan.create({
+          data: {
+            memberId,
+            trainingSessionId: trainingId,
+            title: training.title,
+            planBody: training.defaultPlan,
+            status: 'published',
+          },
+        });
+      }
     }
 
     const updated = await prisma.trainingSession.findUnique({

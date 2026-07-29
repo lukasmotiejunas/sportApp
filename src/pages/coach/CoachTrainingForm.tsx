@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { CalendarPlus, PlusCircle, Save, Trash2 } from 'lucide-react';
+import { CalendarPlus, Save } from 'lucide-react';
 import { PageTitle } from '../../components/layout/PageTitle';
 import { FormField, SelectField, TextareaField } from '../../components/ui/FormField';
 import { useStore } from '../../store/useStore';
@@ -36,8 +36,7 @@ export default function CoachTrainingForm({ mode }: Props) {
       coachId: existing?.coachId ?? defaultCoachId,
       capacity: existing?.capacity ?? 24,
       registrationDeadline: existing?.registrationDeadline ?? existing?.date ?? todayIso(),
-      goals: existing?.goals ?? [''],
-      whatToBring: existing?.whatToBring ?? [''],
+      defaultPlan: existing?.defaultPlan ?? '',
     }),
     [existing, defaultCoachId],
   );
@@ -61,8 +60,9 @@ export default function CoachTrainingForm({ mode }: Props) {
     if (!validate()) return;
     const clean = {
       ...form,
-      goals: form.goals.map((g) => g.trim()).filter(Boolean),
-      whatToBring: form.whatToBring.map((g) => g.trim()).filter(Boolean),
+      // Legacy fields — always empty going forward.
+      goals: [] as string[],
+      whatToBring: [] as string[],
     };
     if (mode === 'create') {
       const created = create(clean);
@@ -158,20 +158,17 @@ export default function CoachTrainingForm({ mode }: Props) {
         </section>
 
         <section className="surface p-4">
-          <h2 className="mb-3 font-display text-base font-bold">Treniruotės tikslai</h2>
-          <RepeatingList
-            values={form.goals}
-            onChange={(v) => setForm({ ...form, goals: v })}
-            placeholder="pvz. Tobulinti sprinto starto techniką"
-          />
-        </section>
-
-        <section className="surface p-4">
-          <h2 className="mb-3 font-display text-base font-bold">Ką atsinešti</h2>
-          <RepeatingList
-            values={form.whatToBring}
-            onChange={(v) => setForm({ ...form, whatToBring: v })}
-            placeholder="pvz. Sportbačiai su spygliais"
+          <h2 className="mb-1 font-display text-base font-bold">Bendras planas</h2>
+          <p className="mb-3 text-xs text-ink-500">
+            Šis planas bus automatiškai priskirtas kiekvienam užsiregistravusiam
+            nariui. Vėliau galėsite pritaikyti kiekvienam individualiai.
+          </p>
+          <TextareaField
+            label="Plano tekstas"
+            value={form.defaultPlan}
+            onChange={(e) => setForm({ ...form, defaultPlan: e.target.value })}
+            rows={10}
+            placeholder="Apšilimas · Pagrindinė dalis · Atsipalaidavimas · Pastabos…"
           />
         </section>
 
@@ -186,42 +183,3 @@ export default function CoachTrainingForm({ mode }: Props) {
   );
 }
 
-function RepeatingList({
-  values,
-  onChange,
-  placeholder,
-}: {
-  values: string[];
-  onChange: (v: string[]) => void;
-  placeholder: string;
-}) {
-  return (
-    <div className="space-y-2">
-      {values.map((v, i) => (
-        <div key={i} className="flex items-center gap-2">
-          <FormField
-            value={v}
-            placeholder={placeholder}
-            onChange={(e) => onChange(values.map((x, idx) => (idx === i ? e.target.value : x)))}
-            className="flex-1"
-          />
-          <button
-            type="button"
-            className="btn-ghost h-11 w-11 px-0"
-            aria-label="Pašalinti"
-            onClick={() => onChange(values.filter((_, idx) => idx !== i))}
-          >
-            <Trash2 className="h-4 w-4 text-red-500" />
-          </button>
-        </div>
-      ))}
-      <button
-        type="button"
-        className="btn-outline h-9 text-sm"
-        onClick={() => onChange([...values, ''])}
-      >
-        <PlusCircle className="h-4 w-4" /> Pridėti punktą
-      </button>
-    </div>
-  );
-}

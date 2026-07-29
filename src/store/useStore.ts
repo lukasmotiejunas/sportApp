@@ -331,6 +331,26 @@ export const useStore = create<State>()(
             return { ok: false, error: 'Ši treniruotė užpildyta.' };
           }
           const isCreditsPlan = plan?.planType === 'credits';
+          // Seed a TrainingPlan for this member from the session's shared
+          // plan if one exists and none has been created yet. Mirrors the
+          // server behaviour so the UI updates immediately.
+          const hasPlanAlready = state.trainingPlans.some(
+            (p) => p.trainingSessionId === trainingId && p.memberId === memberId,
+          );
+          const seededPlan =
+            t.defaultPlan && t.defaultPlan.trim().length > 0 && !hasPlanAlready
+              ? {
+                  id: 'plan-' + Math.random().toString(36).slice(2, 10),
+                  memberId,
+                  trainingSessionId: trainingId,
+                  title: t.title,
+                  duration: 0,
+                  coachNote: '',
+                  plan: t.defaultPlan,
+                  status: 'published' as const,
+                  updatedAt: todayIso(),
+                }
+              : null;
           // Optimistic update, then persist to the server (which re-validates).
           set({
             trainingSessions: state.trainingSessions.map((x) =>
@@ -357,6 +377,9 @@ export const useStore = create<State>()(
                     : mem,
                 )
               : state.members,
+            trainingPlans: seededPlan
+              ? [...state.trainingPlans, seededPlan]
+              : state.trainingPlans,
           });
           apiEndpoints
             .registerForTrainingApi(trainingId, memberId)
