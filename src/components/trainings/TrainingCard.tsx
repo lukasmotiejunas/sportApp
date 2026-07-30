@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Activity, Clock, MapPin, ChevronRight } from 'lucide-react';
 import type { CoachStaff, Member, TrainingSession } from '../../types';
 import { StatusBadge } from '../ui/StatusBadge';
+import { Avatar } from '../ui/Avatar';
 import { CapacityProgress } from './CapacityProgress';
 import { ParticipantAvatarGroup } from './ParticipantAvatarGroup';
 import { relativeDay } from '../../utils/dates';
@@ -25,9 +26,18 @@ export function TrainingCard({ training, coach, members, isRegistered, linkTo, v
       className="group block surface p-4 transition-all hover:shadow-card hover:border-ink-300 dark:hover:border-ink-600"
     >
       <div className="flex items-start gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-ink-100 text-ink-700 dark:bg-ink-800 dark:text-ink-200">
-          <Activity className="h-5 w-5" />
-        </div>
+        {coach ? (
+          <Avatar
+            name={coach.name}
+            color={coach.avatarColor}
+            photoUrl={coach.photoUrl}
+            size="md"
+          />
+        ) : (
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink-100 text-ink-700 dark:bg-ink-800 dark:text-ink-200">
+            <Activity className="h-5 w-5" />
+          </div>
+        )}
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
             <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">
