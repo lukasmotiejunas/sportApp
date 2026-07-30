@@ -31,6 +31,7 @@ export default function MemberTrainingDetail() {
   const cancel = useStore((s) => s.cancelRegistration);
   const push = useStore((s) => s.pushToast);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [confirmLateRegister, setConfirmLateRegister] = useState(false);
 
   const plan = useMemo(
     () =>
@@ -177,7 +178,10 @@ export default function MemberTrainingDetail() {
       );
     }
     return (
-      <button className="btn-accent flex-1" onClick={doRegister}>
+      <button
+        className="btn-accent flex-1"
+        onClick={withinCutoff ? () => setConfirmLateRegister(true) : doRegister}
+      >
         Užsiregistruoti į šią treniruotę
       </button>
     );
@@ -294,6 +298,16 @@ export default function MemberTrainingDetail() {
         confirmLabel="Atšaukti registraciją"
         cancelLabel="Palikti registraciją"
         destructive
+      />
+
+      <ConfirmDialog
+        open={confirmLateRegister}
+        onClose={() => setConfirmLateRegister(false)}
+        onConfirm={doRegister}
+        title="Registruotis likus mažiau nei valandai?"
+        message="Iki treniruotės pradžios liko mažiau nei viena valanda — užsiregistravę nebegalėsite atšaukti registracijos. Ar tikrai norite registruotis?"
+        confirmLabel="Taip, registruotis"
+        cancelLabel="Atšaukti"
       />
     </div>
   );
