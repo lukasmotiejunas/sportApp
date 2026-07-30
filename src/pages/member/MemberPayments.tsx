@@ -334,8 +334,10 @@ export default function MemberPayments() {
 
           <ul className="grid gap-2 sm:grid-cols-2">
             <li className="flex items-center gap-2 rounded-xl bg-ink-50 p-2.5 text-sm dark:bg-ink-800/60">
-              <ShieldCheck className="h-4 w-4 text-emerald-500" /> Neribotos
-              registracijos į treniruotes
+              <ShieldCheck className="h-4 w-4 text-emerald-500" />
+              {plan.trainingsPerWeek === null
+                ? "Neribotos registracijos į treniruotes"
+                : `${plan.trainingsPerWeek} ${plan.trainingsPerWeek === 1 ? "treniruotė" : "treniruotės"} per savaitę`}
             </li>
             <li className="flex items-center gap-2 rounded-xl bg-ink-50 p-2.5 text-sm dark:bg-ink-800/60">
               <ShieldCheck className="h-4 w-4 text-emerald-500" /> Asmeniniai
