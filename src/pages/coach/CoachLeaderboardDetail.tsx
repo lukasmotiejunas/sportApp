@@ -52,7 +52,7 @@ export default function CoachLeaderboardDetail() {
   const parseValue = (raw: string): number | null => {
     const trimmed = raw.trim();
     if (!trimmed) return null;
-    if (category.measurementType === 'seconds' || category.measurementType === 'ms') {
+    if (category.measurementType === 'seconds') {
       // support mm:ss or seconds
       if (trimmed.includes(':')) {
         const [m, s] = trimmed.split(':').map((x) => Number(x));

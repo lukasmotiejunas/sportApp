@@ -32,12 +32,14 @@ export function formatResult(value: number, category: LeaderboardCategory): stri
         return `${mins}:${secs.toFixed(0).padStart(2, '0')}`;
       }
       return `${value.toFixed(2)} s`;
-    case 'ms':
-      return `${value.toFixed(0)} ms`;
     case 'distance_km':
       return `${value.toFixed(1)} km`;
-    case 'points':
-      return `${value.toFixed(0)} t.`;
+    case 'distance_m':
+      return `${value.toFixed(0)} m`;
+    case 'minutes':
+      return `${value.toFixed(2)} min`;
+    case 'kg':
+      return `${value.toFixed(1)} kg`;
     default:
       return String(value);
   }

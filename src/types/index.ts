@@ -204,7 +204,7 @@ export type LeaderboardCategory = {
   id: string;
   name: string;
   event: string; // e.g. "100m"
-  measurementType: 'seconds' | 'ms' | 'distance_km' | 'points';
+  measurementType: 'seconds' | 'distance_km' | 'distance_m' | 'minutes' | 'kg';
   unit: string;
   lowerIsBetter: boolean;
   genderCategory: Gender | 'all';

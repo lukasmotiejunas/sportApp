@@ -188,23 +188,26 @@ export default function CoachLeaderboards() {
               const unit =
                 v === "seconds"
                   ? "s"
-                  : v === "ms"
-                    ? "ms"
-                    : v === "distance_km"
-                      ? "km"
-                      : "pts";
+                  : v === "distance_km"
+                    ? "km"
+                    : v === "distance_m"
+                      ? "m"
+                      : v === "minutes"
+                        ? "min"
+                        : "kg";
               setDraft({
                 ...draft,
                 measurementType: v,
                 unit,
-                lowerIsBetter: v === "seconds" || v === "ms",
+                lowerIsBetter: v === "seconds" || v === "minutes",
               });
             }}
           >
             <option value="seconds">Sekundės</option>
-            <option value="ms">Milisekundės</option>
             <option value="distance_km">Atstumas (km)</option>
-            <option value="points">Taškai</option>
+            <option value="distance_m">Atstumas (m)</option>
+            <option value="minutes">Minutės</option>
+            <option value="kg">kg</option>
           </SelectField>
           <SelectField
             label="Kryptis"
