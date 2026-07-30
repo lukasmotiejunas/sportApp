@@ -210,6 +210,8 @@ model Coach {
   specialty   String?
   avatarColor String?
   initials    String?
+  phone       String?
+  photoUrl    String?
   sessions    TrainingSession[]
   user        User?
 

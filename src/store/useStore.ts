@@ -77,6 +77,7 @@ type State = {
   ) => { ok: boolean; error?: string; waitlisted?: boolean };
   cancelRegistration: (trainingId: string, memberId: string) => void;
   updateMember: (id: string, patch: Partial<Member>) => void;
+  patchCoach: (id: string, patch: Partial<CoachStaff>) => void;
   refreshMyBilling: () => Promise<void>;
 
   // Coach actions
@@ -460,6 +461,12 @@ export const useStore = create<State>()(
             members: get().members.map((m) => (m.id === id ? { ...m, ...patch } : m)),
           });
           apiEndpoints.patchMember(id, patch).catch(onSyncError('Nepavyko atnaujinti nario.'));
+        },
+
+        patchCoach: (id, patch) => {
+          set({
+            coaches: get().coaches.map((c) => (c.id === id ? { ...c, ...patch } : c)),
+          });
         },
 
         refreshMyBilling: async () => {

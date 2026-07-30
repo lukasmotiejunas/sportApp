@@ -1,5 +1,5 @@
 import { api } from './client';
-import type { AuthUser } from '../types';
+import type { AuthUser, CoachStaff } from '../types';
 
 export type UpdateSelfInput = {
   name?: string;
@@ -25,3 +25,14 @@ export const updateClubApi = (input: UpdateClubInput) =>
     '/profile/club',
     input,
   );
+
+export type UpdateCoachSelfInput = {
+  name?: string;
+  specialty?: string;
+  phone?: string;
+  // Data URL to set, empty string to clear the photo.
+  photoUrl?: string | null;
+};
+
+export const updateCoachSelfApi = (input: UpdateCoachSelfInput) =>
+  api.put<CoachStaff>('/profile/coach', input);

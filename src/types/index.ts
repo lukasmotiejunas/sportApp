@@ -151,6 +151,8 @@ export type CoachStaff = {
   initials: string;
   avatarColor: string;
   specialty: string;
+  phone?: string;
+  photoUrl?: string;
 };
 
 export type RegistrationStatus =

@@ -69,6 +69,8 @@ export function serializeCoach(c: Coach) {
     initials: c.initials ?? '',
     avatarColor: c.avatarColor ?? 'bg-slate-500',
     specialty: c.specialty ?? '',
+    phone: c.phone ?? '',
+    photoUrl: c.photoUrl ?? undefined,
   };
 }
 

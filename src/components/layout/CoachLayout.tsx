@@ -4,6 +4,7 @@ import {
   BarChart3,
   Trophy,
   Users2,
+  UserCog,
   Menu,
   X,
 } from "lucide-react";
@@ -17,6 +18,7 @@ const items = [
   { to: "/coach/trainings", label: "Treniruotės", icon: BarChart3, end: false },
   { to: "/coach/members", label: "Nariai", icon: Users2 },
   { to: "/coach/leaderboards", label: "Rezultatai", icon: Trophy },
+  { to: "/coach/profile", label: "Profilis", icon: UserCog },
 ];
 
 export function CoachLayout() {

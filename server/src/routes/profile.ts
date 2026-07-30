@@ -4,7 +4,8 @@ import { prisma } from '../prisma.js';
 import { asyncHandler, HttpError } from '../middleware/errorHandler.js';
 import { requireRole } from '../middleware/auth.js';
 import { hashPassword, verifyPassword } from '../auth/password.js';
-import { serializeUser } from '../serialize.js';
+import { serializeCoach, serializeUser } from '../serialize.js';
+import { initialsFromName } from '../util.js';
 
 export const profileRouter = Router();
 
@@ -68,6 +69,59 @@ profileRouter.post(
     await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
 
     res.status(204).end();
+  }),
+);
+
+const updateCoachSelfSchema = z.object({
+  name: z.string().min(2, 'Vardas per trumpas.').max(120).optional(),
+  specialty: z.string().max(200).optional(),
+  phone: z.string().max(40).optional(),
+  // Data URL (image/*;base64,...) or empty string to clear.
+  photoUrl: z.string().max(300_000).nullable().optional(),
+});
+
+// PUT /coach — coach self-service update of Coach profile fields. Name syncs
+// to the linked User row so it stays consistent with the login identity.
+profileRouter.put(
+  '/coach',
+  requireRole('coach'),
+  asyncHandler(async (req, res) => {
+    const userId = req.user!.userId;
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user?.coachId) throw new HttpError(404, 'Trenerio profilis nerastas.');
+
+    const data = updateCoachSelfSchema.parse(req.body);
+    if (
+      data.name === undefined &&
+      data.specialty === undefined &&
+      data.phone === undefined &&
+      data.photoUrl === undefined
+    ) {
+      throw new HttpError(400, 'Nėra ką atnaujinti.');
+    }
+
+    const updated = await prisma.coach.update({
+      where: { id: user.coachId },
+      data: {
+        ...(data.name !== undefined
+          ? { name: data.name, initials: initialsFromName(data.name) }
+          : {}),
+        ...(data.specialty !== undefined ? { specialty: data.specialty } : {}),
+        ...(data.phone !== undefined ? { phone: data.phone } : {}),
+        ...(data.photoUrl !== undefined
+          ? { photoUrl: data.photoUrl === '' ? null : data.photoUrl }
+          : {}),
+      },
+    });
+
+    if (data.name !== undefined) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { name: data.name },
+      });
+    }
+
+    res.json(serializeCoach(updated));
   }),
 );
 

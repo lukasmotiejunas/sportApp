@@ -6,6 +6,7 @@ import {
   Info,
   MapPin,
   MessageSquareText,
+  Phone,
   Sparkles,
   UserRound,
   XCircle,
@@ -240,6 +241,14 @@ export default function MemberTrainingDetail() {
               label="Data"
               value={formatDateLong(training.date)}
             />
+            {coach?.phone && (
+              <InfoRow
+                icon={Phone}
+                label="Trenerio telefonas"
+                value={coach.phone}
+                href={`tel:${coach.phone.replace(/\s+/g, "")}`}
+              />
+            )}
           </div>
 
           <div className="mt-4">
@@ -317,13 +326,15 @@ function InfoRow({
   icon: Icon,
   label,
   value,
+  href,
 }: {
   icon: any;
   label: string;
   value: string;
+  href?: string;
 }) {
-  return (
-    <div className="flex items-center gap-2 rounded-xl bg-ink-50 p-2.5 dark:bg-ink-800/60">
+  const body = (
+    <>
       <Icon className="h-4 w-4 text-ink-500" />
       <div className="min-w-0">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-500">
@@ -333,6 +344,21 @@ function InfoRow({
           {value}
         </p>
       </div>
+    </>
+  );
+  if (href) {
+    return (
+      <a
+        href={href}
+        className="flex items-center gap-2 rounded-xl bg-ink-50 p-2.5 transition-colors hover:bg-ink-100 dark:bg-ink-800/60 dark:hover:bg-ink-800"
+      >
+        {body}
+      </a>
+    );
+  }
+  return (
+    <div className="flex items-center gap-2 rounded-xl bg-ink-50 p-2.5 dark:bg-ink-800/60">
+      {body}
     </div>
   );
 }
