@@ -220,15 +220,6 @@ export default function MemberProfile() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3 rounded-xl bg-ink-50 p-3 dark:bg-ink-800/60">
-            <User className="h-4 w-4 text-ink-500" />
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">
-                Amžiaus grupė
-              </p>
-              <p className="text-sm font-semibold">{member.ageGroup}</p>
-            </div>
-          </div>
         </div>
 
         <button
