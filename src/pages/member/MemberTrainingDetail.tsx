@@ -256,6 +256,12 @@ export default function MemberTrainingDetail() {
               registered={activeRegs.length}
               capacity={training.capacity}
             />
+            {waitlistRegs.length > 0 && (
+              <p className="mt-2 text-xs font-medium text-ink-500">
+                Laukiančiųjų sąraše: {waitlistRegs.length}
+                {isWaitlisted && ` · jūsų pozicija ${waitlistPosition}`}
+              </p>
+            )}
           </div>
         </section>
 
