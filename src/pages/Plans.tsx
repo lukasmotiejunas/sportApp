@@ -220,7 +220,8 @@ export default function Plans() {
             <p className="mt-4 max-w-xl text-lg text-white/70">
               Nariai, treniruotės, mokėjimai ir rezultatai vienoje vietoje.
               Pirmos <strong>2 savaitės — nemokamai</strong>, o po to vos{" "}
-              <strong>{formatPrice(MONTHLY_FEE)} per mėnesį</strong> už visą klubą.
+              <strong>{formatPrice(MONTHLY_FEE)} per mėnesį</strong> už visą
+              klubą.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <button
@@ -228,7 +229,7 @@ export default function Plans() {
                 className="btn-accent group h-12 px-6 text-base"
               >
                 Išbandyti nemokamai 2 savaites
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                <ArrowRight className="h-4 w-4 transition-transform" />
               </button>
               <a
                 href="#kaina"
@@ -243,7 +244,10 @@ export default function Plans() {
           </div>
 
           <div className="relative">
-            <div className="absolute -inset-4 rounded-3xl bg-lime-400/20 blur-3xl" aria-hidden />
+            <div
+              className="absolute -inset-4 rounded-3xl bg-lime-400/20 blur-3xl"
+              aria-hidden
+            />
             <div className="surface relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] p-6 text-white shadow-pop backdrop-blur">
               <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-lime-300">
                 <Sparkles className="h-3.5 w-3.5" /> Mėnesio prenumerata
@@ -338,7 +342,8 @@ export default function Plans() {
                 <ArrowRight className="h-4 w-4" />
               </button>
               <p className="text-xs text-white/50">
-                Šiandien nieko neapmokestiname. Bet kada galite atsisakyti prenumeratos.
+                Šiandien nieko neapmokestiname. Bet kada galite atsisakyti
+                prenumeratos.
               </p>
             </div>
           </div>
@@ -409,7 +414,8 @@ function InfoStep(props: {
   nextChargeDate: string;
   onBack: () => void;
 }) {
-  const { info, setField, submit, submitting, error, nextChargeDate, onBack } = props;
+  const { info, setField, submit, submitting, error, nextChargeDate, onBack } =
+    props;
   return (
     <div className="relative min-h-screen bg-ink-950 text-white">
       <div className="hero-gradient absolute inset-0 -z-10" />
@@ -440,9 +446,9 @@ function InfoStep(props: {
           </h1>
           <p className="mt-2 text-sm text-white/70">
             Pirmos 2 savaitės — nemokamai. Pirmasis mokėjimas{" "}
-            <strong className="text-white">{formatPrice(MONTHLY_FEE)}</strong> bus{" "}
-            <strong className="text-white">{nextChargeDate}</strong>, ir kartosis
-            kas mėnesį, kol atšauksite prenumeratą.
+            <strong className="text-white">{formatPrice(MONTHLY_FEE)}</strong>{" "}
+            bus <strong className="text-white">{nextChargeDate}</strong>, ir
+            kartosis kas mėnesį, kol atšauksite prenumeratą.
           </p>
         </div>
 
@@ -541,7 +547,8 @@ function PaymentStep(props: {
     return (
       <PaymentShell onBack={onBack}>
         <div className="rounded-xl border border-red-400/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-          Trūksta „VITE_STRIPE_PUBLISHABLE_KEY" aplinkos kintamojo. Praneškite administratoriui.
+          Trūksta „VITE_STRIPE_PUBLISHABLE_KEY" aplinkos kintamojo. Praneškite
+          administratoriui.
         </div>
       </PaymentShell>
     );
@@ -624,8 +631,9 @@ function PaymentShell({
             Pridėkite mokėjimo kortelę.
           </h1>
           <p className="mt-2 text-sm text-white/70">
-            Pirmos <strong className="text-white">2 savaitės — nemokamai</strong>.
-            Po to kortelė bus apmokestinta{" "}
+            Pirmos{" "}
+            <strong className="text-white">2 savaitės — nemokamai</strong>. Po
+            to kortelė bus apmokestinta{" "}
             <strong className="text-white">{formatPrice(MONTHLY_FEE)}</strong>{" "}
             kas mėnesį, kol atšauksite prenumeratą. Šiandien nieko
             neapmokestiname.
@@ -705,7 +713,11 @@ function PaymentForm({
           </div>
         </div>
         <div className="mt-5">
-          <PaymentElement options={{ wallets: { link: "never", applePay: "never", googlePay: "never" } }} />
+          <PaymentElement
+            options={{
+              wallets: { link: "never", applePay: "never", googlePay: "never" },
+            }}
+          />
         </div>
       </section>
 
@@ -715,9 +727,8 @@ function PaymentForm({
         </p>
         <p className="mt-1.5 text-white/70">
           Paspausdami „Aktyvuoti bandymo laikotarpį" sutinkate, kad po nemokamo
-          laikotarpio ({" "}
-          <strong className="text-white">{nextChargeDate}</strong>) jūsų kortelė
-          bus apmokestinta{" "}
+          laikotarpio ( <strong className="text-white">{nextChargeDate}</strong>
+          ) jūsų kortelė bus apmokestinta{" "}
           <strong className="text-white">{formatPrice(MONTHLY_FEE)}</strong> per
           mėnesį. Prenumerata kartojasi kas mėnesį, kol atšauksite ją iš klubo
           administravimo skydelio.
@@ -735,9 +746,7 @@ function PaymentForm({
         disabled={!stripe || !elements || submitting}
         className="btn-accent h-12 w-full text-base"
       >
-        {submitting
-          ? "Tvirtinama…"
-          : "Aktyvuoti bandymo laikotarpį"}
+        {submitting ? "Tvirtinama…" : "Aktyvuoti bandymo laikotarpį"}
         {!submitting && <ArrowRight className="h-4 w-4" />}
       </button>
 
@@ -791,7 +800,9 @@ function FormSection({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             {Icon && <Icon className="h-4 w-4 text-white/60" />}
-            <h2 className="font-display text-lg font-bold text-white">{title}</h2>
+            <h2 className="font-display text-lg font-bold text-white">
+              {title}
+            </h2>
           </div>
           {description && (
             <p className="mt-1 text-sm text-white/60">{description}</p>
@@ -910,7 +921,8 @@ function SuccessScreen({
             Jūsų prisijungimo duomenys
           </h2>
           <p className="mt-1 text-sm text-white/60">
-            Išsaugokite šiuos duomenis — jais prisijungsite prie savo klubo administravimo.
+            Išsaugokite šiuos duomenis — jais prisijungsite prie savo klubo
+            administravimo.
           </p>
 
           <div className="mt-4 space-y-3">
@@ -938,7 +950,9 @@ function SuccessScreen({
         </div>
 
         <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-sm text-white/70">
-          <p className="font-display text-base font-bold text-white">Kas toliau?</p>
+          <p className="font-display text-base font-bold text-white">
+            Kas toliau?
+          </p>
           <ul className="mt-2 space-y-1.5">
             <li className="flex items-start gap-2">
               <Check className="mt-0.5 h-4 w-4 shrink-0 text-lime-300" />
@@ -976,7 +990,9 @@ function CredentialRow({
         <div className="text-[11px] font-bold uppercase tracking-widest text-white/50">
           {label}
         </div>
-        <div className="mt-0.5 truncate font-mono text-sm text-white">{value}</div>
+        <div className="mt-0.5 truncate font-mono text-sm text-white">
+          {value}
+        </div>
       </div>
       <button
         type="button"

@@ -1,17 +1,17 @@
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowRight, Search, Trophy } from 'lucide-react';
-import { useStore, useCurrentMember } from '../../store/useStore';
-import { PageTitle } from '../../components/layout/PageTitle';
-import { StatusBadge } from '../../components/ui/StatusBadge';
-import { formatResult } from '../../utils/format';
+import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { ArrowRight, Search, Trophy } from "lucide-react";
+import { useStore, useCurrentMember } from "../../store/useStore";
+import { PageTitle } from "../../components/layout/PageTitle";
+import { StatusBadge } from "../../components/ui/StatusBadge";
+import { formatResult } from "../../utils/format";
 
 export default function MemberLeaderboards() {
   const member = useCurrentMember();
   const categories = useStore((s) => s.leaderboardCategories);
   const results = useStore((s) => s.leaderboardResults);
 
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const active = categories.filter((c) => !c.archived);
   const filtered = active.filter((c) =>
     (c.name + c.event).toLowerCase().includes(search.toLowerCase()),
@@ -22,7 +22,9 @@ export default function MemberLeaderboards() {
     for (const c of active) {
       const r = results
         .filter((x) => x.categoryId === c.id)
-        .sort((a, b) => (c.lowerIsBetter ? a.value - b.value : b.value - a.value));
+        .sort((a, b) =>
+          c.lowerIsBetter ? a.value - b.value : b.value - a.value,
+        );
       const idx = r.findIndex((x) => x.memberId === member.id);
       map[c.id] = idx >= 0 ? { rank: idx + 1, value: r[idx].value } : null;
     }
@@ -54,7 +56,9 @@ export default function MemberLeaderboards() {
           const my = rankedByCategory[c.id];
           const top = results
             .filter((r) => r.categoryId === c.id)
-            .sort((a, b) => (c.lowerIsBetter ? a.value - b.value : b.value - a.value))[0];
+            .sort((a, b) =>
+              c.lowerIsBetter ? a.value - b.value : b.value - a.value,
+            )[0];
           return (
             <Link
               key={c.id}
@@ -65,10 +69,12 @@ export default function MemberLeaderboards() {
                 <Trophy className="h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">{c.event}</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">
+                  {c.event}
+                </p>
                 <p className="font-display text-base font-bold">{c.name}</p>
                 <p className="mt-0.5 text-xs text-ink-500">
-                  Geriausias: {top ? formatResult(top.value, c) : '—'}
+                  Geriausias: {top ? formatResult(top.value, c) : "—"}
                 </p>
               </div>
               <div className="flex flex-col items-end gap-1">
@@ -79,7 +85,7 @@ export default function MemberLeaderboards() {
                 ) : (
                   <StatusBadge tone="neutral">Nereitinguota</StatusBadge>
                 )}
-                <ArrowRight className="h-4 w-4 text-ink-400 group-hover:text-ink-600" />
+                <ArrowRight className="h-4 w-4 text-ink-400" />
               </div>
             </Link>
           );
