@@ -66,6 +66,9 @@ export default function MemberTrainingDetail() {
   const registered = activeRegs
     .map((r) => members.find((m) => m.id === r.memberId))
     .filter(Boolean) as typeof members;
+  const waitlisted = waitlistRegs
+    .map((r) => members.find((m) => m.id === r.memberId))
+    .filter(Boolean) as typeof members;
   const myEntry = training.registrations.find(
     (r) =>
       r.memberId === member.id &&
@@ -295,6 +298,36 @@ export default function MemberTrainingDetail() {
             </ul>
           )}
         </section>
+
+        {waitlisted.length > 0 && (
+          <section className="surface p-4 md:col-span-2">
+            <h3 className="mb-3 flex items-center gap-2 font-display text-base font-bold">
+              <Sparkles className="h-4 w-4 text-lime-600" />
+              Laukiantys dalyviai
+              <span className="text-xs font-medium text-ink-500">
+                · {waitlisted.length}
+              </span>
+            </h3>
+            <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {waitlisted.map((m) => (
+                <li
+                  key={m.id}
+                  className="flex items-center gap-2 rounded-xl border border-ink-100 p-2 dark:border-ink-800"
+                >
+                  <Avatar
+                    name={m.name}
+                    color={m.avatarColor}
+                    size="sm"
+                    photoUrl={m.photoUrl}
+                  />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold">{m.name}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </div>
 
       {/* Sticky action */}
