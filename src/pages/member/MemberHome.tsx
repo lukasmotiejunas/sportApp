@@ -42,8 +42,13 @@ export default function MemberHome() {
   }, [refreshMyBilling]);
 
   const today = todayIso();
+  const nowMs = Date.now();
   const upcoming = trainings
-    .filter((t) => t.date >= today && t.status !== "cancelled")
+    .filter((t) => {
+      if (t.status === "cancelled") return false;
+      const end = new Date(`${t.date}T${t.endTime}`).getTime();
+      return Number.isNaN(end) ? t.date >= today : end > nowMs;
+    })
     .sort((a, b) => (a.date + a.startTime).localeCompare(b.date + b.startTime));
   const next =
     upcoming.find((t) =>
