@@ -78,13 +78,14 @@ export default function MemberTrainingDetail() {
   const isOverdue = member.paymentStatus === "overdue";
   const isCancelled = training.status === "cancelled";
   const isClosed = training.status === "closed";
-  // Members can no longer cancel a real registration once less than 1h
-  // remains before start (server enforces the same rule).
+  // Within 1h of start: cancelling a registration and joining the waitlist
+  // are locked, but registering into a free spot is still allowed. Server
+  // enforces the same rules.
   const minutesToStart =
     (new Date(`${training.date}T${training.startTime}`).getTime() -
       Date.now()) /
     60000;
-  const cancelLocked = minutesToStart < 60;
+  const withinCutoff = minutesToStart < 60;
 
   const doRegister = () => {
     const res = register(training.id, member.id);
@@ -112,16 +113,26 @@ export default function MemberTrainingDetail() {
   };
 
   const primary = () => {
-    // Within 1 hour of start (or after start): everything's frozen. No new
-    // registrations, no waitlist joining, no cancellations. Just a status.
-    if (cancelLocked) {
+    if (isCancelled)
       return (
         <button className="btn-outline flex-1" disabled>
-          Registracija uždaryta — iki treniruotės liko mažiau nei valanda
+          Treniruotė atšaukta
         </button>
       );
-    }
+    if (isClosed)
+      return (
+        <button className="btn-outline flex-1" disabled>
+          Registracija uždaryta
+        </button>
+      );
     if (isRegistered) {
+      if (withinCutoff) {
+        return (
+          <button className="btn-outline flex-1" disabled>
+            Iki treniruotės liko mažiau nei valanda — atšaukti nebegalima
+          </button>
+        );
+      }
       return (
         <button
           className="btn-danger flex-1"
@@ -142,18 +153,6 @@ export default function MemberTrainingDetail() {
         </button>
       );
     }
-    if (isCancelled)
-      return (
-        <button className="btn-outline flex-1" disabled>
-          Treniruotė atšaukta
-        </button>
-      );
-    if (isClosed)
-      return (
-        <button className="btn-outline flex-1" disabled>
-          Registracija uždaryta
-        </button>
-      );
     if (isOverdue)
       return (
         <button
@@ -164,6 +163,13 @@ export default function MemberTrainingDetail() {
         </button>
       );
     if (isFull) {
+      if (withinCutoff) {
+        return (
+          <button className="btn-outline flex-1" disabled>
+            Užpildyta — iki treniruotės liko mažiau nei valanda
+          </button>
+        );
+      }
       return (
         <button className="btn-accent flex-1" onClick={doRegister}>
           Užpildyta · stoti į laukiančiųjų sąrašą
