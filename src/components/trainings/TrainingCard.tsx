@@ -26,6 +26,7 @@ export function TrainingCard({
 }: Props) {
   const isCancelled = training.status === "cancelled";
   const isClosed = training.status === "closed";
+  const timeState = trainingTimeState(training);
 
   return (
     <Link
@@ -63,6 +64,21 @@ export function TrainingCard({
             {isRegistered && !isCancelled && (
               <StatusBadge tone="accent" dot>
                 Užsiregistravote
+              </StatusBadge>
+            )}
+            {!isCancelled && timeState === "in_progress" && (
+              <StatusBadge tone="success" dot>
+                Vyksta dabar
+              </StatusBadge>
+            )}
+            {!isCancelled && timeState === "finished" && (
+              <StatusBadge tone="neutral" dot>
+                Pasibaigė
+              </StatusBadge>
+            )}
+            {!isCancelled && timeState === "upcoming" && (
+              <StatusBadge tone="info" dot>
+                Dar neprasidėjo
               </StatusBadge>
             )}
           </div>
@@ -103,4 +119,16 @@ export function TrainingCard({
       )}
     </Link>
   );
+}
+
+function trainingTimeState(
+  training: TrainingSession,
+): "upcoming" | "in_progress" | "finished" {
+  const now = Date.now();
+  const start = new Date(`${training.date}T${training.startTime}`).getTime();
+  const end = new Date(`${training.date}T${training.endTime}`).getTime();
+  if (Number.isNaN(start) || Number.isNaN(end)) return "upcoming";
+  if (now < start) return "upcoming";
+  if (now >= end) return "finished";
+  return "in_progress";
 }
