@@ -17,12 +17,11 @@ import {
 } from "../../api/endpoints";
 import { ApiError } from "../../api/client";
 
-type InvoiceFilter = "all" | "paid" | "open" | "uncollectible";
+type InvoiceFilter = "all" | "paid" | "uncollectible";
 
 const filters: { id: InvoiceFilter; label: string }[] = [
   { id: "all", label: "Visi" },
   { id: "paid", label: "Apmokėta" },
-  { id: "open", label: "Laukiama" },
   { id: "uncollectible", label: "Nesumokėta" },
 ];
 
@@ -83,6 +82,7 @@ export default function AdminPayments() {
   const rows: ClubPaymentInvoice[] = useMemo(() => {
     const list = data?.invoices ?? [];
     return list
+      .filter((inv) => inv.status !== "open")
       .filter((inv) => (filter === "all" ? true : inv.status === filter))
       .filter((inv) => {
         if (!search.trim()) return true;
@@ -100,12 +100,11 @@ export default function AdminPayments() {
   }, [data, filter, search, memberById]);
 
   const counts = useMemo(() => {
-    const acc = { paid: 0, open: 0, uncollectible: 0, other: 0 };
+    const acc = { paid: 0, uncollectible: 0, other: 0 };
     (data?.invoices ?? []).forEach((inv) => {
       if (inv.status === "paid") acc.paid += 1;
-      else if (inv.status === "open") acc.open += 1;
       else if (inv.status === "uncollectible") acc.uncollectible += 1;
-      else acc.other += 1;
+      else if (inv.status !== "open") acc.other += 1;
     });
     return acc;
   }, [data]);
@@ -113,7 +112,6 @@ export default function AdminPayments() {
   const pieData = [
     { name: "Apmokėta", value: counts.paid, color: "#10b981" },
     { name: "Nesumokėta", value: counts.uncollectible, color: "#ef4444" },
-    { name: "Laukiama", value: counts.open, color: "#f59e0b" },
   ];
 
   const notConnected = !loading && data && !data.connected;
