@@ -17,14 +17,11 @@ import { Avatar } from "../../components/ui/Avatar";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { FormField } from "../../components/ui/FormField";
 import { formatDateLong } from "../../utils/dates";
-import { formatResult } from "../../utils/format";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { resizeImageToDataUrl } from "../../utils/image";
 
 export default function MemberProfile() {
   const member = useCurrentMember();
-  const results = useStore((s) => s.leaderboardResults);
-  const categories = useStore((s) => s.leaderboardCategories);
   const plans = useStore((s) => s.membershipPlans);
   const plan = plans.find((p) => p.id === member.membershipPlanId);
   const updateMember = useStore((s) => s.updateMember);
@@ -66,21 +63,6 @@ export default function MemberProfile() {
     phone: member.phone,
     dateOfBirth: member.dateOfBirth,
   });
-
-  const bests = categories
-    .filter((c) => c.measurementType === "seconds")
-    .map((c) => {
-      const my = results
-        .filter((r) => r.categoryId === c.id && r.memberId === member.id)
-        .sort((a, b) =>
-          c.lowerIsBetter ? a.value - b.value : b.value - a.value,
-        )[0];
-      return my ? { c, my } : null;
-    })
-    .filter(Boolean) as {
-    c: (typeof categories)[number];
-    my: (typeof results)[number];
-  }[];
 
   const save = () => {
     updateMember(member.id, edit);
@@ -179,31 +161,6 @@ export default function MemberProfile() {
             Išsaugoti pakeitimus
           </button>
         </div>
-      </section>
-
-      <section className="surface mb-4 p-4">
-        <h2 className="mb-3 font-display text-base font-bold">
-          Asmeniniai rekordai
-        </h2>
-        {bests.length === 0 ? (
-          <p className="text-sm text-ink-500">Rezultatų dar nėra.</p>
-        ) : (
-          <div className="grid gap-2 sm:grid-cols-2">
-            {bests.map(({ c, my }) => (
-              <div
-                key={c.id}
-                className="rounded-xl bg-ink-50 p-3 dark:bg-ink-800/60"
-              >
-                <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">
-                  {c.event}
-                </p>
-                <p className="font-display text-lg font-bold tabular-nums">
-                  {formatResult(my.value, c)}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
       </section>
 
       <section className="surface p-4">

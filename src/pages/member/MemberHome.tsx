@@ -452,18 +452,6 @@ function TrainingCalendar({
           </span>
           Dalyvauta
         </span>
-        <span className="flex items-center gap-1.5">
-          <span className="h-4 w-4 rounded-md border border-ink-200 bg-ink-100/60 dark:border-ink-700 dark:bg-ink-800/60" />
-          Praleista
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="h-4 w-4 rounded-md border border-lime-400/30" />
-          Artėjanti
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="h-4 w-4 rounded-md border border-dashed border-ink-200 dark:border-ink-800" />
-          Poilsis
-        </span>
       </div>
     </Modal>
   );
