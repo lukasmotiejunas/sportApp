@@ -14,7 +14,7 @@ const categorySchema = z.object({
   id: z.string().optional(),
   name: z.string(),
   event: z.string(),
-  measurementType: z.enum(['seconds', 'ms', 'distance_km', 'points']),
+  measurementType: z.enum(['seconds', 'distance_km', 'distance_m', 'minutes', 'kg']),
   unit: z.string(),
   lowerIsBetter: z.boolean(),
   genderCategory: z.enum(['male', 'female', 'all']),

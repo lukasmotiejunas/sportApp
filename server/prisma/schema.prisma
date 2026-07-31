@@ -48,9 +48,10 @@ enum PlanStatus {
 
 enum MeasurementType {
   seconds
-  ms
   distance_km
-  points
+  distance_m
+  minutes
+  kg
 }
 
 enum GenderCategory {
