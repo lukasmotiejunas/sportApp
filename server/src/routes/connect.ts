@@ -195,16 +195,32 @@ connectRouter.get(
       periodEnd: string | null;
     }> = [];
 
-    const raw = await stripe.invoices.list(
-      { limit: 100 },
-      { stripeAccount: acct },
+    const [rawInvoices, rawIntents] = await Promise.all([
+      stripe.invoices.list({ limit: 100 }, { stripeAccount: acct }),
+      stripe.paymentIntents.list(
+        { limit: 100, expand: ['data.latest_charge'] },
+        { stripeAccount: acct },
+      ),
+    ]);
+
+    // One-time payments (credit-pack purchases) don't go through Invoices —
+    // they're standalone PaymentIntents. Identify them via the metadata we
+    // stamp at creation time so we don't double-count subscription charges,
+    // which appear both in Invoices and (indirectly) as PaymentIntents.
+    const oneTimeIntents = rawIntents.data.filter(
+      (pi) => pi.metadata?.planType === 'credits',
     );
 
     const customerIds = Array.from(
       new Set(
-        raw.data
-          .map((i) => (typeof i.customer === 'string' ? i.customer : null))
-          .filter((v): v is string => !!v),
+        [
+          ...rawInvoices.data.map((i) =>
+            typeof i.customer === 'string' ? i.customer : null,
+          ),
+          ...oneTimeIntents.map((pi) =>
+            typeof pi.customer === 'string' ? pi.customer : null,
+          ),
+        ].filter((v): v is string => !!v),
       ),
     );
 
@@ -231,7 +247,7 @@ connectRouter.get(
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    for (const inv of raw.data) {
+    for (const inv of rawInvoices.data) {
       if (inv.status === 'paid' && inv.amount_paid) {
         totalRevenueCents += inv.amount_paid;
         const paidAtTs = inv.status_transitions?.paid_at ?? inv.created;
@@ -271,6 +287,73 @@ connectRouter.get(
           : null,
       });
     }
+
+    for (const pi of oneTimeIntents) {
+      const paid = pi.status === 'succeeded';
+      const amountCents = pi.amount_received || pi.amount || 0;
+      if (paid && amountCents) {
+        totalRevenueCents += amountCents;
+        if (new Date(pi.created * 1000) >= monthStart) {
+          mtdRevenueCents += amountCents;
+          mtdCount += 1;
+        }
+      }
+      if (pi.currency) currency = pi.currency;
+
+      const status =
+        pi.status === 'succeeded'
+          ? 'paid'
+          : pi.status === 'canceled'
+            ? 'void'
+            : pi.status === 'processing' ||
+                pi.status === 'requires_payment_method' ||
+                pi.status === 'requires_action' ||
+                pi.status === 'requires_capture' ||
+                pi.status === 'requires_confirmation'
+              ? 'open'
+              : 'draft';
+
+      const customerId =
+        typeof pi.customer === 'string' ? pi.customer : null;
+      const linked = customerId ? memberByCustomer.get(customerId) : undefined;
+
+      const creditCount = pi.metadata?.creditCount;
+      const label = creditCount
+        ? `Kreditų paketas · ${creditCount}`
+        : pi.description || 'Vienkartinis mokėjimas';
+
+      const latestCharge =
+        pi.latest_charge && typeof pi.latest_charge !== 'string'
+          ? pi.latest_charge
+          : null;
+
+      invoices.push({
+        id: pi.id,
+        customerId,
+        memberId: linked?.id ?? null,
+        memberName: linked?.name ?? null,
+        memberEmail: linked?.email ?? null,
+        number: label,
+        amount: amountCents / 100,
+        currency: pi.currency,
+        status,
+        paidAt: paid
+          ? new Date(pi.created * 1000).toISOString().slice(0, 10)
+          : null,
+        createdDate: new Date(pi.created * 1000).toISOString().slice(0, 10),
+        hostedInvoiceUrl: latestCharge?.receipt_url ?? null,
+        periodStart: null,
+        periodEnd: null,
+      });
+    }
+
+    // Sort merged list by date (newest first) so the table stays chronological
+    // regardless of whether an entry came from Invoices or PaymentIntents.
+    invoices.sort((a, b) => {
+      const at = a.paidAt ?? a.createdDate;
+      const bt = b.paidAt ?? b.createdDate;
+      return bt.localeCompare(at);
+    });
 
     res.json({
       connected: true,
