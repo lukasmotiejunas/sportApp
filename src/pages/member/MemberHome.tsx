@@ -31,6 +31,7 @@ export default function MemberHome() {
   const member = useCurrentMember();
   const trainings = useStore((s) => s.trainingSessions);
   const categories = useStore((s) => s.leaderboardCategories);
+  const coaches = useStore((s) => s.coaches);
   const membershipPlans = useStore((s) => s.membershipPlans);
   const refreshMyBilling = useStore((s) => s.refreshMyBilling);
   const plan = membershipPlans.find((p) => p.id === member.membershipPlanId);
@@ -230,9 +231,21 @@ export default function MemberHome() {
             to={`/member/trainings/${next.id}`}
             className="flex items-start gap-3 rounded-2xl border border-ink-100 p-3 hover:border-ink-300 dark:border-ink-800 dark:hover:border-ink-600"
           >
-            <div className="grid h-12 w-12 place-items-center rounded-2xl bg-lime-100 text-lime-800 dark:bg-lime-400/15 dark:text-lime-200">
-              <Zap className="h-5 w-5" />
-            </div>
+            {(() => {
+              const coach = coaches.find((c) => c.id === next.coachId);
+              return coach ? (
+                <Avatar
+                  name={coach.name}
+                  color={coach.avatarColor}
+                  photoUrl={coach.photoUrl}
+                  size="md"
+                />
+              ) : (
+                <div className="grid h-12 w-12 place-items-center rounded-2xl bg-lime-100 text-lime-800 dark:bg-lime-400/15 dark:text-lime-200">
+                  <Zap className="h-5 w-5" />
+                </div>
+              );
+            })()}
             <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">
                 {relativeDay(next.date)} · {next.startTime}–{next.endTime}
