@@ -1,12 +1,14 @@
 import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Filter } from 'lucide-react';
+import { Filter, Trophy, TrendingDown, TrendingUp, Minus } from 'lucide-react';
 import { useStore, useCurrentMember } from '../../store/useStore';
 import { PageTitle } from '../../components/layout/PageTitle';
 import { LeaderboardRow } from '../../components/leaderboard/LeaderboardRow';
 import { Podium } from '../../components/leaderboard/Podium';
 import { FilterChip } from '../../components/ui/FilterChip';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { formatResult } from '../../utils/format';
+import { formatDateShort } from '../../utils/dates';
 
 export default function MemberLeaderboardDetail() {
   const { id = '' } = useParams();
@@ -40,6 +42,31 @@ export default function MemberLeaderboardDetail() {
       .sort((a, b) => (category.lowerIsBetter ? a.result.value - b.result.value : b.result.value - a.result.value))
       .map((x, i) => ({ rank: i + 1, ...x }));
   }, [category, id, results, members, gender, range]);
+
+  const myHistory = useMemo(() => {
+    if (!category) return [];
+    const mine = results
+      .filter((r) => r.categoryId === id && r.memberId === member.id)
+      .sort((a, b) => a.date.localeCompare(b.date)); // oldest → newest
+    if (mine.length === 0) return [];
+    const bestValue = mine.reduce(
+      (acc, r) => (category.lowerIsBetter ? Math.min(acc, r.value) : Math.max(acc, r.value)),
+      mine[0].value,
+    );
+    // annotate with trend vs previous chronological attempt, then reverse to newest-first
+    return mine
+      .map((r, i) => {
+        const prev = i > 0 ? mine[i - 1] : null;
+        const diff = prev ? r.value - prev.value : 0;
+        const trend: 'up' | 'down' | 'flat' = !prev || diff === 0
+          ? 'flat'
+          : (category.lowerIsBetter ? diff < 0 : diff > 0)
+            ? 'up'
+            : 'down';
+        return { r, trend, isBest: r.value === bestValue };
+      })
+      .reverse();
+  }, [category, id, results, member.id]);
 
   if (!category) {
     return (
@@ -99,6 +126,50 @@ export default function MemberLeaderboardDetail() {
             movement={0}
             highlight
           />
+        </section>
+      )}
+
+      {myHistory.length > 0 && (
+        <section className="surface mb-4 p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-xs font-bold uppercase tracking-wide text-ink-500">
+              Mano rezultatų istorija
+            </p>
+            <p className="text-xs text-ink-500">
+              Iš viso: <span className="font-semibold text-ink-800 dark:text-ink-200">{myHistory.length}</span>
+            </p>
+          </div>
+          <ul className="divide-y divide-ink-100 dark:divide-ink-800">
+            {myHistory.map(({ r, trend, isBest }) => (
+              <li key={r.id} className="flex items-center gap-3 py-2.5">
+                <div className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-ink-50 dark:bg-ink-800/60">
+                  {trend === 'up' ? (
+                    <TrendingUp className="h-4 w-4 text-emerald-500" />
+                  ) : trend === 'down' ? (
+                    <TrendingDown className="h-4 w-4 text-red-500" />
+                  ) : (
+                    <Minus className="h-4 w-4 text-ink-400" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-display text-sm font-bold tabular-nums">
+                    {formatResult(r.value, category)}
+                  </p>
+                  {r.note && (
+                    <p className="truncate text-xs text-ink-500">{r.note}</p>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {isBest && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-lime-400/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-lime-700 dark:text-lime-300">
+                      <Trophy className="h-3 w-3" /> Rekordas
+                    </span>
+                  )}
+                  <span className="text-xs text-ink-500">{formatDateShort(r.date)}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 
