@@ -119,17 +119,20 @@ export default function Login() {
                   Turite sporto klubą?
                 </p>
                 <p className="mt-1 text-xs text-ink-700">
-                  Prenumeruokite Lumo už €0,50 per mėnesį — sukurkite savo klubą per kelias minutes.
+                  Prenumeruokite Lumo už €0,50 per mėnesį — sukurkite savo klubą
+                  per kelias minutes.
                 </p>
               </div>
             </div>
-            <Link
-              to="/plans"
-              className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-ink-950 text-sm font-semibold text-white transition-colors hover:bg-ink-800"
+            <button
+              type="button"
+              disabled
+              aria-disabled="true"
+              className="mt-4 flex h-11 w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl bg-ink-950 text-sm font-semibold text-white opacity-50"
             >
               Sukurti klubą
               <ArrowRight className="h-4 w-4" />
-            </Link>
+            </button>
           </div>
 
           <div className="mt-6 flex items-center justify-center gap-4 text-xs text-ink-400">
