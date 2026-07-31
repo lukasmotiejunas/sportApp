@@ -15,3 +15,16 @@ export function useTrainingsBase(): {
     eyebrow: isAdmin ? 'Administratorius' : 'Treneris',
   };
 }
+
+export function useLeaderboardsBase(): {
+  base: string;
+  isAdmin: boolean;
+  eyebrow: string;
+} {
+  const isAdmin = useLocation().pathname.startsWith('/admin');
+  return {
+    base: isAdmin ? '/admin/leaderboards' : '/coach/leaderboards',
+    isAdmin,
+    eyebrow: isAdmin ? 'Administratorius' : 'Treneris',
+  };
+}

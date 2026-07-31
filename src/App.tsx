@@ -197,6 +197,8 @@ export default function App() {
             path="trainings/:trainingId/plans/:memberId"
             element={<CoachPlanEditor />}
           />
+          <Route path="leaderboards" element={<CoachLeaderboards />} />
+          <Route path="leaderboards/:id" element={<CoachLeaderboardDetail />} />
           <Route path="plans" element={<AdminPlans />} />
           <Route path="subscription" element={<AdminSubscription />} />
           <Route path="profile" element={<AdminProfile />} />

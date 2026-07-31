@@ -8,8 +8,10 @@ import { Modal } from "../../components/ui/Modal";
 import { FormField, SelectField } from "../../components/ui/FormField";
 import type { LeaderboardCategory } from "../../types";
 import { formatResult } from "../../utils/format";
+import { useLeaderboardsBase } from "../../utils/roleContext";
 
 export default function CoachLeaderboards() {
+  const { base, eyebrow } = useLeaderboardsBase();
   const categories = useStore((s) => s.leaderboardCategories);
   const results = useStore((s) => s.leaderboardResults);
   const addCategory = useStore((s) => s.addLeaderboardCategory);
@@ -52,7 +54,7 @@ export default function CoachLeaderboards() {
   return (
     <div>
       <PageTitle
-        eyebrow="Treneris"
+        eyebrow={eyebrow}
         title="Rezultatų lentelės"
         description="Kurkite kategorijas ir tvarkykite rezultatus."
         action={
@@ -73,7 +75,7 @@ export default function CoachLeaderboards() {
           return (
             <Link
               key={c.id}
-              to={`/coach/leaderboards/${c.id}`}
+              to={`${base}/${c.id}`}
               className="group surface flex flex-col p-4 hover:shadow-card"
             >
               <div className="mb-2 flex items-start gap-3">

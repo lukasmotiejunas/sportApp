@@ -10,10 +10,12 @@ import { FormField, SelectField, TextareaField } from '../../components/ui/FormF
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { formatDateShort, todayIso } from '../../utils/dates';
 import { formatResult } from '../../utils/format';
+import { useLeaderboardsBase } from '../../utils/roleContext';
 import type { LeaderboardResult } from '../../types';
 
 export default function CoachLeaderboardDetail() {
   const { id = '' } = useParams();
+  const { base } = useLeaderboardsBase();
   const category = useStore((s) => s.leaderboardCategories.find((c) => c.id === id));
   const results = useStore((s) => s.leaderboardResults);
   const members = useStore((s) => s.members);
@@ -44,7 +46,7 @@ export default function CoachLeaderboardDetail() {
   if (!category) {
     return (
       <div>
-        <PageTitle title="Kategorija nerasta" backTo="/coach/leaderboards" />
+        <PageTitle title="Kategorija nerasta" backTo={base} />
       </div>
     );
   }
@@ -88,7 +90,7 @@ export default function CoachLeaderboardDetail() {
         eyebrow={category.event}
         title={category.name}
         description={`Stebimų rezultatų: ${ranked.length} · ${category.lowerIsBetter ? 'greičiausias laimi' : 'daugiausiai laimi'}`}
-        backTo="/coach/leaderboards"
+        backTo={base}
         action={
           <button className="btn-primary" onClick={() => setAddOpen(true)}>
             <Plus className="h-4 w-4" /> Pridėti rezultatą
