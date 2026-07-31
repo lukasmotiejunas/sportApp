@@ -3,7 +3,6 @@ import clsx from "clsx";
 import {
   Users,
   UserPlus,
-  ShieldCheck,
   CreditCard,
   Receipt,
   UserCog,
@@ -31,14 +30,20 @@ const items = [
 
 export function AdminLayout() {
   const clubName = useStore((s) => s.authUser?.clubName ?? "");
+  const clubLogo = useStore((s) => s.authUser?.clubLogo ?? null);
+  const logoSrc = clubLogo || "/lumo-logo.png";
   return (
     <div className="relative min-h-screen">
       <BackgroundLogo />
       <div className="flex">
         <aside className="hidden w-64 shrink-0 border-r border-ink-100 bg-white p-4 md:flex md:flex-col dark:border-ink-800 dark:bg-ink-900 md:sticky md:top-0 md:h-screen">
           <div className="mb-6 flex items-center gap-2 px-1 font-display text-lg font-bold text-ink-900 dark:text-lime-400">
-            <span className="grid h-8 w-8 place-items-center rounded-xl bg-ink-900 text-lime-400">
-              <ShieldCheck className="h-4 w-4" />
+            <span className="grid h-8 w-8 place-items-center overflow-hidden rounded-xl bg-ink-900">
+              <img
+                src={logoSrc}
+                alt={clubName || "Lumo"}
+                className="h-full w-full object-contain"
+              />
             </span>
             {clubName}
             <span className="ml-1 rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-ink-600 dark:bg-ink-800 dark:text-ink-300">
