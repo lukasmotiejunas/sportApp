@@ -32,6 +32,7 @@ import CoachMemberDetail from './pages/coach/CoachMemberDetail';
 import CoachPlanEditor from './pages/coach/CoachPlanEditor';
 import CoachLeaderboards from './pages/coach/CoachLeaderboards';
 import CoachLeaderboardDetail from './pages/coach/CoachLeaderboardDetail';
+import CoachSchedule from './pages/coach/CoachSchedule';
 import CoachProfile from './pages/coach/CoachProfile';
 
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -175,6 +176,7 @@ export default function App() {
           <Route path="plans/:trainingId/:memberId" element={<CoachPlanEditor />} />
           <Route path="leaderboards" element={<CoachLeaderboards />} />
           <Route path="leaderboards/:id" element={<CoachLeaderboardDetail />} />
+          <Route path="schedule" element={<CoachSchedule />} />
           <Route path="profile" element={<CoachProfile />} />
         </Route>
 

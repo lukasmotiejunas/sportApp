@@ -2,6 +2,7 @@ import { Outlet, NavLink } from "react-router-dom";
 import clsx from "clsx";
 import {
   BarChart3,
+  CalendarDays,
   Trophy,
   Users2,
   UserCog,
@@ -16,6 +17,7 @@ import { useStore } from "../../store/useStore";
 
 const items = [
   { to: "/coach/trainings", label: "Treniruotės", icon: BarChart3, end: false },
+  { to: "/coach/schedule", label: "Mano kalendorius", icon: CalendarDays },
   { to: "/coach/members", label: "Nariai", icon: Users2 },
   { to: "/coach/leaderboards", label: "Rezultatai", icon: Trophy },
   { to: "/coach/profile", label: "Profilis", icon: UserCog },
