@@ -7,6 +7,7 @@ import { LeaderboardRow } from '../../components/leaderboard/LeaderboardRow';
 import { Podium } from '../../components/leaderboard/Podium';
 import { FilterChip } from '../../components/ui/FilterChip';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { Tabs } from '../../components/ui/Tabs';
 import { formatResult } from '../../utils/format';
 import { formatDateShort } from '../../utils/dates';
 
@@ -18,6 +19,7 @@ export default function MemberLeaderboardDetail() {
   const members = useStore((s) => s.members);
   const [gender, setGender] = useState<'all' | 'male' | 'female'>('all');
   const [range, setRange] = useState<'all' | 'month'>('all');
+  const [tab, setTab] = useState<'all' | 'mine'>('all');
 
   const ranked = useMemo(() => {
     if (!category) return [] as { rank: number; result: (typeof results)[number]; member: (typeof members)[number] }[];
@@ -88,49 +90,86 @@ export default function MemberLeaderboardDetail() {
         backTo="/member/leaderboards"
       />
 
-      {topThree.length > 0 && (
-        <div className="mb-4">
-          <Podium
-            entries={topThree.map((x) => ({ result: x.result, member: x.member }))}
-            category={category}
-          />
-        </div>
-      )}
-
-      <div className="mb-4 -mx-4 flex gap-2 overflow-x-auto px-4 no-scrollbar">
-        <FilterChip icon={<Filter className="h-3.5 w-3.5" />} active={gender === 'all'} onClick={() => setGender('all')}>
-          Visi nariai
-        </FilterChip>
-        <FilterChip active={gender === 'male'} onClick={() => setGender('male')}>
-          Vyrai
-        </FilterChip>
-        <FilterChip active={gender === 'female'} onClick={() => setGender('female')}>
-          Moterys
-        </FilterChip>
-        <FilterChip active={range === 'all'} onClick={() => setRange('all')}>
-          Visą laiką
-        </FilterChip>
-        <FilterChip active={range === 'month'} onClick={() => setRange('month')}>
-          Šį mėnesį
-        </FilterChip>
+      <div className="mb-4">
+        <Tabs
+          items={[
+            { id: 'all', label: 'Visų rezultatai' },
+            { id: 'mine', label: 'Mano rezultatai', badge: myHistory.length || undefined },
+          ]}
+          active={tab}
+          onChange={(id) => setTab(id as 'all' | 'mine')}
+          variant="underline"
+        />
       </div>
 
-      {myRow && (
-        <section className="mb-4 rounded-2xl border border-lime-300 bg-lime-50 p-3 dark:border-lime-500/50 dark:bg-lime-500/10">
-          <p className="mb-2 text-xs font-bold uppercase tracking-wide text-lime-900 dark:text-lime-200">Jūsų vieta</p>
-          <LeaderboardRow
-            rank={myRow.rank}
-            result={myRow.result}
-            member={myRow.member}
-            category={category}
-            movement={0}
-            highlight
-          />
-        </section>
-      )}
+      {tab === 'all' ? (
+        <>
+          {topThree.length > 0 && (
+            <div className="mb-4">
+              <Podium
+                entries={topThree.map((x) => ({ result: x.result, member: x.member }))}
+                category={category}
+              />
+            </div>
+          )}
 
-      {myHistory.length > 0 && (
-        <section className="surface mb-4 p-3">
+          <div className="mb-4 -mx-4 flex gap-2 overflow-x-auto px-4 no-scrollbar">
+            <FilterChip icon={<Filter className="h-3.5 w-3.5" />} active={gender === 'all'} onClick={() => setGender('all')}>
+              Visi nariai
+            </FilterChip>
+            <FilterChip active={gender === 'male'} onClick={() => setGender('male')}>
+              Vyrai
+            </FilterChip>
+            <FilterChip active={gender === 'female'} onClick={() => setGender('female')}>
+              Moterys
+            </FilterChip>
+            <FilterChip active={range === 'all'} onClick={() => setRange('all')}>
+              Visą laiką
+            </FilterChip>
+            <FilterChip active={range === 'month'} onClick={() => setRange('month')}>
+              Šį mėnesį
+            </FilterChip>
+          </div>
+
+          {myRow && (
+            <section className="mb-4 rounded-2xl border border-lime-300 bg-lime-50 p-3 dark:border-lime-500/50 dark:bg-lime-500/10">
+              <p className="mb-2 text-xs font-bold uppercase tracking-wide text-lime-900 dark:text-lime-200">Jūsų vieta</p>
+              <LeaderboardRow
+                rank={myRow.rank}
+                result={myRow.result}
+                member={myRow.member}
+                category={category}
+                movement={0}
+                highlight
+              />
+            </section>
+          )}
+
+          {ranked.length === 0 ? (
+            <EmptyState icon={Filter} title="Reitinguotų rezultatų dar nėra" description="Paprašykite trenerio įtraukti rezultatus." />
+          ) : (
+            <div className="space-y-2">
+              {ranked.map((row) => (
+                <LeaderboardRow
+                  key={row.result.id}
+                  rank={row.rank}
+                  result={row.result}
+                  member={row.member}
+                  category={category}
+                  highlight={row.member.id === member.id}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      ) : myHistory.length === 0 ? (
+        <EmptyState
+          icon={Trophy}
+          title="Jūs dar neturite rezultatų"
+          description="Paprašykite trenerio įtraukti jūsų rezultatą į šią lentelę."
+        />
+      ) : (
+        <section className="surface p-3">
           <div className="mb-2 flex items-center justify-between">
             <p className="text-xs font-bold uppercase tracking-wide text-ink-500">
               Mano rezultatų istorija
@@ -171,23 +210,6 @@ export default function MemberLeaderboardDetail() {
             ))}
           </ul>
         </section>
-      )}
-
-      {ranked.length === 0 ? (
-        <EmptyState icon={Filter} title="Reitinguotų rezultatų dar nėra" description="Paprašykite trenerio įtraukti rezultatus." />
-      ) : (
-        <div className="space-y-2">
-          {ranked.map((row) => (
-            <LeaderboardRow
-              key={row.result.id}
-              rank={row.rank}
-              result={row.result}
-              member={row.member}
-              category={category}
-              highlight={row.member.id === member.id}
-            />
-          ))}
-        </div>
       )}
     </div>
   );
