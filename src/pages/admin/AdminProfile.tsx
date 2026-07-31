@@ -23,7 +23,6 @@ export default function AdminProfile() {
 
   // Personal info section
   const [name, setName] = useState(authUser?.name ?? "");
-  const [email, setEmail] = useState(authUser?.email ?? "");
   const [selfBusy, setSelfBusy] = useState(false);
   const [selfError, setSelfError] = useState<string | null>(null);
 
@@ -43,7 +42,6 @@ export default function AdminProfile() {
   useEffect(() => {
     setClubName(authUser?.clubName ?? "");
     setName(authUser?.name ?? "");
-    setEmail(authUser?.email ?? "");
   }, [authUser]);
 
   const submitClub = async (e: React.FormEvent) => {
@@ -72,29 +70,20 @@ export default function AdminProfile() {
     e.preventDefault();
     setSelfError(null);
     const nameTrimmed = name.trim();
-    const emailTrimmed = email.trim().toLowerCase();
     if (nameTrimmed.length < 2) {
       setSelfError("Vardas per trumpas.");
       return;
     }
-    if (!emailTrimmed) {
-      setSelfError("El. paštas privalomas.");
-      return;
-    }
 
-    // Only send fields that actually changed.
-    const patch: { name?: string; email?: string } = {};
-    if (nameTrimmed !== (authUser?.name ?? "")) patch.name = nameTrimmed;
-    if (emailTrimmed !== (authUser?.email ?? "")) patch.email = emailTrimmed;
-    if (Object.keys(patch).length === 0) {
+    if (nameTrimmed === (authUser?.name ?? "")) {
       push({ kind: "info", message: "Duomenys nepakito." });
       return;
     }
 
     setSelfBusy(true);
     try {
-      const updated = await updateSelfApi(patch);
-      patchAuthUser({ name: updated.name, email: updated.email });
+      const updated = await updateSelfApi({ name: nameTrimmed });
+      patchAuthUser({ name: updated.name });
       push({ kind: "success", message: "Jūsų duomenys atnaujinti." });
     } catch (err) {
       setSelfError(
@@ -283,7 +272,7 @@ export default function AdminProfile() {
                 Jūsų duomenys
               </h2>
               <p className="mt-0.5 text-sm text-ink-500">
-                El. paštu prisijungsite prie klubo. Pakeitus jį, kitą kartą junkitės naujuoju.
+                El. paštas naudojamas prisijungimui ir yra nekeičiamas.
               </p>
             </div>
           </div>
@@ -298,10 +287,11 @@ export default function AdminProfile() {
             <FormField
               label="El. paštas"
               type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="jus@klubas.lt"
+              value={authUser?.email ?? ""}
+              disabled
+              readOnly
+              hint="Naudojamas prisijungimui — pakeisti negalima."
+              onChange={() => {}}
             />
             {selfError && (
               <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 sm:col-span-2">

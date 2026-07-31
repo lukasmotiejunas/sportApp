@@ -4,6 +4,7 @@ import {
   Bell,
   Calendar,
   Camera,
+  KeyRound,
   LogOut,
   Mail,
   Phone,
@@ -19,6 +20,8 @@ import { FormField } from "../../components/ui/FormField";
 import { formatDateLong } from "../../utils/dates";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { resizeImageToDataUrl } from "../../utils/image";
+import { changePasswordApi } from "../../api/profile";
+import { ApiError } from "../../api/client";
 
 export default function MemberProfile() {
   const member = useCurrentMember();
@@ -59,7 +62,6 @@ export default function MemberProfile() {
 
   const [edit, setEdit] = useState({
     name: member.name,
-    email: member.email,
     phone: member.phone,
     dateOfBirth: member.dateOfBirth,
   });
@@ -67,6 +69,41 @@ export default function MemberProfile() {
   const save = () => {
     updateMember(member.id, edit);
     push({ kind: "success", message: "Profilis atnaujintas." });
+  };
+
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [pwBusy, setPwBusy] = useState(false);
+  const [pwError, setPwError] = useState<string | null>(null);
+
+  const submitPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPwError(null);
+    if (newPassword.length < 6) {
+      setPwError("Naujas slaptažodis turi būti bent 6 simbolių.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPwError("Nauji slaptažodžiai nesutampa.");
+      return;
+    }
+    setPwBusy(true);
+    try {
+      await changePasswordApi({ currentPassword, newPassword });
+      push({ kind: "success", message: "Slaptažodis pakeistas." });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err) {
+      setPwError(
+        err instanceof ApiError
+          ? err.message
+          : "Nepavyko pakeisti slaptažodžio.",
+      );
+    } finally {
+      setPwBusy(false);
+    }
   };
 
   return (
@@ -139,12 +176,6 @@ export default function MemberProfile() {
             onChange={(e) => setEdit({ ...edit, name: e.target.value })}
           />
           <FormField
-            label="El. paštas"
-            type="email"
-            value={edit.email}
-            onChange={(e) => setEdit({ ...edit, email: e.target.value })}
-          />
-          <FormField
             label="Telefonas"
             value={edit.phone}
             onChange={(e) => setEdit({ ...edit, phone: e.target.value })}
@@ -161,6 +192,61 @@ export default function MemberProfile() {
             Išsaugoti pakeitimus
           </button>
         </div>
+      </section>
+
+      <section className="surface mb-4 p-4">
+        <div className="mb-3 flex items-start gap-3">
+          <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-lime-400/15 text-lime-600 dark:text-lime-300">
+            <KeyRound className="h-4 w-4" />
+          </div>
+          <div>
+            <h2 className="font-display text-base font-bold">Slaptažodis</h2>
+            <p className="mt-0.5 text-sm text-ink-500">
+              Norėdami pakeisti slaptažodį, pirma įveskite dabartinį.
+            </p>
+          </div>
+        </div>
+        <form onSubmit={submitPassword} className="space-y-3">
+          <FormField
+            label="Dabartinis slaptažodis"
+            type="password"
+            required
+            autoComplete="current-password"
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            placeholder="••••••••"
+          />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <FormField
+              label="Naujas slaptažodis"
+              type="password"
+              required
+              autoComplete="new-password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="Bent 6 simboliai"
+            />
+            <FormField
+              label="Pakartokite naują slaptažodį"
+              type="password"
+              required
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Bent 6 simboliai"
+            />
+          </div>
+          {pwError && (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {pwError}
+            </div>
+          )}
+          <div className="flex justify-end">
+            <button type="submit" className="btn-primary h-10 px-4 text-sm" disabled={pwBusy}>
+              {pwBusy ? "Keičiama…" : "Pakeisti slaptažodį"}
+            </button>
+          </div>
+        </form>
       </section>
 
       <section className="surface p-4">

@@ -8,7 +8,6 @@ import { ApiError } from "../../api/client";
 import {
   changePasswordApi,
   updateCoachSelfApi,
-  updateSelfApi,
 } from "../../api/profile";
 import { resizeImageToDataUrl } from "../../utils/image";
 
@@ -20,7 +19,6 @@ export default function CoachProfile() {
   const push = useStore((s) => s.pushToast);
 
   const [name, setName] = useState(coach?.name ?? "");
-  const [email, setEmail] = useState(authUser?.email ?? "");
   const [specialty, setSpecialty] = useState(coach?.specialty ?? "");
   const [phone, setPhone] = useState(coach?.phone ?? "");
   const [selfBusy, setSelfBusy] = useState(false);
@@ -40,10 +38,6 @@ export default function CoachProfile() {
     setSpecialty(coach?.specialty ?? "");
     setPhone(coach?.phone ?? "");
   }, [coach?.name, coach?.specialty, coach?.phone]);
-
-  useEffect(() => {
-    setEmail(authUser?.email ?? "");
-  }, [authUser?.email]);
 
   if (!coach) {
     return (
@@ -102,16 +96,11 @@ export default function CoachProfile() {
     e.preventDefault();
     setSelfError(null);
     const nameTrimmed = name.trim();
-    const emailTrimmed = email.trim().toLowerCase();
     const specialtyTrimmed = specialty.trim();
     const phoneTrimmed = phone.trim();
 
     if (nameTrimmed.length < 2) {
       setSelfError("Vardas per trumpas.");
-      return;
-    }
-    if (!emailTrimmed) {
-      setSelfError("El. paštas privalomas.");
       return;
     }
 
@@ -125,24 +114,16 @@ export default function CoachProfile() {
       coachPatch.specialty = specialtyTrimmed;
     if (phoneTrimmed !== (coach.phone ?? "")) coachPatch.phone = phoneTrimmed;
 
-    const emailChanged = emailTrimmed !== (authUser?.email ?? "");
-
-    if (Object.keys(coachPatch).length === 0 && !emailChanged) {
+    if (Object.keys(coachPatch).length === 0) {
       push({ kind: "info", message: "Duomenys nepakito." });
       return;
     }
 
     setSelfBusy(true);
     try {
-      if (Object.keys(coachPatch).length > 0) {
-        const updated = await updateCoachSelfApi(coachPatch);
-        patchCoach(coach.id, updated);
-        if (coachPatch.name) patchAuthUser({ name: coachPatch.name });
-      }
-      if (emailChanged) {
-        const updatedUser = await updateSelfApi({ email: emailTrimmed });
-        patchAuthUser({ email: updatedUser.email });
-      }
+      const updated = await updateCoachSelfApi(coachPatch);
+      patchCoach(coach.id, updated);
+      if (coachPatch.name) patchAuthUser({ name: coachPatch.name });
       push({ kind: "success", message: "Profilis atnaujintas." });
     } catch (err) {
       setSelfError(
@@ -263,10 +244,11 @@ export default function CoachProfile() {
             <FormField
               label="El. paštas"
               type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="jus@klubas.lt"
+              value={authUser?.email ?? ""}
+              disabled
+              readOnly
+              hint="Naudojamas prisijungimui — pakeisti negalima."
+              onChange={() => {}}
             />
             <FormField
               label="Telefonas"
