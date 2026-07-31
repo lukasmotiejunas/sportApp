@@ -18,7 +18,6 @@ export default function MemberLeaderboardDetail() {
   const results = useStore((s) => s.leaderboardResults);
   const members = useStore((s) => s.members);
   const [gender, setGender] = useState<'all' | 'male' | 'female'>('all');
-  const [range, setRange] = useState<'all' | 'month'>('all');
   const [tab, setTab] = useState<'all' | 'mine'>('all');
 
   const ranked = useMemo(() => {
@@ -32,18 +31,14 @@ export default function MemberLeaderboardDetail() {
         bestByMember.set(r.memberId, r);
       }
     }
-    let list = Array.from(bestByMember.values());
-    if (range === 'month') {
-      const t = new Date();
-      list = list.filter((r) => new Date(r.date + 'T00:00:00').getMonth() === t.getMonth());
-    }
+    const list = Array.from(bestByMember.values());
     return list
       .map((r) => ({ result: r, member: members.find((m) => m.id === r.memberId)! }))
       .filter((x) => x.member)
       .filter((x) => (gender === 'all' ? true : x.member.gender === gender))
       .sort((a, b) => (category.lowerIsBetter ? a.result.value - b.result.value : b.result.value - a.result.value))
       .map((x, i) => ({ rank: i + 1, ...x }));
-  }, [category, id, results, members, gender, range]);
+  }, [category, id, results, members, gender]);
 
   const myHistory = useMemo(() => {
     if (!category) return [];
@@ -122,12 +117,6 @@ export default function MemberLeaderboardDetail() {
             </FilterChip>
             <FilterChip active={gender === 'female'} onClick={() => setGender('female')}>
               Moterys
-            </FilterChip>
-            <FilterChip active={range === 'all'} onClick={() => setRange('all')}>
-              Visą laiką
-            </FilterChip>
-            <FilterChip active={range === 'month'} onClick={() => setRange('month')}>
-              Šį mėnesį
             </FilterChip>
           </div>
 
