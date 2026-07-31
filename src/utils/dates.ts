@@ -43,6 +43,16 @@ export function formatDateShort(iso: string): string {
   return `${DAY_NAMES[d.getDay()]}, ${d.getDate()} ${MONTH_NAMES[d.getMonth()].slice(0, 3)}`;
 }
 
+export function formatDateSlash(iso: string): string {
+  if (!iso) return '—';
+  const d = new Date(iso + 'T00:00:00');
+  if (Number.isNaN(d.getTime())) return '—';
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}/${m}/${day}`;
+}
+
 export function formatDateLong(iso: string): string {
   if (!iso) return '—';
   const d = new Date(iso + 'T00:00:00');

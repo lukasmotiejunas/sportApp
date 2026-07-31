@@ -12,9 +12,10 @@ type Props = {
   category: LeaderboardCategory;
   movement?: number; // positive = moved up in ranking
   highlight?: boolean;
+  formatDate?: (iso: string) => string;
 };
 
-export function LeaderboardRow({ rank, result, member, category, movement, highlight }: Props) {
+export function LeaderboardRow({ rank, result, member, category, movement, highlight, formatDate = formatDateShort }: Props) {
   return (
     <div
       className={clsx(
@@ -31,7 +32,7 @@ export function LeaderboardRow({ rank, result, member, category, movement, highl
       <div className="flex-1 min-w-0">
         <p className="truncate text-sm font-semibold text-ink-900 dark:text-ink-50">{member.name}</p>
         <p className="text-xs text-ink-500">
-          {formatDateShort(result.date)} · {member.ageGroup}
+          {formatDate(result.date)} · {member.ageGroup}
         </p>
       </div>
       <div className="text-right">

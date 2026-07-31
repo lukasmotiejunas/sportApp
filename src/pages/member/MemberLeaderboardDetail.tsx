@@ -9,7 +9,7 @@ import { FilterChip } from '../../components/ui/FilterChip';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Tabs } from '../../components/ui/Tabs';
 import { formatResult } from '../../utils/format';
-import { formatDateShort } from '../../utils/dates';
+import { formatDateSlash } from '../../utils/dates';
 
 export default function MemberLeaderboardDetail() {
   const { id = '' } = useParams();
@@ -141,6 +141,7 @@ export default function MemberLeaderboardDetail() {
                 category={category}
                 movement={0}
                 highlight
+                formatDate={formatDateSlash}
               />
             </section>
           )}
@@ -157,6 +158,7 @@ export default function MemberLeaderboardDetail() {
                   member={row.member}
                   category={category}
                   highlight={row.member.id === member.id}
+                  formatDate={formatDateSlash}
                 />
               ))}
             </div>
@@ -204,7 +206,7 @@ export default function MemberLeaderboardDetail() {
                       <Trophy className="h-3 w-3" /> Rekordas
                     </span>
                   )}
-                  <span className="text-xs text-ink-500">{formatDateShort(r.date)}</span>
+                  <span className="text-xs text-ink-500">{formatDateSlash(r.date)}</span>
                 </div>
               </li>
             ))}
