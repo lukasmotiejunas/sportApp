@@ -9,6 +9,7 @@ import type {
   TrainingPlan,
   TrainingRegistration,
   TrainingSession,
+  TrainingTemplate,
   User,
 } from '@prisma/client';
 
@@ -142,6 +143,21 @@ export function serializeTrainingPlan(p: TrainingPlan) {
     plan: p.planBody ?? '',
     status: p.status,
     updatedAt: toDateString(p.updatedAt) ?? '',
+  };
+}
+
+export function serializeTrainingTemplate(t: TrainingTemplate) {
+  return {
+    id: t.id,
+    name: t.name,
+    title: t.title ?? '',
+    description: t.description ?? '',
+    location: t.location ?? '',
+    startTime: t.startTime ?? '',
+    endTime: t.endTime ?? '',
+    capacity: t.capacity ?? null,
+    defaultPlan: t.defaultPlan ?? '',
+    updatedAt: t.updatedAt.toISOString(),
   };
 }
 

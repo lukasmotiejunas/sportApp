@@ -188,6 +188,22 @@ export type TrainingSession = {
   status: 'open' | 'closed' | 'cancelled';
 };
 
+// Reusable pre-filled training definition. When creating a TrainingSession
+// the coach can pick a template to auto-fill the form. There's no linkage
+// back to the template after the session is created.
+export type TrainingTemplate = {
+  id: string;
+  name: string;
+  title: string;
+  description: string;
+  location: string;
+  startTime: string;
+  endTime: string;
+  capacity: number | null;
+  defaultPlan: string;
+  updatedAt: string;
+};
+
 export type TrainingPlan = {
   id: string;
   memberId: string;

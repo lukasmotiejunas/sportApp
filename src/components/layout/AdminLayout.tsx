@@ -10,6 +10,7 @@ import {
   Wallet,
   BarChart3,
   Trophy,
+  ClipboardList,
 } from "lucide-react";
 import { UserMenu } from "../ui/UserMenu";
 import { ToastContainer } from "../ui/ToastContainer";
@@ -20,6 +21,7 @@ const items = [
   { to: "/admin", label: "Skydelis", icon: LayoutDashboard, end: true },
   { to: "/admin/users", label: "Paskyros", icon: Users, end: false },
   { to: "/admin/trainings", label: "Treniruotės", icon: BarChart3, end: false },
+  { to: "/admin/training-templates", label: "Treniruočių planai", icon: ClipboardList, end: false },
   { to: "/admin/leaderboards", label: "Rezultatai", icon: Trophy, end: false },
   { to: "/admin/payments", label: "Mokėjimai", icon: Wallet, end: false },
   { to: "/admin/plans", label: "Narystės planai", icon: CreditCard, end: false },

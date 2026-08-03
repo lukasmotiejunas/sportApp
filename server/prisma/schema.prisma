@@ -90,6 +90,7 @@ model Club {
   members              Member[]
   coaches              Coach[]
   trainingSessions     TrainingSession[]
+  trainingTemplates    TrainingTemplate[]
   membershipPlans      MembershipPlan[]
   leaderboardCategories LeaderboardCategory[]
   subscription         ClubSubscription?
@@ -259,6 +260,28 @@ model TrainingRegistration {
   registeredAt      DateTime @default(now())
 
   @@unique([trainingSessionId, memberId])
+}
+
+// Reusable training template. Coaches/admins define these ahead of time and
+// pick one when creating a TrainingSession to pre-fill its fields. Purely a
+// convenience — there's no runtime linkage back from a session to the
+// template it was created from.
+model TrainingTemplate {
+  id           String   @id @default(cuid())
+  clubId       String
+  club         Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  name         String
+  title        String?
+  description  String?
+  location     String?
+  startTime    String?
+  endTime      String?
+  capacity     Int?
+  defaultPlan  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([clubId])
 }
 
 model TrainingPlan {

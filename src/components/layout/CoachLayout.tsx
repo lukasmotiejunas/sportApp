@@ -3,6 +3,7 @@ import clsx from "clsx";
 import {
   BarChart3,
   CalendarDays,
+  ClipboardList,
   Trophy,
   Users2,
   UserCog,
@@ -17,6 +18,7 @@ import { useStore } from "../../store/useStore";
 
 const items = [
   { to: "/coach/trainings", label: "Treniruotės", icon: BarChart3, end: false },
+  { to: "/coach/training-templates", label: "Treniruočių planai", icon: ClipboardList },
   { to: "/coach/schedule", label: "Mano kalendorius", icon: CalendarDays },
   { to: "/coach/members", label: "Nariai", icon: Users2 },
   { to: "/coach/leaderboards", label: "Rezultatai", icon: Trophy },

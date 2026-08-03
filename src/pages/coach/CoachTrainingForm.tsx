@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { CalendarPlus, Save } from 'lucide-react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { CalendarPlus, ClipboardList, Save } from 'lucide-react';
 import { PageTitle } from '../../components/layout/PageTitle';
 import { FormField, SelectField, TextareaField } from '../../components/ui/FormField';
 import { useStore } from '../../store/useStore';
@@ -12,9 +12,10 @@ type Props = { mode: 'create' | 'edit' };
 export default function CoachTrainingForm({ mode }: Props) {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { base, eyebrow } = useTrainingsBase();
+  const { base, eyebrow, isAdmin } = useTrainingsBase();
   const existing = useStore((s) => (mode === 'edit' ? s.trainingSessions.find((t) => t.id === id) : undefined));
   const coaches = useStore((s) => s.coaches);
+  const templates = useStore((s) => s.trainingTemplates);
   const create = useStore((s) => s.createTraining);
   const update = useStore((s) => s.updateTraining);
   const push = useStore((s) => s.pushToast);
@@ -42,6 +43,30 @@ export default function CoachTrainingForm({ mode }: Props) {
   );
   const [form, setForm] = useState(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [templateId, setTemplateId] = useState('');
+
+  const sortedTemplates = useMemo(
+    () => [...templates].sort((a, b) => a.name.localeCompare(b.name, 'lt')),
+    [templates],
+  );
+
+  const applyTemplate = (id: string) => {
+    setTemplateId(id);
+    if (!id) return;
+    const t = templates.find((x) => x.id === id);
+    if (!t) return;
+    setForm((prev) => ({
+      ...prev,
+      title: t.title || prev.title,
+      description: t.description || prev.description,
+      location: t.location || prev.location,
+      startTime: t.startTime || prev.startTime,
+      endTime: t.endTime || prev.endTime,
+      capacity: t.capacity ?? prev.capacity,
+      defaultPlan: t.defaultPlan || prev.defaultPlan,
+    }));
+    push({ kind: 'success', message: `Užpildyta pagal „${t.name}“.` });
+  };
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -92,6 +117,45 @@ export default function CoachTrainingForm({ mode }: Props) {
       />
 
       <form onSubmit={submit} className="space-y-6">
+        {mode === 'create' && (
+          <section className="surface p-4">
+            <div className="mb-2 flex items-center gap-2 font-display text-base font-bold">
+              <ClipboardList className="h-4 w-4" />
+              Užpildyti pagal planą
+            </div>
+            {sortedTemplates.length === 0 ? (
+              <p className="text-sm text-ink-500">
+                Kol kas planų nėra.{' '}
+                <Link
+                  to={
+                    isAdmin
+                      ? '/admin/training-templates'
+                      : '/coach/training-templates'
+                  }
+                  className="font-semibold underline"
+                >
+                  Sukurti pirmą planą
+                </Link>
+                .
+              </p>
+            ) : (
+              <SelectField
+                label="Pasirinkite planą"
+                value={templateId}
+                onChange={(e) => applyTemplate(e.target.value)}
+                hint="Pasirinkus, laukai bus užpildyti pagal plano reikšmes."
+              >
+                <option value="">— Nenaudoti plano —</option>
+                {sortedTemplates.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
+              </SelectField>
+            )}
+          </section>
+        )}
+
         <section className="surface p-4">
           <h2 className="mb-3 font-display text-base font-bold">Pagrindinė informacija</h2>
           <div className="grid gap-3 sm:grid-cols-2">

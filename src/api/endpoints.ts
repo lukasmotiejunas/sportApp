@@ -8,6 +8,7 @@ import type {
   MembershipPlan,
   TrainingPlan,
   TrainingSession,
+  TrainingTemplate,
 } from '../types';
 
 // --- Reads (used by loadInitialData) ---
@@ -176,6 +177,19 @@ export const upsertPlanApi = (plan: TrainingPlan) =>
 export const publishPlanApi = (id: string) =>
   api.patch<TrainingPlan>(`/training-plans/${id}/publish`);
 export const deletePlanApi = (id: string) => api.del<void>(`/training-plans/${id}`);
+
+// --- Training templates (reusable pre-filled trainings) ---
+export type TrainingTemplateInput = Omit<TrainingTemplate, 'id' | 'updatedAt'>;
+export const fetchTrainingTemplates = () =>
+  api.get<TrainingTemplate[]>('/training-templates');
+export const createTrainingTemplateApi = (input: TrainingTemplateInput) =>
+  api.post<TrainingTemplate>('/training-templates', input);
+export const patchTrainingTemplateApi = (
+  id: string,
+  patch: Partial<TrainingTemplateInput>,
+) => api.patch<TrainingTemplate>(`/training-templates/${id}`, patch);
+export const deleteTrainingTemplateApi = (id: string) =>
+  api.del<void>(`/training-templates/${id}`);
 
 // --- Leaderboards ---
 export const createCategoryApi = (category: LeaderboardCategory) =>

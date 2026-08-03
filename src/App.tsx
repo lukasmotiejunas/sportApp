@@ -27,6 +27,7 @@ import MemberProfile from './pages/member/MemberProfile';
 import CoachTrainings from './pages/coach/CoachTrainings';
 import CoachTrainingDetail from './pages/coach/CoachTrainingDetail';
 import CoachTrainingForm from './pages/coach/CoachTrainingForm';
+import CoachTrainingTemplates from './pages/coach/CoachTrainingTemplates';
 import CoachMembers from './pages/coach/CoachMembers';
 import CoachMemberDetail from './pages/coach/CoachMemberDetail';
 import CoachPlanEditor from './pages/coach/CoachPlanEditor';
@@ -171,6 +172,7 @@ export default function App() {
           <Route path="trainings/new" element={<CoachTrainingForm mode="create" />} />
           <Route path="trainings/:id" element={<CoachTrainingDetail />} />
           <Route path="trainings/:id/edit" element={<CoachTrainingForm mode="edit" />} />
+          <Route path="training-templates" element={<CoachTrainingTemplates />} />
           <Route path="members" element={<CoachMembers />} />
           <Route path="members/:id" element={<CoachMemberDetail />} />
           <Route path="plans/:trainingId/:memberId" element={<CoachPlanEditor />} />
@@ -195,6 +197,7 @@ export default function App() {
           <Route path="trainings/new" element={<CoachTrainingForm mode="create" />} />
           <Route path="trainings/:id" element={<CoachTrainingDetail />} />
           <Route path="trainings/:id/edit" element={<CoachTrainingForm mode="edit" />} />
+          <Route path="training-templates" element={<CoachTrainingTemplates />} />
           <Route
             path="trainings/:trainingId/plans/:memberId"
             element={<CoachPlanEditor />}

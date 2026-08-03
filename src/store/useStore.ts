@@ -25,6 +25,7 @@ import type {
   ToastRecord,
   TrainingPlan,
   TrainingSession,
+  TrainingTemplate,
 } from '../types';
 import { todayIso } from '../utils/dates';
 
@@ -54,6 +55,7 @@ type State = {
   coaches: CoachStaff[];
   trainingSessions: TrainingSession[];
   trainingPlans: TrainingPlan[];
+  trainingTemplates: TrainingTemplate[];
   leaderboardCategories: LeaderboardCategory[];
   leaderboardResults: LeaderboardResult[];
   payments: Payment[];
@@ -90,6 +92,15 @@ type State = {
   upsertPlan: (plan: TrainingPlan) => void;
   publishPlan: (planId: string) => void;
   deletePlan: (planId: string) => void;
+
+  createTrainingTemplate: (
+    input: Omit<TrainingTemplate, 'id' | 'updatedAt'>,
+  ) => Promise<{ ok: boolean; error?: string; template?: TrainingTemplate }>;
+  updateTrainingTemplate: (
+    id: string,
+    patch: Partial<Omit<TrainingTemplate, 'id' | 'updatedAt'>>,
+  ) => Promise<{ ok: boolean; error?: string }>;
+  deleteTrainingTemplate: (id: string) => void;
 
   addLeaderboardCategory: (c: Omit<LeaderboardCategory, 'id'>) => LeaderboardCategory;
   updateLeaderboardCategory: (id: string, patch: Partial<LeaderboardCategory>) => void;
@@ -151,6 +162,7 @@ export const useStore = create<State>()(
         coaches: [],
         trainingSessions: [],
         trainingPlans: [],
+        trainingTemplates: [],
         leaderboardCategories: [],
         leaderboardResults: [],
         payments: mockPayments,
@@ -181,6 +193,7 @@ export const useStore = create<State>()(
               membershipPlans,
               trainingSessions,
               trainingPlans,
+              trainingTemplates,
               leaderboardCategories,
               leaderboardResults,
             ] = await Promise.all([
@@ -189,6 +202,7 @@ export const useStore = create<State>()(
               apiEndpoints.fetchMembershipPlans(),
               apiEndpoints.fetchTrainings(),
               apiEndpoints.fetchTrainingPlans(),
+              apiEndpoints.fetchTrainingTemplates(),
               apiEndpoints.fetchLeaderboardCategories(),
               apiEndpoints.fetchLeaderboardResults(),
             ]);
@@ -198,6 +212,7 @@ export const useStore = create<State>()(
               membershipPlans,
               trainingSessions,
               trainingPlans,
+              trainingTemplates,
               leaderboardCategories,
               leaderboardResults,
               loaded: true,
@@ -303,6 +318,7 @@ export const useStore = create<State>()(
             coaches: [],
             trainingSessions: [],
             trainingPlans: [],
+            trainingTemplates: [],
             leaderboardCategories: [],
             leaderboardResults: [],
           });
@@ -581,6 +597,47 @@ export const useStore = create<State>()(
         deletePlan: (planId) => {
           set({ trainingPlans: get().trainingPlans.filter((p) => p.id !== planId) });
           apiEndpoints.deletePlanApi(planId).catch(onSyncError('Nepavyko ištrinti plano.'));
+        },
+
+        createTrainingTemplate: async (input) => {
+          try {
+            const template = await apiEndpoints.createTrainingTemplateApi(input);
+            set({ trainingTemplates: [template, ...get().trainingTemplates] });
+            return { ok: true, template };
+          } catch (err) {
+            const message =
+              err instanceof ApiError
+                ? err.message
+                : 'Nepavyko sukurti treniruotės plano.';
+            return { ok: false, error: message };
+          }
+        },
+
+        updateTrainingTemplate: async (id, patch) => {
+          try {
+            const updated = await apiEndpoints.patchTrainingTemplateApi(id, patch);
+            set({
+              trainingTemplates: get().trainingTemplates.map((t) =>
+                t.id === id ? updated : t,
+              ),
+            });
+            return { ok: true };
+          } catch (err) {
+            const message =
+              err instanceof ApiError
+                ? err.message
+                : 'Nepavyko atnaujinti treniruotės plano.';
+            return { ok: false, error: message };
+          }
+        },
+
+        deleteTrainingTemplate: (id) => {
+          set({
+            trainingTemplates: get().trainingTemplates.filter((t) => t.id !== id),
+          });
+          apiEndpoints
+            .deleteTrainingTemplateApi(id)
+            .catch(onSyncError('Nepavyko ištrinti treniruotės plano.'));
         },
 
         addLeaderboardCategory: (c) => {

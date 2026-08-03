@@ -11,6 +11,7 @@ import { coachesRouter } from './routes/coaches.js';
 import { membershipPlansRouter } from './routes/membershipPlans.js';
 import { trainingsRouter } from './routes/trainings.js';
 import { trainingPlansRouter } from './routes/trainingPlans.js';
+import { trainingTemplatesRouter } from './routes/trainingTemplates.js';
 import { leaderboardsRouter } from './routes/leaderboards.js';
 import { superAdminRouter } from './routes/superadmin.js';
 import { signupRouter } from './routes/signup.js';
@@ -81,6 +82,12 @@ app.use(
   requireAuth,
   requireActiveSubscription,
   trainingPlansRouter,
+);
+app.use(
+  '/training-templates',
+  requireAuth,
+  requireActiveSubscription,
+  trainingTemplatesRouter,
 );
 app.use(
   '/leaderboards',
