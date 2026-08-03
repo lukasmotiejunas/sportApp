@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react';
-import { ClipboardList, Plus, Save, Trash2, X } from 'lucide-react';
+import { ClipboardList, Plus, Save, Sparkles, Trash2, X } from 'lucide-react';
 import { PageTitle } from '../../components/layout/PageTitle';
 import { FormField, TextareaField } from '../../components/ui/FormField';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { useStore } from '../../store/useStore';
+import { generateTrainingTemplateApi } from '../../api/endpoints';
+import { ApiError } from '../../api/client';
 import type { TrainingTemplate } from '../../types';
 
 type FormState = {
@@ -69,6 +71,41 @@ export default function CoachTrainingTemplates() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [toDelete, setToDelete] = useState<TrainingTemplate | null>(null);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [generating, setGenerating] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  const generate = async () => {
+    setAiError(null);
+    if (aiPrompt.trim().length < 3) {
+      setAiError('Aprašykite treniruotę bent keliais žodžiais.');
+      return;
+    }
+    setGenerating(true);
+    try {
+      const result = await generateTrainingTemplateApi(aiPrompt.trim());
+      setForm({
+        name: result.name,
+        title: result.title,
+        description: result.description,
+        location: result.location,
+        startTime: result.startTime || emptyForm.startTime,
+        endTime: result.endTime || emptyForm.endTime,
+        capacity:
+          result.capacity != null ? String(result.capacity) : emptyForm.capacity,
+        defaultPlan: result.defaultPlan,
+      });
+      push({ kind: 'success', message: 'Planas sugeneruotas — patikrinkite ir išsaugokite.' });
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : 'Nepavyko sugeneruoti plano.';
+      setAiError(message);
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const sortedTemplates = useMemo(
     () => [...templates].sort((a, b) => a.name.localeCompare(b.name, 'lt')),
@@ -80,6 +117,8 @@ export default function CoachTrainingTemplates() {
     setCreating(true);
     setForm(emptyForm);
     setError(null);
+    setAiPrompt('');
+    setAiError(null);
   };
 
   const startEdit = (t: TrainingTemplate) => {
@@ -87,6 +126,8 @@ export default function CoachTrainingTemplates() {
     setEditingId(t.id);
     setForm(toForm(t));
     setError(null);
+    setAiPrompt('');
+    setAiError(null);
   };
 
   const cancelForm = () => {
@@ -94,6 +135,8 @@ export default function CoachTrainingTemplates() {
     setCreating(false);
     setForm(emptyForm);
     setError(null);
+    setAiPrompt('');
+    setAiError(null);
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -160,6 +203,36 @@ export default function CoachTrainingTemplates() {
               <X className="h-4 w-4" />
             </button>
           </div>
+          <div className="mb-4 rounded-2xl border border-lime-200 bg-lime-50/60 p-3 dark:border-lime-900/60 dark:bg-lime-950/40">
+            <div className="mb-2 flex items-center gap-2 font-display text-sm font-bold text-lime-900 dark:text-lime-200">
+              <Sparkles className="h-4 w-4" />
+              Generuoti su AI
+            </div>
+            <p className="mb-2 text-xs text-ink-600 dark:text-ink-300">
+              Aprašykite treniruotę laisva forma — AI užpildys visus laukus. Rezultatą galėsite pataisyti prieš išsaugant.
+            </p>
+            <TextareaField
+              value={aiPrompt}
+              onChange={(e) => setAiPrompt(e.target.value)}
+              rows={3}
+              placeholder="pvz. 60 min sprinto technikos treniruotė 12–14 m. vaikams stadione, akcentas — pirmieji 30 m."
+            />
+            {aiError && (
+              <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">{aiError}</p>
+            )}
+            <div className="mt-2 flex justify-end">
+              <button
+                type="button"
+                className="btn-accent"
+                onClick={generate}
+                disabled={generating}
+              >
+                <Sparkles className="h-4 w-4" />
+                {generating ? 'Generuojama…' : 'Sugeneruoti'}
+              </button>
+            </div>
+          </div>
+
           <form onSubmit={submit} className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-2">
               <FormField

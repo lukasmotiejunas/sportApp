@@ -191,6 +191,10 @@ export const patchTrainingTemplateApi = (
 export const deleteTrainingTemplateApi = (id: string) =>
   api.del<void>(`/training-templates/${id}`);
 
+export type GeneratedTemplate = Omit<TrainingTemplate, 'id' | 'updatedAt'>;
+export const generateTrainingTemplateApi = (prompt: string) =>
+  api.post<GeneratedTemplate>('/training-templates/generate', { prompt });
+
 // --- Leaderboards ---
 export const createCategoryApi = (category: LeaderboardCategory) =>
   api.post<LeaderboardCategory>('/leaderboards/categories', category);
