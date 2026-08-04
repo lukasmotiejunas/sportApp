@@ -167,6 +167,13 @@ export type SyncSubscriptionFeeResponse = {
   updated: number;
   skipped: number;
   errors: Array<{ id: string; message: string }>;
+  details: Array<{
+    id: string;
+    status: string;
+    before: number | null;
+    after: number | null;
+    action: 'updated' | 'skipped_terminal' | 'skipped_same' | 'error';
+  }>;
 };
 export const syncSubscriptionFeeApi = () =>
   api.post<SyncSubscriptionFeeResponse>('/connect/subscriptions/sync-fee');

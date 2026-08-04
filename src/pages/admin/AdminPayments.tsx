@@ -177,13 +177,26 @@ export default function AdminPayments() {
 
       {syncResult?.kind === "ok" && (
         <div className="mb-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
-          Nustatytas platformos mokestis {syncResult.data.targetPct}%.
-          Peržiūrėta {syncResult.data.scanned}, atnaujinta{" "}
-          {syncResult.data.updated}, praleista {syncResult.data.skipped}
-          {syncResult.data.errors.length > 0
-            ? `, klaidų ${syncResult.data.errors.length}`
-            : ""}
-          .
+          <p>
+            Nustatytas platformos mokestis {syncResult.data.targetPct}%.
+            Peržiūrėta {syncResult.data.scanned}, atnaujinta{" "}
+            {syncResult.data.updated}, praleista {syncResult.data.skipped}
+            {syncResult.data.errors.length > 0
+              ? `, klaidų ${syncResult.data.errors.length}`
+              : ""}
+            .
+          </p>
+          {syncResult.data.details.length > 0 && (
+            <ul className="mt-2 space-y-1 text-xs">
+              {syncResult.data.details.map((d) => (
+                <li key={d.id} className="font-mono">
+                  {d.id} — status: <b>{d.status}</b>, buvo:{" "}
+                  {d.before ?? "null"}%, tapo: {d.after ?? "null"}% ({d.action}
+                  )
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
       {syncResult?.kind === "err" && (

@@ -435,36 +435,71 @@ connectRouter.post(
     let updated = 0;
     let skipped = 0;
     const errors: Array<{ id: string; message: string }> = [];
+    const details: Array<{
+      id: string;
+      status: string;
+      before: number | null;
+      after: number | null;
+      action: 'updated' | 'skipped_terminal' | 'skipped_same' | 'error';
+    }> = [];
 
     for await (const sub of stripe.subscriptions.list(
       { status: 'all', limit: 100 },
       { stripeAccount: acct },
     )) {
       scanned += 1;
+      const before = sub.application_fee_percent ?? null;
       // Skip terminal states — Stripe won't accept updates on these anyway.
       if (sub.status === 'canceled' || sub.status === 'incomplete_expired') {
         skipped += 1;
+        details.push({
+          id: sub.id,
+          status: sub.status,
+          before,
+          after: before,
+          action: 'skipped_terminal',
+        });
         continue;
       }
-      if (sub.application_fee_percent === targetPct) {
+      if (before === targetPct) {
         skipped += 1;
+        details.push({
+          id: sub.id,
+          status: sub.status,
+          before,
+          after: before,
+          action: 'skipped_same',
+        });
         continue;
       }
       try {
-        await stripe.subscriptions.update(
+        const upd = await stripe.subscriptions.update(
           sub.id,
           { application_fee_percent: targetPct },
           { stripeAccount: acct },
         );
         updated += 1;
-      } catch (err) {
-        errors.push({
+        details.push({
           id: sub.id,
-          message: err instanceof Error ? err.message : String(err),
+          status: sub.status,
+          before,
+          after: upd.application_fee_percent ?? null,
+          action: 'updated',
+        });
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : String(err);
+        errors.push({ id: sub.id, message });
+        details.push({
+          id: sub.id,
+          status: sub.status,
+          before,
+          after: before,
+          action: 'error',
         });
       }
     }
 
-    res.json({ targetPct, scanned, updated, skipped, errors });
+    res.json({ targetPct, scanned, updated, skipped, errors, details });
   }),
 );
