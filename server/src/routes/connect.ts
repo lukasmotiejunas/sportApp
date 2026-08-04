@@ -195,13 +195,53 @@ connectRouter.get(
       periodEnd: string | null;
     }> = [];
 
-    const [rawInvoices, rawIntents] = await Promise.all([
+    // Also fetch charges with their balance_transaction expanded so we can
+    // report the amount the club actually receives after Stripe processing
+    // fees and any platform fees. Charges are correlated to PaymentIntents,
+    // and invoices are correlated to PaymentIntents via `invoice.payments`.
+    const [rawInvoices, rawIntents, rawCharges] = await Promise.all([
       stripe.invoices.list({ limit: 100 }, { stripeAccount: acct }),
-      stripe.paymentIntents.list(
-        { limit: 100, expand: ['data.latest_charge'] },
+      stripe.paymentIntents.list({ limit: 100 }, { stripeAccount: acct }),
+      stripe.charges.list(
+        { limit: 100, expand: ['data.balance_transaction'] },
         { stripeAccount: acct },
       ),
     ]);
+
+    const netByPaymentIntentId = new Map<string, number>();
+    const receiptByPaymentIntentId = new Map<string, string>();
+    for (const ch of rawCharges.data) {
+      const bt = ch.balance_transaction;
+      const net =
+        bt && typeof bt !== 'string' && typeof bt.net === 'number'
+          ? bt.net
+          : null;
+      const piId =
+        typeof ch.payment_intent === 'string' ? ch.payment_intent : null;
+      if (piId && net != null) netByPaymentIntentId.set(piId, net);
+      if (piId && ch.receipt_url)
+        receiptByPaymentIntentId.set(piId, ch.receipt_url);
+    }
+
+    // Invoices in this API version reference their PaymentIntents through the
+    // `payments` sub-list rather than a direct `charge` field.
+    const netByInvoiceId = new Map<string, number>();
+    for (const inv of rawInvoices.data) {
+      const payments = inv.payments?.data ?? [];
+      for (const p of payments) {
+        if (p.status !== 'paid') continue;
+        const piRef = p.payment.payment_intent;
+        const piId =
+          typeof piRef === 'string' ? piRef : piRef?.id ?? null;
+        const net = piId ? netByPaymentIntentId.get(piId) : undefined;
+        if (net != null) {
+          netByInvoiceId.set(
+            inv.id,
+            (netByInvoiceId.get(inv.id) ?? 0) + net,
+          );
+        }
+      }
+    }
 
     // One-time payments (credit-pack purchases) don't go through Invoices —
     // they're standalone PaymentIntents. Identify them via the metadata we
@@ -248,11 +288,13 @@ connectRouter.get(
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
     for (const inv of rawInvoices.data) {
-      if (inv.status === 'paid' && inv.amount_paid) {
-        totalRevenueCents += inv.amount_paid;
+      const grossPaid = inv.amount_paid ?? 0;
+      const netPaid = netByInvoiceId.get(inv.id) ?? grossPaid;
+      if (inv.status === 'paid' && grossPaid) {
+        totalRevenueCents += netPaid;
         const paidAtTs = inv.status_transitions?.paid_at ?? inv.created;
         if (paidAtTs && new Date(paidAtTs * 1000) >= monthStart) {
-          mtdRevenueCents += inv.amount_paid;
+          mtdRevenueCents += netPaid;
           mtdCount += 1;
         }
       }
@@ -262,6 +304,9 @@ connectRouter.get(
         typeof inv.customer === 'string' ? inv.customer : null;
       const linked = customerId ? memberByCustomer.get(customerId) : undefined;
 
+      const displayCents = grossPaid
+        ? netPaid
+        : (inv.amount_due as number) ?? 0;
       invoices.push({
         id: inv.id,
         customerId,
@@ -269,7 +314,7 @@ connectRouter.get(
         memberName: linked?.name ?? null,
         memberEmail: linked?.email ?? null,
         number: inv.number ?? null,
-        amount: ((inv.amount_paid || inv.amount_due) as number) / 100,
+        amount: displayCents / 100,
         currency: inv.currency,
         status: inv.status ?? 'draft',
         paidAt: inv.status_transitions?.paid_at
@@ -290,11 +335,12 @@ connectRouter.get(
 
     for (const pi of oneTimeIntents) {
       const paid = pi.status === 'succeeded';
-      const amountCents = pi.amount_received || pi.amount || 0;
-      if (paid && amountCents) {
-        totalRevenueCents += amountCents;
+      const grossCents = pi.amount_received || pi.amount || 0;
+      const netCents = netByPaymentIntentId.get(pi.id) ?? grossCents;
+      if (paid && grossCents) {
+        totalRevenueCents += netCents;
         if (new Date(pi.created * 1000) >= monthStart) {
-          mtdRevenueCents += amountCents;
+          mtdRevenueCents += netCents;
           mtdCount += 1;
         }
       }
@@ -322,11 +368,6 @@ connectRouter.get(
         ? `Kreditų paketas · ${creditCount}`
         : pi.description || 'Vienkartinis mokėjimas';
 
-      const latestCharge =
-        pi.latest_charge && typeof pi.latest_charge !== 'string'
-          ? pi.latest_charge
-          : null;
-
       invoices.push({
         id: pi.id,
         customerId,
@@ -334,14 +375,14 @@ connectRouter.get(
         memberName: linked?.name ?? null,
         memberEmail: linked?.email ?? null,
         number: label,
-        amount: amountCents / 100,
+        amount: (paid ? netCents : grossCents) / 100,
         currency: pi.currency,
         status,
         paidAt: paid
           ? new Date(pi.created * 1000).toISOString().slice(0, 10)
           : null,
         createdDate: new Date(pi.created * 1000).toISOString().slice(0, 10),
-        hostedInvoiceUrl: latestCharge?.receipt_url ?? null,
+        hostedInvoiceUrl: receiptByPaymentIntentId.get(pi.id) ?? null,
         periodStart: null,
         periodEnd: null,
       });

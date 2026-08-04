@@ -121,7 +121,7 @@ export default function AdminPayments() {
       <PageTitle
         eyebrow="Administratorius"
         title="Mokėjimai"
-        description="Realūs Stripe atsiskaitymai jūsų klubo prijungtoje sąskaitoje."
+        description="Sumos atskaičius Stripe ir platformos mokesčius — tiek klubas realiai gauna."
       />
 
       <ConnectSection />
