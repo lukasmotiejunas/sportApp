@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
-import { CircleDollarSign, ExternalLink, RefreshCw, Search } from "lucide-react";
+import { CircleDollarSign, ExternalLink, Search } from "lucide-react";
 import { useStore } from "../../store/useStore";
 import { PageTitle } from "../../components/layout/PageTitle";
 import { StatusBadge } from "../../components/ui/StatusBadge";
@@ -12,10 +12,8 @@ import { formatDateShort } from "../../utils/dates";
 import { FilterChip } from "../../components/ui/FilterChip";
 import {
   fetchClubPaymentsApi,
-  syncSubscriptionFeeApi,
   type ClubPaymentInvoice,
   type ClubPaymentsResponse,
-  type SyncSubscriptionFeeResponse,
 } from "../../api/endpoints";
 import { ApiError } from "../../api/client";
 
@@ -50,29 +48,6 @@ export default function AdminPayments() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<InvoiceFilter>("all");
-  const [syncing, setSyncing] = useState(false);
-  const [syncResult, setSyncResult] = useState<
-    | { kind: "ok"; data: SyncSubscriptionFeeResponse }
-    | { kind: "err"; message: string }
-    | null
-  >(null);
-
-  const runSyncFee = () => {
-    setSyncing(true);
-    setSyncResult(null);
-    syncSubscriptionFeeApi()
-      .then((resp) => setSyncResult({ kind: "ok", data: resp }))
-      .catch((err) =>
-        setSyncResult({
-          kind: "err",
-          message:
-            err instanceof ApiError
-              ? err.message
-              : "Nepavyko sinchronizuoti platformos mokesčio.",
-        }),
-      )
-      .finally(() => setSyncing(false));
-  };
 
   useEffect(() => {
     let cancelled = false;
@@ -150,60 +125,6 @@ export default function AdminPayments() {
       />
 
       <ConnectSection />
-
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-ink-100 bg-ink-50/50 p-3 text-sm dark:border-ink-800 dark:bg-ink-900/40">
-        <div>
-          <p className="font-semibold">
-            Platformos mokestis:{" "}
-            <span className="text-emerald-600 dark:text-emerald-400">
-              {data ? `${data.platformFeePct}%` : "—"}
-            </span>
-          </p>
-          <p className="text-xs text-ink-500">
-            Nauja reikšmė netaikoma automatiškai jau sukurtoms Stripe
-            prenumeratoms — paspauskite, kad atnaujintumėte visas.
-          </p>
-        </div>
-        <button
-          type="button"
-          className="btn-primary"
-          onClick={runSyncFee}
-          disabled={syncing}
-        >
-          <RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
-          {syncing ? "Sinchronizuojama…" : "Sinchronizuoti mokestį"}
-        </button>
-      </div>
-
-      {syncResult?.kind === "ok" && (
-        <div className="mb-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
-          <p>
-            Nustatytas platformos mokestis {syncResult.data.targetPct}%.
-            Peržiūrėta {syncResult.data.scanned}, atnaujinta{" "}
-            {syncResult.data.updated}, praleista {syncResult.data.skipped}
-            {syncResult.data.errors.length > 0
-              ? `, klaidų ${syncResult.data.errors.length}`
-              : ""}
-            .
-          </p>
-          {syncResult.data.details.length > 0 && (
-            <ul className="mt-2 space-y-1 text-xs">
-              {syncResult.data.details.map((d) => (
-                <li key={d.id} className="font-mono">
-                  {d.id} — status: <b>{d.status}</b>, buvo:{" "}
-                  {d.before ?? "null"}%, tapo: {d.after ?? "null"}% ({d.action}
-                  )
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-      {syncResult?.kind === "err" && (
-        <div className="mb-3 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
-          {syncResult.message}
-        </div>
-      )}
 
       {error && (
         <div className="mb-3 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
