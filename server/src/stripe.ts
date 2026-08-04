@@ -30,9 +30,9 @@ export const STRIPE_CONNECT_WEBHOOK_SECRET = () =>
 
 // Percentage of every member payment routed to Lumo's platform balance via
 // Stripe's `application_fee_percent`. Tunable per-deploy without a code
-// change. Default 5.
+// change. Default 3.
 export const LUMO_APPLICATION_FEE_PERCENT = () => {
-  const raw = Number(process.env.LUMO_APPLICATION_FEE_PERCENT ?? 5);
-  if (!Number.isFinite(raw) || raw < 0 || raw > 100) return 5;
+  const raw = Number(process.env.LUMO_APPLICATION_FEE_PERCENT ?? 3);
+  if (!Number.isFinite(raw) || raw < 0 || raw > 100) return 3;
   return raw;
 };

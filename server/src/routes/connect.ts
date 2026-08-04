@@ -200,7 +200,10 @@ connectRouter.get(
     // fees and any platform fees. Charges are correlated to PaymentIntents,
     // and invoices are correlated to PaymentIntents via `invoice.payments`.
     const [rawInvoices, rawIntents, rawCharges] = await Promise.all([
-      stripe.invoices.list({ limit: 100 }, { stripeAccount: acct }),
+      stripe.invoices.list(
+        { limit: 100, expand: ['data.payments'] },
+        { stripeAccount: acct },
+      ),
       stripe.paymentIntents.list({ limit: 100 }, { stripeAccount: acct }),
       stripe.charges.list(
         { limit: 100, expand: ['data.balance_transaction'] },
