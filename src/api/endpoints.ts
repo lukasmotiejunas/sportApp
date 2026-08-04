@@ -160,6 +160,16 @@ export type ClubPaymentsResponse = {
 export const fetchClubPaymentsApi = () =>
   api.get<ClubPaymentsResponse>('/connect/payments');
 
+export type SyncSubscriptionFeeResponse = {
+  targetPct: number;
+  scanned: number;
+  updated: number;
+  skipped: number;
+  errors: Array<{ id: string; message: string }>;
+};
+export const syncSubscriptionFeeApi = () =>
+  api.post<SyncSubscriptionFeeResponse>('/connect/subscriptions/sync-fee');
+
 // --- Trainings ---
 export const createTrainingApi = (training: Partial<TrainingSession> & { id: string }) =>
   api.post<TrainingSession>('/trainings', training);

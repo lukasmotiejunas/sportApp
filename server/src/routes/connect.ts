@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../prisma.js';
 import { asyncHandler, HttpError } from '../middleware/errorHandler.js';
 import { requireClubId, requireRole } from '../middleware/auth.js';
-import { getStripe } from '../stripe.js';
+import { getStripe, LUMO_APPLICATION_FEE_PERCENT } from '../stripe.js';
 
 export const connectRouter = Router();
 
@@ -407,5 +407,62 @@ connectRouter.get(
       currency,
       invoices,
     });
+  }),
+);
+
+// POST /connect/subscriptions/sync-fee — align every active subscription on
+// the club's connected account with the current platform-fee setting. Stripe
+// stores `application_fee_percent` on each subscription at creation, so a
+// change to the env variable does not retroactively apply to old subs; this
+// route sweeps them.
+connectRouter.post(
+  '/subscriptions/sync-fee',
+  asyncHandler(async (req, res) => {
+    const clubId = requireClubId(req);
+    const club = await prisma.club.findUnique({ where: { id: clubId } });
+    if (!club) throw new HttpError(404, 'Klubas nerastas.');
+    if (!club.stripeConnectAccountId) {
+      throw new HttpError(400, 'Klubas dar neprijungtas prie Stripe.');
+    }
+
+    const stripe = getStripe();
+    const acct = club.stripeConnectAccountId;
+    const targetPct = LUMO_APPLICATION_FEE_PERCENT();
+
+    let scanned = 0;
+    let updated = 0;
+    let skipped = 0;
+    const errors: Array<{ id: string; message: string }> = [];
+
+    for await (const sub of stripe.subscriptions.list(
+      { status: 'all', limit: 100 },
+      { stripeAccount: acct },
+    )) {
+      scanned += 1;
+      // Skip terminal states — Stripe won't accept updates on these anyway.
+      if (sub.status === 'canceled' || sub.status === 'incomplete_expired') {
+        skipped += 1;
+        continue;
+      }
+      if (sub.application_fee_percent === targetPct) {
+        skipped += 1;
+        continue;
+      }
+      try {
+        await stripe.subscriptions.update(
+          sub.id,
+          { application_fee_percent: targetPct },
+          { stripeAccount: acct },
+        );
+        updated += 1;
+      } catch (err) {
+        errors.push({
+          id: sub.id,
+          message: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+
+    res.json({ targetPct, scanned, updated, skipped, errors });
   }),
 );
