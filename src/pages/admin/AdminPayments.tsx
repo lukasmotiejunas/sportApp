@@ -153,11 +153,15 @@ export default function AdminPayments() {
 
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-ink-100 bg-ink-50/50 p-3 text-sm dark:border-ink-800 dark:bg-ink-900/40">
         <div>
-          <p className="font-semibold">Platformos mokestis egzistuojančioms prenumeratoms</p>
+          <p className="font-semibold">
+            Platformos mokestis:{" "}
+            <span className="text-emerald-600 dark:text-emerald-400">
+              {data ? `${data.platformFeePct}%` : "—"}
+            </span>
+          </p>
           <p className="text-xs text-ink-500">
-            Nauja platformos mokesčio reikšmė nesikeičia automatiškai jau
-            sukurtoms Stripe prenumeratoms. Paspauskite, kad atnaujintumėte
-            visas.
+            Nauja reikšmė netaikoma automatiškai jau sukurtoms Stripe
+            prenumeratoms — paspauskite, kad atnaujintumėte visas.
           </p>
         </div>
         <button

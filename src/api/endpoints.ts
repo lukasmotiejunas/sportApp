@@ -155,6 +155,7 @@ export type ClubPaymentsResponse = {
   mtdCount: number;
   totalRevenue: number;
   currency: string;
+  platformFeePct: number;
   invoices: ClubPaymentInvoice[];
 };
 export const fetchClubPaymentsApi = () =>

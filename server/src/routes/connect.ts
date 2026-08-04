@@ -168,6 +168,7 @@ connectRouter.get(
         mtdCount: 0,
         totalRevenue: 0,
         currency: 'eur',
+        platformFeePct: LUMO_APPLICATION_FEE_PERCENT(),
         invoices: [],
       });
       return;
@@ -405,6 +406,7 @@ connectRouter.get(
       mtdCount,
       totalRevenue: totalRevenueCents / 100,
       currency,
+      platformFeePct: LUMO_APPLICATION_FEE_PERCENT(),
       invoices,
     });
   }),
