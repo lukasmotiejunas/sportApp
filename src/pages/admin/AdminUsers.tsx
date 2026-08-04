@@ -13,6 +13,7 @@ import {
 import { ApiError } from "../../api/client";
 import { useStore } from "../../store/useStore";
 import type { AuthUser } from "../../types";
+import { formatCurrency } from "../../utils/format";
 
 const roleTone: Record<AuthUser["role"], "accent" | "info" | "success"> = {
   super_admin: "accent",
@@ -32,6 +33,19 @@ export default function AdminUsers() {
   const currentUserId = useStore((s) => s.authUser?.id ?? "");
   const clubSlug = useStore((s) => s.authUser?.clubSlug ?? "");
   const push = useStore((s) => s.pushToast);
+  const members = useStore((s) => s.members);
+  const membershipPlans = useStore((s) => s.membershipPlans);
+
+  const memberById = useMemo(() => {
+    const map = new Map<string, (typeof members)[number]>();
+    members.forEach((m) => map.set(m.id, m));
+    return map;
+  }, [members]);
+  const planById = useMemo(() => {
+    const map = new Map<string, (typeof membershipPlans)[number]>();
+    membershipPlans.forEach((p) => map.set(p.id, p));
+    return map;
+  }, [membershipPlans]);
 
   const [users, setUsers] = useState<AuthUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -164,7 +178,20 @@ export default function AdminUsers() {
         ) : users.length === 0 ? (
           <p className="p-4 text-sm text-ink-500">Paskyrų nėra.</p>
         ) : (
-          users.map((u) => (
+          users.map((u) => {
+            const member = u.memberId ? memberById.get(u.memberId) : undefined;
+            const plan = member?.membershipPlanId
+              ? planById.get(member.membershipPlanId)
+              : undefined;
+            let planLabel: string | null = null;
+            if (u.role === "member") {
+              if (!plan) planLabel = "Be plano";
+              else if (plan.planType === "monthly")
+                planLabel = `${plan.name} · ${formatCurrency(plan.monthlyFee)}/mėn.`;
+              else
+                planLabel = `${plan.name} · ${member?.creditsRemaining ?? 0} kreditai`;
+            }
+            return (
             <div key={u.id} className="flex items-center gap-3 p-3">
               <Avatar name={u.name ?? u.email} size="sm" />
               <div className="min-w-0 flex-1">
@@ -172,6 +199,11 @@ export default function AdminUsers() {
                   {u.name ?? "—"}
                 </p>
                 <p className="truncate text-xs text-ink-500">{u.email}</p>
+                {planLabel && (
+                  <p className="truncate text-xs text-ink-500 dark:text-ink-400">
+                    {planLabel}
+                  </p>
+                )}
               </div>
               <StatusBadge tone={roleTone[u.role]} dot>
                 {roleLabel[u.role]}
@@ -189,7 +221,8 @@ export default function AdminUsers() {
                 </button>
               )}
             </div>
-          ))
+            );
+          })
         )}
       </section>
 
