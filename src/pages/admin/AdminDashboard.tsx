@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { CalendarCheck2, CreditCard, Users } from "lucide-react";
 import {
@@ -16,6 +17,10 @@ import { StatusBadge } from "../../components/ui/StatusBadge";
 import { Avatar } from "../../components/ui/Avatar";
 import { formatDateShort, todayIso } from "../../utils/dates";
 import { formatCurrency } from "../../utils/format";
+import {
+  fetchClubPaymentsApi,
+  type ClubPaymentsResponse,
+} from "../../api/endpoints";
 
 export default function AdminDashboard() {
   const authUser = useStore((s) => s.authUser);
@@ -45,15 +50,22 @@ export default function AdminDashboard() {
     };
   });
 
-  const monthlyRevenue = members
-    .filter((m) => m.paymentStatus === "paid")
-    .reduce(
-      (s, m) =>
-        s +
-        (membershipPlans.find((p) => p.id === m.membershipPlanId)?.monthlyFee ??
-          0),
-      0,
-    );
+  const [payments, setPayments] = useState<ClubPaymentsResponse | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetchClubPaymentsApi()
+      .then((resp) => {
+        if (!cancelled) setPayments(resp);
+      })
+      .catch(() => {
+        if (!cancelled) setPayments(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const monthlyRevenue = payments?.mtdRevenue ?? 0;
   const expectedRevenue = members.reduce(
     (s, m) =>
       s +
