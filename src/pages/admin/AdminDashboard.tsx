@@ -66,13 +66,11 @@ export default function AdminDashboard() {
   }, []);
 
   const monthlyRevenue = payments?.mtdRevenue ?? 0;
-  const expectedRevenue = members.reduce(
-    (s, m) =>
-      s +
-      (membershipPlans.find((p) => p.id === m.membershipPlanId)?.monthlyFee ??
-        0),
-    0,
-  );
+  const expectedRevenue = members.reduce((s, m) => {
+    const plan = membershipPlans.find((p) => p.id === m.membershipPlanId);
+    if (!plan || plan.planType !== "monthly") return s;
+    return s + plan.monthlyFee;
+  }, 0);
   const completion = Math.round(
     (monthlyRevenue / Math.max(expectedRevenue, 1)) * 100,
   );
