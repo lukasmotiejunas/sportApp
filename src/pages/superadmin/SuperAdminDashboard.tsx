@@ -6,7 +6,7 @@ import { ApiError } from "../../api/client";
 import { fetchSuperAdminClubs, fetchSuperAdminStats } from "../../api/superadmin";
 import type { ClubSummary, SuperAdminStats } from "../../types";
 
-const currency = (n: number) => `${n.toFixed(0)} €`;
+const currency = (n: number) => `${n.toFixed(2)} €`;
 
 function StatCard({
   label,
