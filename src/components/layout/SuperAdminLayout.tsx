@@ -1,13 +1,13 @@
 import { Outlet, NavLink } from "react-router-dom";
 import clsx from "clsx";
-import { LayoutDashboard, Building2, Sparkles } from "lucide-react";
+import { Building2, Coins, Sparkles } from "lucide-react";
 import { UserMenu } from "../ui/UserMenu";
 import { ToastContainer } from "../ui/ToastContainer";
 import { BackgroundLogo } from "./BackgroundLogo";
 
 const items = [
-  { to: "/superadmin", label: "Suvestinė", icon: LayoutDashboard, end: true },
   { to: "/superadmin/clubs", label: "Klubai", icon: Building2, end: false },
+  { to: "/superadmin/finances", label: "Finansai", icon: Coins, end: false },
 ];
 
 export function SuperAdminLayout() {

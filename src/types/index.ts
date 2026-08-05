@@ -134,6 +134,25 @@ export type ClubFinances = {
   };
 };
 
+export type PlatformFinances = {
+  totals: {
+    applicationFees: number;
+    clubSubscriptions: number;
+    grossTotal: number;
+    stripeFees: number;
+    tax: number;
+    net: number;
+  };
+  months: {
+    month: string; // "YYYY-MM"
+    applicationFees: number;
+    clubSubscriptions: number;
+    stripeFees: number;
+    tax: number;
+    net: number;
+  }[];
+};
+
 export type SuperAdminStats = {
   clubs: number;
   members: number;

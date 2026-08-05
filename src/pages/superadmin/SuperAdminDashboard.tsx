@@ -60,8 +60,8 @@ export default function SuperAdminDashboard() {
     <div>
       <PageTitle
         eyebrow="Platforma"
-        title="Suvestinė"
-        description="Visų klubų statistika ir platformos pelnas."
+        title="Klubai"
+        description="Visi klubai ir jų statistika."
         action={
           <button type="button" className="btn-ghost" onClick={load}>
             <RefreshCw className="h-4 w-4" /> Atnaujinti

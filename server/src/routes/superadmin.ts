@@ -512,6 +512,128 @@ superAdminRouter.get(
   }),
 );
 
+// -------------------------------------------------------------------------
+// Platform-wide finances page. Aggregates every application fee we've
+// collected (our cut of member payments) and every paid club-subscription
+// invoice (what clubs pay us for SportApp itself), broken out per month.
+// Uses the same helpers as /clubs/:id/finances. All values in the platform
+// currency (EUR); Stripe returns amounts in cents.
+// -------------------------------------------------------------------------
+superAdminRouter.get(
+  '/finances',
+  asyncHandler(async (_req, res) => {
+    type MonthAgg = {
+      applicationFees: number;
+      clubSubscriptions: number;
+      stripeFees: number;
+      tax: number;
+    };
+    const monthMap = new Map<string, MonthAgg>();
+    const bucket = (m: string): MonthAgg => {
+      const cur = monthMap.get(m);
+      if (cur) return cur;
+      const fresh: MonthAgg = {
+        applicationFees: 0,
+        clubSubscriptions: 0,
+        stripeFees: 0,
+        tax: 0,
+      };
+      monthMap.set(m, fresh);
+      return fresh;
+    };
+    const monthKey = (unixSec: number): string => {
+      const d = new Date(unixSec * 1000);
+      return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+    };
+
+    let appFeesTotal = 0;
+    let clubSubTotal = 0;
+    let stripeFeesTotal = 0;
+    let taxTotal = 0;
+
+    try {
+      const stripe = getStripe();
+
+      // Application fees = our platform cut across all Connect accounts.
+      for await (const fee of stripe.applicationFees.list({ limit: 100 })) {
+        const net = (fee.amount ?? 0) - (fee.amount_refunded ?? 0);
+        appFeesTotal += net;
+        bucket(monthKey(fee.created)).applicationFees += net;
+      }
+
+      // Charge fees indexed by payment_intent, for pairing with invoices.
+      const feeByPi = new Map<string, number>();
+      for await (const ch of stripe.charges.list({
+        limit: 100,
+        expand: ['data.balance_transaction'],
+      })) {
+        const bt = ch.balance_transaction;
+        const fee =
+          bt && typeof bt !== 'string' && typeof bt.fee === 'number' ? bt.fee : 0;
+        const piId = typeof ch.payment_intent === 'string' ? ch.payment_intent : null;
+        if (piId) feeByPi.set(piId, (feeByPi.get(piId) ?? 0) + fee);
+      }
+
+      // Paid invoices on the platform = club subscription payments to us.
+      for await (const inv of stripe.invoices.list({
+        limit: 100,
+        expand: ['data.payments'],
+      })) {
+        if (inv.status !== 'paid') continue;
+        const gross = inv.amount_paid ?? 0;
+        if (!gross) continue;
+        const paidAt = inv.status_transitions?.paid_at ?? inv.created;
+        const b = bucket(monthKey(paidAt));
+        b.clubSubscriptions += gross;
+        clubSubTotal += gross;
+
+        let stripeFee = 0;
+        for (const p of inv.payments?.data ?? []) {
+          if (p.status !== 'paid') continue;
+          const piRef = p.payment.payment_intent;
+          const piId = typeof piRef === 'string' ? piRef : piRef?.id ?? null;
+          const fee = piId ? feeByPi.get(piId) : undefined;
+          if (fee) stripeFee += fee;
+        }
+        b.stripeFees += stripeFee;
+        stripeFeesTotal += stripeFee;
+
+        const tax = invoiceTaxCents(inv);
+        b.tax += tax;
+        taxTotal += tax;
+      }
+    } catch (err) {
+      console.warn('finances aggregation failed:', err);
+    }
+
+    const months = [...monthMap.entries()]
+      .map(([month, agg]) => ({
+        month,
+        applicationFees: agg.applicationFees / 100,
+        clubSubscriptions: agg.clubSubscriptions / 100,
+        stripeFees: agg.stripeFees / 100,
+        tax: agg.tax / 100,
+        net:
+          (agg.applicationFees + agg.clubSubscriptions - agg.stripeFees - agg.tax) /
+          100,
+      }))
+      .sort((a, b) => b.month.localeCompare(a.month));
+
+    const grossTotal = appFeesTotal + clubSubTotal;
+    res.json({
+      totals: {
+        applicationFees: appFeesTotal / 100,
+        clubSubscriptions: clubSubTotal / 100,
+        grossTotal: grossTotal / 100,
+        stripeFees: stripeFeesTotal / 100,
+        tax: taxTotal / 100,
+        net: (grossTotal - stripeFeesTotal - taxTotal) / 100,
+      },
+      months,
+    });
+  }),
+);
+
 // POST /superadmin/impersonate/:userId — mint a JWT for the target user so a
 // super_admin can debug issues in that user's shoes. Refuses to impersonate
 // another super_admin. The frontend opens the returned session in a new tab

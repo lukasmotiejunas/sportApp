@@ -4,6 +4,7 @@ import type {
   ClubDetail,
   ClubFinances,
   ClubSummary,
+  PlatformFinances,
   SuperAdminStats,
 } from '../types';
 
@@ -43,3 +44,6 @@ export const deleteClubApi = (id: string) =>
 // impersonate another super_admin.
 export const impersonateUserApi = (userId: string) =>
   api.post<{ token: string }>(`/superadmin/impersonate/${userId}`);
+
+export const fetchSuperAdminFinances = () =>
+  api.get<PlatformFinances>('/superadmin/finances');
