@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Building2, Users, UserCog, Euro, PlusCircle, RefreshCw } from "lucide-react";
+import { Building2, Users, UserCog, Euro, RefreshCw } from "lucide-react";
 import { PageTitle } from "../../components/layout/PageTitle";
 import { ApiError } from "../../api/client";
 import { fetchSuperAdminClubs, fetchSuperAdminStats } from "../../api/superadmin";
@@ -63,14 +63,9 @@ export default function SuperAdminDashboard() {
         title="Suvestinė"
         description="Visų klubų statistika ir platformos pelnas."
         action={
-          <div className="flex gap-2">
-            <button type="button" className="btn-ghost" onClick={load}>
-              <RefreshCw className="h-4 w-4" /> Atnaujinti
-            </button>
-            <Link to="/superadmin/clubs/new" className="btn-primary">
-              <PlusCircle className="h-4 w-4" /> Naujas klubas
-            </Link>
-          </div>
+          <button type="button" className="btn-ghost" onClick={load}>
+            <RefreshCw className="h-4 w-4" /> Atnaujinti
+          </button>
         }
       />
 
@@ -104,9 +99,6 @@ export default function SuperAdminDashboard() {
         ) : clubs.length === 0 ? (
           <div className="p-4 text-center">
             <p className="text-sm text-ink-500">Klubų dar nėra.</p>
-            <Link to="/superadmin/clubs/new" className="btn-primary mt-3">
-              <PlusCircle className="h-4 w-4" /> Sukurti pirmą klubą
-            </Link>
           </div>
         ) : (
           <ul className="divide-y divide-ink-100 dark:divide-ink-800">

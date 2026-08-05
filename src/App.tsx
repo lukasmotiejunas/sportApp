@@ -46,7 +46,6 @@ import AdminProfile from './pages/admin/AdminProfile';
 import AdminAddCoach from './pages/admin/AdminAddCoach';
 
 import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard';
-import SuperAdminCreateClub from './pages/superadmin/SuperAdminCreateClub';
 import SuperAdminClubDetail from './pages/superadmin/SuperAdminClubDetail';
 
 function ScrollToTop() {
@@ -222,7 +221,6 @@ export default function App() {
         >
           <Route index element={<SuperAdminDashboard />} />
           <Route path="clubs" element={<SuperAdminDashboard />} />
-          <Route path="clubs/new" element={<SuperAdminCreateClub />} />
           <Route path="clubs/:id" element={<SuperAdminClubDetail />} />
         </Route>
 
