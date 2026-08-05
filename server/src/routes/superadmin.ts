@@ -1,10 +1,12 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import type Stripe from 'stripe';
 import { prisma } from '../prisma.js';
 import { asyncHandler, HttpError } from '../middleware/errorHandler.js';
 import { requireRole } from '../middleware/auth.js';
 import { hashPassword } from '../auth/password.js';
 import { serializeClub, serializeUser } from '../serialize.js';
+import { getStripe } from '../stripe.js';
 
 export const superAdminRouter = Router();
 
@@ -163,6 +165,321 @@ superAdminRouter.get(
         name: c.name,
         specialty: c.specialty ?? '',
       })),
+    });
+  }),
+);
+
+// -------------------------------------------------------------------------
+// Finances — live pull from Stripe for member payments (Connect account) and
+// the club's own platform subscription. Whole history by default; scope to a
+// month via ?month=YYYY-MM. Fees & tax are only in Stripe (no local mirror),
+// so this can be slow for large clubs — accept for now, cache later.
+// -------------------------------------------------------------------------
+
+type FinancePayment = {
+  id: string;
+  kind: 'subscription' | 'credits';
+  number: string | null;
+  memberId: string | null;
+  memberName: string | null;
+  memberEmail: string | null;
+  gross: number;
+  stripeFee: number;
+  applicationFee: number;
+  tax: number;
+  net: number;
+  currency: string;
+  paidAt: string;
+  hostedInvoiceUrl: string | null;
+};
+
+type FinanceTotals = {
+  gross: number;
+  stripeFee: number;
+  applicationFee: number;
+  tax: number;
+  net: number;
+  count: number;
+};
+
+function emptyTotals(): FinanceTotals {
+  return { gross: 0, stripeFee: 0, applicationFee: 0, tax: 0, net: 0, count: 0 };
+}
+
+function addToTotals(list: FinancePayment[]): FinanceTotals {
+  return list.reduce<FinanceTotals>((acc, p) => {
+    acc.gross += p.gross;
+    acc.stripeFee += p.stripeFee;
+    acc.applicationFee += p.applicationFee;
+    acc.tax += p.tax;
+    acc.net += p.net;
+    acc.count += 1;
+    return acc;
+  }, emptyTotals());
+}
+
+function parseMonthRange(m: string | null): { gte: number; lt: number } | null {
+  if (!m) return null;
+  const match = /^(\d{4})-(\d{2})$/.exec(m);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const mon = Number(match[2]);
+  if (mon < 1 || mon > 12) return null;
+  const start = Date.UTC(year, mon - 1, 1);
+  const end = Date.UTC(year, mon, 1);
+  return { gte: Math.floor(start / 1000), lt: Math.floor(end / 1000) };
+}
+
+// Tax field moved from `invoice.tax` (int) to `total_taxes[]` in newer API
+// versions. Tolerate both.
+function invoiceTaxCents(inv: Stripe.Invoice): number {
+  const legacy = (inv as unknown as { tax?: number | null }).tax;
+  if (typeof legacy === 'number') return legacy;
+  const arr = (inv as unknown as { total_taxes?: { amount?: number }[]; total_tax_amounts?: { amount?: number }[] });
+  const list = arr.total_taxes ?? arr.total_tax_amounts;
+  if (Array.isArray(list)) {
+    return list.reduce((s, t) => s + (t?.amount ?? 0), 0);
+  }
+  return 0;
+}
+
+superAdminRouter.get(
+  '/clubs/:id/finances',
+  asyncHandler(async (req, res) => {
+    const club = await prisma.club.findUnique({
+      where: { id: req.params.id },
+      include: { subscription: true },
+    });
+    if (!club) throw new HttpError(404, 'Club not found');
+
+    const monthParam = typeof req.query.month === 'string' ? req.query.month : null;
+    const range = parseMonthRange(monthParam);
+    const createdFilter = range ? { created: { gte: range.gte, lt: range.lt } } : {};
+
+    const stripe = getStripe();
+
+    // -------- Member payments (on the club's Connect account) --------------
+    const memberPayments: FinancePayment[] = [];
+    let memberCurrency = 'eur';
+
+    if (club.stripeConnectAccountId) {
+      const acct = club.stripeConnectAccountId;
+
+      // First pass: build a charge lookup keyed by payment_intent so invoices
+      // and one-time PIs can attribute Stripe fees + platform fees.
+      const chargeByPi = new Map<
+        string,
+        { fee: number; net: number; applicationFee: number }
+      >();
+      for await (const ch of stripe.charges.list(
+        { limit: 100, ...createdFilter, expand: ['data.balance_transaction'] },
+        { stripeAccount: acct },
+      )) {
+        const bt = ch.balance_transaction;
+        const fee =
+          bt && typeof bt !== 'string' && typeof bt.fee === 'number' ? bt.fee : 0;
+        const net =
+          bt && typeof bt !== 'string' && typeof bt.net === 'number' ? bt.net : ch.amount;
+        const piId = typeof ch.payment_intent === 'string' ? ch.payment_intent : null;
+        if (!piId) continue;
+        const prev = chargeByPi.get(piId) ?? { fee: 0, net: 0, applicationFee: 0 };
+        chargeByPi.set(piId, {
+          fee: prev.fee + fee,
+          net: prev.net + net,
+          applicationFee: prev.applicationFee + (ch.application_fee_amount ?? 0),
+        });
+      }
+
+      const invoicesData: Stripe.Invoice[] = [];
+      for await (const inv of stripe.invoices.list(
+        { limit: 100, ...createdFilter, expand: ['data.payments'] },
+        { stripeAccount: acct },
+      )) {
+        invoicesData.push(inv);
+      }
+
+      const oneTimeIntents: Stripe.PaymentIntent[] = [];
+      for await (const pi of stripe.paymentIntents.list(
+        { limit: 100, ...createdFilter },
+        { stripeAccount: acct },
+      )) {
+        if (pi.metadata?.planType === 'credits') oneTimeIntents.push(pi);
+      }
+
+      // Correlate to members via stripeCustomerId so the UI can name payers.
+      const customerIds = new Set<string>();
+      for (const inv of invoicesData) {
+        if (typeof inv.customer === 'string') customerIds.add(inv.customer);
+      }
+      for (const pi of oneTimeIntents) {
+        if (typeof pi.customer === 'string') customerIds.add(pi.customer);
+      }
+      const members = customerIds.size
+        ? await prisma.member.findMany({
+            where: { clubId: club.id, stripeCustomerId: { in: [...customerIds] } },
+            select: { id: true, name: true, email: true, stripeCustomerId: true },
+          })
+        : [];
+      const memberByCustomer = new Map(
+        members.map((m) => [m.stripeCustomerId!, m]),
+      );
+
+      for (const inv of invoicesData) {
+        const gross = inv.amount_paid ?? 0;
+        if (!gross) continue;
+        let stripeFee = 0;
+        let applicationFee = 0;
+        const payments = inv.payments?.data ?? [];
+        for (const p of payments) {
+          if (p.status !== 'paid') continue;
+          const piRef = p.payment.payment_intent;
+          const piId = typeof piRef === 'string' ? piRef : piRef?.id ?? null;
+          const data = piId ? chargeByPi.get(piId) : undefined;
+          if (data) {
+            stripeFee += data.fee;
+            applicationFee += data.applicationFee;
+          }
+        }
+        const tax = invoiceTaxCents(inv);
+        const net = gross - stripeFee - applicationFee;
+        memberCurrency = inv.currency;
+
+        const customerId = typeof inv.customer === 'string' ? inv.customer : null;
+        const member = customerId ? memberByCustomer.get(customerId) : undefined;
+
+        memberPayments.push({
+          id: inv.id,
+          kind: 'subscription',
+          number: inv.number ?? null,
+          memberId: member?.id ?? null,
+          memberName: member?.name ?? null,
+          memberEmail: member?.email ?? null,
+          gross: gross / 100,
+          stripeFee: stripeFee / 100,
+          applicationFee: applicationFee / 100,
+          tax: tax / 100,
+          net: net / 100,
+          currency: inv.currency,
+          paidAt: inv.status_transitions?.paid_at
+            ? new Date(inv.status_transitions.paid_at * 1000).toISOString()
+            : new Date(inv.created * 1000).toISOString(),
+          hostedInvoiceUrl: inv.hosted_invoice_url ?? null,
+        });
+      }
+
+      for (const pi of oneTimeIntents) {
+        if (pi.status !== 'succeeded') continue;
+        const gross = pi.amount_received || pi.amount || 0;
+        if (!gross) continue;
+        const data = chargeByPi.get(pi.id) ?? { fee: 0, net: gross, applicationFee: 0 };
+        const net = gross - data.fee - data.applicationFee;
+        memberCurrency = pi.currency;
+
+        const customerId = typeof pi.customer === 'string' ? pi.customer : null;
+        const member = customerId ? memberByCustomer.get(customerId) : undefined;
+        const creditCount = pi.metadata?.creditCount;
+
+        memberPayments.push({
+          id: pi.id,
+          kind: 'credits',
+          number: creditCount ? `Kreditų paketas · ${creditCount}` : null,
+          memberId: member?.id ?? null,
+          memberName: member?.name ?? null,
+          memberEmail: member?.email ?? null,
+          gross: gross / 100,
+          stripeFee: data.fee / 100,
+          applicationFee: data.applicationFee / 100,
+          tax: 0,
+          net: net / 100,
+          currency: pi.currency,
+          paidAt: new Date(pi.created * 1000).toISOString(),
+          hostedInvoiceUrl: null,
+        });
+      }
+    }
+
+    memberPayments.sort((a, b) => b.paidAt.localeCompare(a.paidAt));
+
+    // -------- Club's own subscription payments (platform account) ---------
+    const clubSubPayments: FinancePayment[] = [];
+    let clubSubCurrency = 'eur';
+
+    if (club.subscription?.stripeCustomerId) {
+      const customer = club.subscription.stripeCustomerId;
+
+      const chargeByPi = new Map<string, { fee: number; net: number }>();
+      for await (const ch of stripe.charges.list({
+        customer,
+        limit: 100,
+        ...createdFilter,
+        expand: ['data.balance_transaction'],
+      })) {
+        const bt = ch.balance_transaction;
+        const fee =
+          bt && typeof bt !== 'string' && typeof bt.fee === 'number' ? bt.fee : 0;
+        const net =
+          bt && typeof bt !== 'string' && typeof bt.net === 'number' ? bt.net : ch.amount;
+        const piId = typeof ch.payment_intent === 'string' ? ch.payment_intent : null;
+        if (!piId) continue;
+        const prev = chargeByPi.get(piId) ?? { fee: 0, net: 0 };
+        chargeByPi.set(piId, { fee: prev.fee + fee, net: prev.net + net });
+      }
+
+      for await (const inv of stripe.invoices.list({
+        customer,
+        limit: 100,
+        ...createdFilter,
+        expand: ['data.payments'],
+      })) {
+        const gross = inv.amount_paid ?? 0;
+        if (!gross) continue;
+        let stripeFee = 0;
+        const payments = inv.payments?.data ?? [];
+        for (const p of payments) {
+          if (p.status !== 'paid') continue;
+          const piRef = p.payment.payment_intent;
+          const piId = typeof piRef === 'string' ? piRef : piRef?.id ?? null;
+          const data = piId ? chargeByPi.get(piId) : undefined;
+          if (data) stripeFee += data.fee;
+        }
+        const tax = invoiceTaxCents(inv);
+        const net = gross - stripeFee;
+        clubSubCurrency = inv.currency;
+
+        clubSubPayments.push({
+          id: inv.id,
+          kind: 'subscription',
+          number: inv.number ?? null,
+          memberId: null,
+          memberName: null,
+          memberEmail: null,
+          gross: gross / 100,
+          stripeFee: stripeFee / 100,
+          applicationFee: 0,
+          tax: tax / 100,
+          net: net / 100,
+          currency: inv.currency,
+          paidAt: inv.status_transitions?.paid_at
+            ? new Date(inv.status_transitions.paid_at * 1000).toISOString()
+            : new Date(inv.created * 1000).toISOString(),
+          hostedInvoiceUrl: inv.hosted_invoice_url ?? null,
+        });
+      }
+    }
+    clubSubPayments.sort((a, b) => b.paidAt.localeCompare(a.paidAt));
+
+    res.json({
+      month: monthParam,
+      memberPayments: {
+        currency: memberCurrency.toUpperCase(),
+        totals: addToTotals(memberPayments),
+        list: memberPayments,
+      },
+      clubSubscription: {
+        currency: clubSubCurrency.toUpperCase(),
+        totals: addToTotals(clubSubPayments),
+        list: clubSubPayments,
+      },
     });
   }),
 );

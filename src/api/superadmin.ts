@@ -1,5 +1,11 @@
 import { api } from './client';
-import type { Club, ClubDetail, ClubSummary, SuperAdminStats } from '../types';
+import type {
+  Club,
+  ClubDetail,
+  ClubFinances,
+  ClubSummary,
+  SuperAdminStats,
+} from '../types';
 
 export const fetchSuperAdminStats = () =>
   api.get<SuperAdminStats>('/superadmin/stats');
@@ -9,6 +15,12 @@ export const fetchSuperAdminClubs = () =>
 
 export const fetchSuperAdminClub = (id: string) =>
   api.get<ClubDetail>(`/superadmin/clubs/${id}`);
+
+// month = "YYYY-MM" for a single-month view, or null/undefined for all-time.
+export const fetchSuperAdminClubFinances = (id: string, month?: string | null) => {
+  const q = month ? `?month=${encodeURIComponent(month)}` : '';
+  return api.get<ClubFinances>(`/superadmin/clubs/${id}/finances${q}`);
+};
 
 export type CreateClubInput = {
   name: string;

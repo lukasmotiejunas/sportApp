@@ -1,14 +1,71 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Building2, Trash2, Users, UserCog, Euro, CreditCard } from "lucide-react";
+import {
+  Building2,
+  Trash2,
+  Users,
+  UserCog,
+  Euro,
+  CreditCard,
+  Wallet,
+  Receipt,
+  ExternalLink,
+} from "lucide-react";
 import { PageTitle } from "../../components/layout/PageTitle";
 import { StatusBadge } from "../../components/ui/StatusBadge";
+import { FilterChip } from "../../components/ui/FilterChip";
 import { ApiError } from "../../api/client";
-import { deleteClubApi, fetchSuperAdminClub } from "../../api/superadmin";
+import {
+  deleteClubApi,
+  fetchSuperAdminClub,
+  fetchSuperAdminClubFinances,
+} from "../../api/superadmin";
 import { useStore } from "../../store/useStore";
-import type { ClubDetail, PaymentStatus } from "../../types";
+import { formatCurrency } from "../../utils/format";
+import type {
+  ClubDetail,
+  ClubFinances,
+  FinancePayment,
+  FinanceTotals,
+  PaymentStatus,
+} from "../../types";
 
 const currency = (n: number) => `${n.toFixed(2)} €`;
+
+const MONTH_NAMES_LT = [
+  "Sausis",
+  "Vasaris",
+  "Kovas",
+  "Balandis",
+  "Gegužė",
+  "Birželis",
+  "Liepa",
+  "Rugpjūtis",
+  "Rugsėjis",
+  "Spalis",
+  "Lapkritis",
+  "Gruodis",
+];
+
+function buildMonthOptions(): { value: string; label: string }[] {
+  const now = new Date();
+  const opts: { value: string; label: string }[] = [];
+  for (let i = 0; i < 24; i += 1) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const label = `${MONTH_NAMES_LT[d.getMonth()]} ${d.getFullYear()}`;
+    opts.push({ value, label });
+  }
+  return opts;
+}
+
+function formatPaidAt(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString("lt-LT");
+  } catch {
+    return iso.slice(0, 10);
+  }
+}
 
 const paymentTone: Record<PaymentStatus, "success" | "warning" | "danger"> = {
   paid: "success",
@@ -48,6 +105,214 @@ function StatCard({
   );
 }
 
+function FinanceKpi({
+  label,
+  amount,
+  currency,
+  tone,
+  hint,
+}: {
+  label: string;
+  amount: number;
+  currency: string;
+  tone?: "default" | "muted" | "danger" | "positive";
+  hint?: string;
+}) {
+  const toneClass =
+    tone === "danger"
+      ? "text-red-600 dark:text-red-400"
+      : tone === "positive"
+        ? "text-lime-700 dark:text-lime-300"
+        : tone === "muted"
+          ? "text-ink-500"
+          : "text-ink-950 dark:text-ink-50";
+  return (
+    <div className="rounded-xl border border-ink-100 bg-white p-3 dark:border-ink-800 dark:bg-ink-900">
+      <p className="text-xs uppercase tracking-wide text-ink-500">{label}</p>
+      <p className={`mt-1 font-display text-lg font-bold tabular-nums ${toneClass}`}>
+        {formatCurrency(amount, currency)}
+      </p>
+      {hint && <p className="mt-0.5 text-[10px] text-ink-500">{hint}</p>}
+    </div>
+  );
+}
+
+function FinancePaymentsTable({
+  list,
+  currency,
+  showMember,
+  showAppFee,
+}: {
+  list: FinancePayment[];
+  currency: string;
+  showMember: boolean;
+  showAppFee: boolean;
+}) {
+  if (list.length === 0) {
+    return <p className="p-4 text-sm text-ink-500">Mokėjimų nėra.</p>;
+  }
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead className="text-left text-xs uppercase tracking-wide text-ink-500">
+          <tr className="border-b border-ink-100 dark:border-ink-800">
+            <th className="px-4 py-2 font-semibold">Data</th>
+            {showMember && <th className="px-4 py-2 font-semibold">Narys</th>}
+            <th className="px-4 py-2 font-semibold text-right">Bruto</th>
+            <th className="px-4 py-2 font-semibold text-right">Stripe</th>
+            {showAppFee && (
+              <th className="px-4 py-2 font-semibold text-right">Mūsų dalis</th>
+            )}
+            <th className="px-4 py-2 font-semibold text-right">Mokesčiai</th>
+            <th className="px-4 py-2 font-semibold text-right">
+              {showAppFee ? "Klubui" : "Mums"}
+            </th>
+            <th className="px-4 py-2" />
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
+          {list.map((p) => (
+            <tr key={p.id}>
+              <td className="whitespace-nowrap px-4 py-2 text-ink-700 dark:text-ink-200">
+                {formatPaidAt(p.paidAt)}
+              </td>
+              {showMember && (
+                <td className="px-4 py-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-ink-900 dark:text-ink-50">
+                      {p.memberName ?? (p.number ?? "—")}
+                    </p>
+                    {p.memberEmail && (
+                      <p className="truncate text-xs text-ink-500">{p.memberEmail}</p>
+                    )}
+                    {p.kind === "credits" && (
+                      <StatusBadge tone="info" dot>
+                        Kreditai
+                      </StatusBadge>
+                    )}
+                  </div>
+                </td>
+              )}
+              <td className="whitespace-nowrap px-4 py-2 text-right tabular-nums">
+                {formatCurrency(p.gross, currency)}
+              </td>
+              <td className="whitespace-nowrap px-4 py-2 text-right tabular-nums text-red-600 dark:text-red-400">
+                −{formatCurrency(p.stripeFee, currency)}
+              </td>
+              {showAppFee && (
+                <td className="whitespace-nowrap px-4 py-2 text-right tabular-nums text-lime-700 dark:text-lime-300">
+                  {formatCurrency(p.applicationFee, currency)}
+                </td>
+              )}
+              <td className="whitespace-nowrap px-4 py-2 text-right tabular-nums text-ink-500">
+                {formatCurrency(p.tax, currency)}
+              </td>
+              <td className="whitespace-nowrap px-4 py-2 text-right font-semibold tabular-nums">
+                {formatCurrency(p.net, currency)}
+              </td>
+              <td className="whitespace-nowrap px-4 py-2 text-right">
+                {p.hostedInvoiceUrl ? (
+                  <a
+                    className="inline-flex items-center gap-1 text-xs text-lime-700 hover:underline dark:text-lime-300"
+                    href={p.hostedInvoiceUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    Sąskaita
+                  </a>
+                ) : null}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function FinanceSection({
+  title,
+  icon: Icon,
+  totals,
+  list,
+  currency,
+  showMember,
+  showAppFee,
+}: {
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  totals: FinanceTotals;
+  list: FinancePayment[];
+  currency: string;
+  showMember: boolean;
+  showAppFee: boolean;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <section className="surface">
+      <header className="flex items-center justify-between gap-2 border-b border-ink-100 px-4 py-3 dark:border-ink-800">
+        <div className="flex items-center gap-2">
+          <Icon className="h-4 w-4 text-ink-500" />
+          <h2 className="font-display text-base font-bold text-ink-950 dark:text-ink-50">
+            {title}
+          </h2>
+          <span className="text-xs text-ink-500">
+            {totals.count} {totals.count === 1 ? "mokėjimas" : "mokėjimai"}
+          </span>
+        </div>
+        <button
+          type="button"
+          className="text-xs text-ink-500 hover:text-ink-800 dark:hover:text-ink-100"
+          onClick={() => setExpanded((v) => !v)}
+        >
+          {expanded ? "Slėpti" : "Rodyti sąrašą"}
+        </button>
+      </header>
+      <div className="grid grid-cols-2 gap-2 p-4 md:grid-cols-5">
+        <FinanceKpi label="Bruto" amount={totals.gross} currency={currency} />
+        <FinanceKpi
+          label="Stripe mokestis"
+          amount={totals.stripeFee}
+          currency={currency}
+          tone="danger"
+        />
+        {showAppFee && (
+          <FinanceKpi
+            label="Mūsų dalis"
+            amount={totals.applicationFee}
+            currency={currency}
+            tone="positive"
+            hint="Application fee"
+          />
+        )}
+        <FinanceKpi
+          label="Mokesčiai (VAT)"
+          amount={totals.tax}
+          currency={currency}
+          tone="muted"
+        />
+        <FinanceKpi
+          label={showAppFee ? "Klubui gryna" : "Mums gryna"}
+          amount={totals.net}
+          currency={currency}
+          tone="positive"
+        />
+      </div>
+      {expanded && (
+        <div className="border-t border-ink-100 dark:border-ink-800">
+          <FinancePaymentsTable
+            list={list}
+            currency={currency}
+            showMember={showMember}
+            showAppFee={showAppFee}
+          />
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function SuperAdminClubDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -56,6 +321,13 @@ export default function SuperAdminClubDetail() {
   const [club, setClub] = useState<ClubDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // "" = all time; otherwise "YYYY-MM".
+  const [month, setMonth] = useState<string>("");
+  const monthOptions = useMemo(() => buildMonthOptions(), []);
+  const [finances, setFinances] = useState<ClubFinances | null>(null);
+  const [financesLoading, setFinancesLoading] = useState(false);
+  const [financesError, setFinancesError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -67,6 +339,20 @@ export default function SuperAdminClubDetail() {
       )
       .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+    setFinancesLoading(true);
+    setFinancesError(null);
+    fetchSuperAdminClubFinances(id, month || null)
+      .then(setFinances)
+      .catch((err) =>
+        setFinancesError(
+          err instanceof ApiError ? err.message : "Nepavyko įkelti finansų.",
+        ),
+      )
+      .finally(() => setFinancesLoading(false));
+  }, [id, month]);
 
   const handleDelete = async () => {
     if (!club) return;
@@ -121,6 +407,69 @@ export default function SuperAdminClubDetail() {
         <StatCard label="Treniruotės" value={String(club.counts.trainingSessions)} icon={Building2} />
         <StatCard label="MRR" value={currency(club.mrr)} icon={Euro} />
       </div>
+
+      <section className="surface mb-6">
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-ink-100 px-4 py-3 dark:border-ink-800">
+          <div>
+            <h2 className="font-display text-base font-bold text-ink-950 dark:text-ink-50">
+              Finansai
+            </h2>
+            <p className="text-xs text-ink-500">
+              {month
+                ? monthOptions.find((o) => o.value === month)?.label ?? month
+                : "Visą laiką"}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <FilterChip active={month === ""} onClick={() => setMonth("")}>
+              Visą laiką
+            </FilterChip>
+            <select
+              value={month}
+              onChange={(e) => setMonth(e.target.value)}
+              className="h-9 rounded-full border border-ink-200 bg-white px-3 text-sm font-semibold text-ink-700 dark:border-ink-700 dark:bg-ink-900 dark:text-ink-200"
+            >
+              <option value="">Pasirinkti mėnesį…</option>
+              {monthOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </header>
+        <div className="p-4">
+          {financesError && (
+            <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {financesError}
+            </div>
+          )}
+          {financesLoading && !finances ? (
+            <p className="text-sm text-ink-500">Kraunama…</p>
+          ) : finances ? (
+            <div className="grid gap-4">
+              <FinanceSection
+                title="Narių mokėjimai"
+                icon={Wallet}
+                totals={finances.memberPayments.totals}
+                list={finances.memberPayments.list}
+                currency={finances.memberPayments.currency}
+                showMember
+                showAppFee
+              />
+              <FinanceSection
+                title="Klubo prenumerata (SportApp)"
+                icon={Receipt}
+                totals={finances.clubSubscription.totals}
+                list={finances.clubSubscription.list}
+                currency={finances.clubSubscription.currency}
+                showMember={false}
+                showAppFee={false}
+              />
+            </div>
+          ) : null}
+        </div>
+      </section>
 
       <section className="surface mb-6">
         <header className="border-b border-ink-100 px-4 py-3 dark:border-ink-800">

@@ -84,6 +84,46 @@ export type ClubDetail = Club & {
   coaches: { id: string; name: string; specialty: string }[];
 };
 
+export type FinancePayment = {
+  id: string;
+  kind: 'subscription' | 'credits';
+  number: string | null;
+  memberId: string | null;
+  memberName: string | null;
+  memberEmail: string | null;
+  gross: number;
+  stripeFee: number;
+  applicationFee: number;
+  tax: number;
+  net: number;
+  currency: string;
+  paidAt: string;
+  hostedInvoiceUrl: string | null;
+};
+
+export type FinanceTotals = {
+  gross: number;
+  stripeFee: number;
+  applicationFee: number;
+  tax: number;
+  net: number;
+  count: number;
+};
+
+export type ClubFinances = {
+  month: string | null;
+  memberPayments: {
+    currency: string;
+    totals: FinanceTotals;
+    list: FinancePayment[];
+  };
+  clubSubscription: {
+    currency: string;
+    totals: FinanceTotals;
+    list: FinancePayment[];
+  };
+};
+
 export type SuperAdminStats = {
   clubs: number;
   members: number;
