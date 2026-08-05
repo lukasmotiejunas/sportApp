@@ -341,7 +341,11 @@ superAdminRouter.get(
           }
         }
         const tax = invoiceTaxCents(inv);
-        const net = gross - stripeFee - applicationFee;
+        // balance_transaction.fee on a connected account already includes the
+        // application fee. Split them so the UI can report Stripe's cut vs.
+        // ours separately, and net = gross − balance_transaction.fee.
+        const pureStripeFee = Math.max(0, stripeFee - applicationFee);
+        const net = gross - stripeFee;
         memberCurrency = inv.currency;
 
         const customerId = typeof inv.customer === 'string' ? inv.customer : null;
@@ -355,7 +359,7 @@ superAdminRouter.get(
           memberName: member?.name ?? null,
           memberEmail: member?.email ?? null,
           gross: gross / 100,
-          stripeFee: stripeFee / 100,
+          stripeFee: pureStripeFee / 100,
           applicationFee: applicationFee / 100,
           tax: tax / 100,
           net: net / 100,
@@ -372,7 +376,9 @@ superAdminRouter.get(
         const gross = pi.amount_received || pi.amount || 0;
         if (!gross) continue;
         const data = chargeByPi.get(pi.id) ?? { fee: 0, net: gross, applicationFee: 0 };
-        const net = gross - data.fee - data.applicationFee;
+        // See note above: data.fee already includes application fee.
+        const pureStripeFee = Math.max(0, data.fee - data.applicationFee);
+        const net = gross - data.fee;
         memberCurrency = pi.currency;
 
         const customerId = typeof pi.customer === 'string' ? pi.customer : null;
@@ -387,7 +393,7 @@ superAdminRouter.get(
           memberName: member?.name ?? null,
           memberEmail: member?.email ?? null,
           gross: gross / 100,
-          stripeFee: data.fee / 100,
+          stripeFee: pureStripeFee / 100,
           applicationFee: data.applicationFee / 100,
           tax: 0,
           net: net / 100,
