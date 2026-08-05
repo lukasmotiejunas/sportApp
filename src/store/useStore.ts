@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 // Payments are intentionally kept client-side (feature skipped for the backend
 // for now). Everything else is loaded from and persisted to the API.
 import { payments as mockPayments } from '../data/mockData';
@@ -764,6 +764,21 @@ export const useStore = create<State>()(
     {
       name: 'paceclub-prototype-v2',
       version: 12,
+      // Super-admin impersonation opens a new tab with `?imp=1`. That tab must
+      // NOT share auth with the original tab (super-admin), so we back the
+      // persist store with sessionStorage (per-tab) instead of localStorage
+      // (shared). Once the flag is set on the sessionStorage the tab keeps
+      // that mode even across in-app navigation.
+      storage: createJSONStorage(() => {
+        if (typeof window === 'undefined') return localStorage;
+        const url = new URL(window.location.href);
+        const already = window.sessionStorage.getItem('imp_mode') === '1';
+        if (url.searchParams.get('imp') === '1' || already) {
+          window.sessionStorage.setItem('imp_mode', '1');
+          return window.sessionStorage;
+        }
+        return window.localStorage;
+      }),
       // Only auth/session state is persisted locally; all domain data lives in
       // the DB and is re-fetched on bootstrap.
       partialize: (s) => ({

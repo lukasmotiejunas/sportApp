@@ -13,6 +13,7 @@ import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import MemberJoin from './pages/MemberJoin';
 import ClubSuspended from './pages/ClubSuspended';
+import ImpersonateLanding from './pages/ImpersonateLanding';
 
 import MemberHome from './pages/member/MemberHome';
 import MemberTrainings from './pages/member/MemberTrainings';
@@ -137,6 +138,7 @@ export default function App() {
           path="/login"
           element={authUser ? <Navigate to={home} replace /> : <Login />}
         />
+        <Route path="/impersonate" element={<ImpersonateLanding />} />
         <Route path="/plans" element={<Plans />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />

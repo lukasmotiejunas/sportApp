@@ -10,6 +10,7 @@ import {
   Wallet,
   Receipt,
   ExternalLink,
+  LogIn,
 } from "lucide-react";
 import { PageTitle } from "../../components/layout/PageTitle";
 import { StatusBadge } from "../../components/ui/StatusBadge";
@@ -19,6 +20,7 @@ import {
   deleteClubApi,
   fetchSuperAdminClub,
   fetchSuperAdminClubFinances,
+  impersonateUserApi,
 } from "../../api/superadmin";
 import { useStore } from "../../store/useStore";
 import { formatCurrency } from "../../utils/format";
@@ -231,6 +233,31 @@ function FinancePaymentsTable({
   );
 }
 
+function LoginAsButton({
+  onClick,
+  loading,
+  disabled,
+  disabledTitle,
+}: {
+  onClick: () => void;
+  loading: boolean;
+  disabled?: boolean;
+  disabledTitle?: string;
+}) {
+  return (
+    <button
+      type="button"
+      className="inline-flex h-8 items-center gap-1 rounded-full border border-ink-200 px-2.5 text-xs font-semibold text-ink-700 hover:border-ink-400 disabled:cursor-not-allowed disabled:opacity-40 dark:border-ink-700 dark:text-ink-200 dark:hover:border-ink-500"
+      onClick={onClick}
+      disabled={disabled || loading}
+      title={disabled ? disabledTitle : "Prisijungti kaip šis vartotojas"}
+    >
+      <LogIn className="h-3 w-3" />
+      {loading ? "…" : "Prisijungti kaip"}
+    </button>
+  );
+}
+
 function FinanceSection({
   title,
   icon: Icon,
@@ -353,6 +380,33 @@ export default function SuperAdminClubDetail() {
       )
       .finally(() => setFinancesLoading(false));
   }, [id, month]);
+
+  const [impersonatingUserId, setImpersonatingUserId] = useState<string | null>(
+    null,
+  );
+
+  const handleImpersonate = async (userId: string) => {
+    setImpersonatingUserId(userId);
+    try {
+      const { token } = await impersonateUserApi(userId);
+      // ?imp=1 tells the new tab's store to persist to sessionStorage instead
+      // of localStorage, so the super-admin session in the current tab is
+      // untouched. The landing page reads the token, strips it from the URL,
+      // and forwards to the target's home dashboard.
+      const url = `/impersonate?imp=1&token=${encodeURIComponent(token)}`;
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      push({
+        kind: "error",
+        message:
+          err instanceof ApiError
+            ? err.message
+            : "Nepavyko prisijungti kaip vartotojas.",
+      });
+    } finally {
+      setImpersonatingUserId(null);
+    }
+  };
 
   const handleDelete = async () => {
     if (!club) return;
@@ -482,16 +536,22 @@ export default function SuperAdminClubDetail() {
         ) : (
           <ul className="divide-y divide-ink-100 dark:divide-ink-800">
             {club.admins.map((a) => (
-              <li key={a.id} className="flex items-center justify-between px-4 py-3">
-                <div>
-                  <p className="text-sm font-semibold text-ink-900 dark:text-ink-50">
+              <li key={a.id} className="flex items-center justify-between gap-3 px-4 py-3">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-ink-900 dark:text-ink-50">
                     {a.name ?? "—"}
                   </p>
-                  <p className="text-xs text-ink-500">{a.email}</p>
+                  <p className="truncate text-xs text-ink-500">{a.email}</p>
                 </div>
-                <StatusBadge tone="accent" dot>
-                  Admin
-                </StatusBadge>
+                <div className="flex shrink-0 items-center gap-2">
+                  <StatusBadge tone="accent" dot>
+                    Admin
+                  </StatusBadge>
+                  <LoginAsButton
+                    onClick={() => handleImpersonate(a.id)}
+                    loading={impersonatingUserId === a.id}
+                  />
+                </div>
               </li>
             ))}
           </ul>
@@ -524,6 +584,14 @@ export default function SuperAdminClubDetail() {
                   <StatusBadge tone={paymentTone[m.paymentStatus]} dot>
                     {paymentLabel[m.paymentStatus]}
                   </StatusBadge>
+                  <LoginAsButton
+                    onClick={() => m.userId && handleImpersonate(m.userId)}
+                    loading={
+                      m.userId !== null && impersonatingUserId === m.userId
+                    }
+                    disabled={!m.userId}
+                    disabledTitle="Šis narys neturi prisijungimo paskyros"
+                  />
                 </li>
               ))}
             </ul>
@@ -554,6 +622,14 @@ export default function SuperAdminClubDetail() {
                       <p className="truncate text-xs text-ink-500">{c.specialty}</p>
                     )}
                   </div>
+                  <LoginAsButton
+                    onClick={() => c.userId && handleImpersonate(c.userId)}
+                    loading={
+                      c.userId !== null && impersonatingUserId === c.userId
+                    }
+                    disabled={!c.userId}
+                    disabledTitle="Šis treneris neturi prisijungimo paskyros"
+                  />
                 </li>
               ))}
             </ul>

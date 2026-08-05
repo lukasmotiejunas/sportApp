@@ -6,6 +6,7 @@ import { asyncHandler, HttpError } from '../middleware/errorHandler.js';
 import { requireRole } from '../middleware/auth.js';
 import { hashPassword } from '../auth/password.js';
 import { serializeClub, serializeUser } from '../serialize.js';
+import { signToken } from '../auth/jwt.js';
 import { getStripe } from '../stripe.js';
 
 export const superAdminRouter = Router();
@@ -113,11 +114,17 @@ superAdminRouter.get(
             email: true,
             paymentStatus: true,
             membershipPlan: { select: { name: true, monthlyFee: true } },
+            user: { select: { id: true } },
           },
           orderBy: { name: 'asc' },
         },
         coaches: {
-          select: { id: true, name: true, specialty: true },
+          select: {
+            id: true,
+            name: true,
+            specialty: true,
+            user: { select: { id: true } },
+          },
           orderBy: { name: 'asc' },
         },
         users: {
@@ -159,11 +166,13 @@ superAdminRouter.get(
         paymentStatus: m.paymentStatus,
         planName: m.membershipPlan?.name ?? null,
         monthlyFee: Number(m.membershipPlan?.monthlyFee ?? 0),
+        userId: m.user?.id ?? null,
       })),
       coaches: club.coaches.map((c) => ({
         id: c.id,
         name: c.name,
         specialty: c.specialty ?? '',
+        userId: c.user?.id ?? null,
       })),
     });
   }),
@@ -485,6 +494,49 @@ superAdminRouter.get(
         currency: clubSubCurrency.toUpperCase(),
         totals: addToTotals(clubSubPayments),
         list: clubSubPayments,
+      },
+    });
+  }),
+);
+
+// POST /superadmin/impersonate/:userId — mint a JWT for the target user so a
+// super_admin can debug issues in that user's shoes. Refuses to impersonate
+// another super_admin. The frontend opens the returned session in a new tab
+// backed by sessionStorage, so the original super_admin session in the
+// current tab stays intact.
+superAdminRouter.post(
+  '/impersonate/:userId',
+  asyncHandler(async (req, res) => {
+    const target = await prisma.user.findUnique({
+      where: { id: req.params.userId },
+      include: { club: { include: { subscription: true } } },
+    });
+    if (!target) throw new HttpError(404, 'Vartotojas nerastas.');
+    if (target.role === 'super_admin') {
+      throw new HttpError(400, 'Negalima apsimesti kitu super_admin.');
+    }
+
+    const token = signToken({
+      userId: target.id,
+      role: target.role,
+      clubId: target.clubId,
+      memberId: target.memberId,
+      coachId: target.coachId,
+    });
+
+    const sub = target.club?.subscription;
+    res.json({
+      token,
+      user: {
+        ...serializeUser(target),
+        clubLogo: target.club?.logoUrl ?? null,
+        subscription: sub
+          ? {
+              status: sub.status,
+              trialEndsAt: sub.trialEndsAt.toISOString(),
+              currentPeriodEnd: sub.currentPeriodEnd.toISOString(),
+            }
+          : null,
       },
     });
   }),

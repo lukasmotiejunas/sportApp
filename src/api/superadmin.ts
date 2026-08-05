@@ -38,3 +38,8 @@ export const createClubApi = (input: CreateClubInput) =>
 
 export const deleteClubApi = (id: string) =>
   api.del<void>(`/superadmin/clubs/${id}`);
+
+// Returns a JWT + user for the impersonation target. Server refuses to
+// impersonate another super_admin.
+export const impersonateUserApi = (userId: string) =>
+  api.post<{ token: string }>(`/superadmin/impersonate/${userId}`);

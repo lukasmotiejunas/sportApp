@@ -80,8 +80,15 @@ export type ClubDetail = Club & {
     paymentStatus: PaymentStatus;
     planName: string | null;
     monthlyFee: number;
+    // null when this member has no linked User row and can't be impersonated.
+    userId: string | null;
   }[];
-  coaches: { id: string; name: string; specialty: string }[];
+  coaches: {
+    id: string;
+    name: string;
+    specialty: string;
+    userId: string | null;
+  }[];
 };
 
 export type FinancePayment = {
