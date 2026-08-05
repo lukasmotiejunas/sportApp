@@ -266,6 +266,7 @@ function FinanceSection({
   currency,
   showMember,
   showAppFee,
+  defaultExpanded = false,
 }: {
   title: string;
   icon: React.ComponentType<{ className?: string }>;
@@ -274,8 +275,9 @@ function FinanceSection({
   currency: string;
   showMember: boolean;
   showAppFee: boolean;
+  defaultExpanded?: boolean;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(defaultExpanded);
   return (
     <section className="surface">
       <header className="flex items-center justify-between gap-2 border-b border-ink-100 px-4 py-3 dark:border-ink-800">
@@ -514,6 +516,7 @@ export default function SuperAdminClubDetail() {
                 currency={finances.memberPayments.currency}
                 showMember
                 showAppFee
+                defaultExpanded
               />
               <FinanceSection
                 title="Klubo prenumerata (SportApp)"
