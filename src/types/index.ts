@@ -60,7 +60,9 @@ export type ClubSummary = Club & {
   memberCount: number;
   coachCount: number;
   userCount: number;
-  mrr: number;
+  // Net application fees the platform earned from this club, all-time,
+  // in the platform currency (EUR).
+  platformEarnings: number;
 };
 
 export type ClubDetail = Club & {
@@ -71,7 +73,8 @@ export type ClubDetail = Club & {
     trainingSessions: number;
     membershipPlans: number;
   };
-  mrr: number;
+  // Net application fees the platform earned from this club, all-time, EUR.
+  platformEarnings: number;
   admins: { id: string; email: string; name?: string; createdAt: string }[];
   members: {
     id: string;
@@ -135,7 +138,8 @@ export type SuperAdminStats = {
   clubs: number;
   members: number;
   coaches: number;
-  mrr: number;
+  // Net application fees earned across all clubs, all-time, EUR.
+  platformEarnings: number;
 };
 
 export type PaymentStatus = 'paid' | 'overdue' | 'pending';

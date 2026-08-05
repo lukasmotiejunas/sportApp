@@ -33,30 +33,48 @@ async function uniqueSlug(base: string): Promise<string> {
   return slug;
 }
 
+// Platform earnings = every application fee we've collected across all
+// connected accounts, net of refunds. Fetched by scanning `applicationFees`
+// on the platform Stripe account. Returns cents. Falls back to a zeroed
+// result if Stripe is not configured or the request fails, so the dashboard
+// still loads.
+async function fetchPlatformEarnings(): Promise<{
+  total: number;
+  byAccount: Map<string, number>;
+}> {
+  const byAccount = new Map<string, number>();
+  let total = 0;
+  try {
+    const stripe = getStripe();
+    for await (const fee of stripe.applicationFees.list({ limit: 100 })) {
+      const net = (fee.amount ?? 0) - (fee.amount_refunded ?? 0);
+      total += net;
+      const acc =
+        typeof fee.account === 'string' ? fee.account : fee.account?.id;
+      if (acc) byAccount.set(acc, (byAccount.get(acc) ?? 0) + net);
+    }
+  } catch (err) {
+    console.warn('fetchPlatformEarnings failed:', err);
+  }
+  return { total, byAccount };
+}
+
 // Aggregated stats across all clubs.
 superAdminRouter.get(
   '/stats',
   asyncHandler(async (_req, res) => {
-    const [clubCount, memberCount, coachCount, mrrAgg] = await Promise.all([
+    const [clubCount, memberCount, coachCount, earnings] = await Promise.all([
       prisma.club.count(),
       prisma.member.count(),
       prisma.coach.count(),
-      prisma.member.findMany({
-        where: { membershipPlanId: { not: null }, paymentStatus: 'paid' },
-        select: { membershipPlan: { select: { monthlyFee: true } } },
-      }),
+      fetchPlatformEarnings(),
     ]);
-
-    const mrr = mrrAgg.reduce(
-      (sum, m) => sum + Number(m.membershipPlan?.monthlyFee ?? 0),
-      0,
-    );
 
     res.json({
       clubs: clubCount,
       members: memberCount,
       coaches: coachCount,
-      mrr,
+      platformEarnings: earnings.total / 100,
     });
   }),
 );
@@ -65,16 +83,15 @@ superAdminRouter.get(
 superAdminRouter.get(
   '/clubs',
   asyncHandler(async (_req, res) => {
-    const clubs = await prisma.club.findMany({
-      orderBy: { createdAt: 'desc' },
-      include: {
-        _count: { select: { members: true, coaches: true, users: true } },
-        members: {
-          where: { membershipPlanId: { not: null }, paymentStatus: 'paid' },
-          select: { membershipPlan: { select: { monthlyFee: true } } },
+    const [clubs, earnings] = await Promise.all([
+      prisma.club.findMany({
+        orderBy: { createdAt: 'desc' },
+        include: {
+          _count: { select: { members: true, coaches: true, users: true } },
         },
-      },
-    });
+      }),
+      fetchPlatformEarnings(),
+    ]);
 
     res.json(
       clubs.map((c) => ({
@@ -82,10 +99,9 @@ superAdminRouter.get(
         memberCount: c._count.members,
         coachCount: c._count.coaches,
         userCount: c._count.users,
-        mrr: c.members.reduce(
-          (sum, m) => sum + Number(m.membershipPlan?.monthlyFee ?? 0),
-          0,
-        ),
+        platformEarnings: c.stripeConnectAccountId
+          ? (earnings.byAccount.get(c.stripeConnectAccountId) ?? 0) / 100
+          : 0,
       })),
     );
   }),
@@ -135,13 +151,10 @@ superAdminRouter.get(
     });
     if (!club) throw new HttpError(404, 'Club not found');
 
-    const mrr = club.members.reduce(
-      (sum, m) =>
-        m.paymentStatus === 'paid'
-          ? sum + Number(m.membershipPlan?.monthlyFee ?? 0)
-          : sum,
-      0,
-    );
+    const earnings = await fetchPlatformEarnings();
+    const platformEarnings = club.stripeConnectAccountId
+      ? (earnings.byAccount.get(club.stripeConnectAccountId) ?? 0) / 100
+      : 0;
 
     res.json({
       ...serializeClub(club),
@@ -152,7 +165,7 @@ superAdminRouter.get(
         trainingSessions: club._count.trainingSessions,
         membershipPlans: club._count.membershipPlans,
       },
-      mrr,
+      platformEarnings,
       admins: club.users.map((u) => ({
         id: u.id,
         email: u.email,

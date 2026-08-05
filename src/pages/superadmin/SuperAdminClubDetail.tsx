@@ -459,7 +459,11 @@ export default function SuperAdminClubDetail() {
         <StatCard label="Nariai" value={String(club.counts.members)} icon={Users} />
         <StatCard label="Treneriai" value={String(club.counts.coaches)} icon={UserCog} />
         <StatCard label="Treniruotės" value={String(club.counts.trainingSessions)} icon={Building2} />
-        <StatCard label="MRR" value={currency(club.mrr)} icon={Euro} />
+        <StatCard
+          label="Mūsų pelnas"
+          value={currency(club.platformEarnings)}
+          icon={Euro}
+        />
       </div>
 
       <section className="surface mb-6">

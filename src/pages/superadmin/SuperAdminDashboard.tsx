@@ -61,7 +61,7 @@ export default function SuperAdminDashboard() {
       <PageTitle
         eyebrow="Platforma"
         title="Suvestinė"
-        description="Visų klubų statistika ir MRR."
+        description="Visų klubų statistika ir platformos pelnas."
         action={
           <div className="flex gap-2">
             <button type="button" className="btn-ghost" onClick={load}>
@@ -84,7 +84,11 @@ export default function SuperAdminDashboard() {
         <StatCard label="Klubai" value={String(stats?.clubs ?? 0)} icon={Building2} />
         <StatCard label="Nariai" value={String(stats?.members ?? 0)} icon={Users} />
         <StatCard label="Treneriai" value={String(stats?.coaches ?? 0)} icon={UserCog} />
-        <StatCard label="MRR" value={currency(stats?.mrr ?? 0)} icon={Euro} />
+        <StatCard
+          label="Mūsų pelnas"
+          value={currency(stats?.platformEarnings ?? 0)}
+          icon={Euro}
+        />
       </div>
 
       <section className="surface">
@@ -131,8 +135,10 @@ export default function SuperAdminDashboard() {
                       <p className="text-sm font-semibold">{c.coachCount}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase text-ink-500">MRR</p>
-                      <p className="text-sm font-semibold">{currency(c.mrr)}</p>
+                      <p className="text-[10px] uppercase text-ink-500">Mūsų pelnas</p>
+                      <p className="text-sm font-semibold">
+                        {currency(c.platformEarnings)}
+                      </p>
                     </div>
                   </div>
                 </Link>
