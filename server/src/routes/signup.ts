@@ -33,7 +33,7 @@ const signupSchema = z.object({
   adminPassword: z.string().min(6, 'Slaptažodis turi būti bent 6 simbolių.'),
 });
 
-const MONTHLY_FEE = 0.5;
+const MONTHLY_FEE = 100;
 const TRIAL_DAYS = 30;
 
 // Creates the club + admin user + Stripe customer + subscription with a
