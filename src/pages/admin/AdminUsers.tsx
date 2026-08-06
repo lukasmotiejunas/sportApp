@@ -15,7 +15,7 @@ import { ApiError } from "../../api/client";
 import { useStore } from "../../store/useStore";
 import type { AuthUser, Member, MembershipPlan } from "../../types";
 import { formatCurrency } from "../../utils/format";
-import { formatDateShort } from "../../utils/dates";
+import { formatDateSlash } from "../../utils/dates";
 
 const genderLabel: Record<string, string> = {
   male: "Vyras",
@@ -240,7 +240,7 @@ export default function AdminUsers() {
             }
             const nextPaymentLabel =
               plan?.planType === "monthly" && member?.paymentDueDate
-                ? formatDateShort(member.paymentDueDate)
+                ? formatDateSlash(member.paymentDueDate)
                 : null;
             const clickable = u.role === "member" && !!member;
             return (
@@ -360,7 +360,7 @@ export default function AdminUsers() {
                 label="Gimimo data"
                 value={
                   openMember.member.dateOfBirth
-                    ? formatDateShort(openMember.member.dateOfBirth)
+                    ? formatDateSlash(openMember.member.dateOfBirth)
                     : "—"
                 }
               />
@@ -376,7 +376,7 @@ export default function AdminUsers() {
                 label="Narys nuo"
                 value={
                   openMember.member.memberSince
-                    ? formatDateShort(openMember.member.memberSince)
+                    ? formatDateSlash(openMember.member.memberSince)
                     : "—"
                 }
               />
@@ -439,7 +439,7 @@ export default function AdminUsers() {
                 }
                 value={
                   openMember.member.paymentDueDate
-                    ? formatDateShort(openMember.member.paymentDueDate)
+                    ? formatDateSlash(openMember.member.paymentDueDate)
                     : "—"
                 }
               />
@@ -447,7 +447,7 @@ export default function AdminUsers() {
                 label="Paskutinis mokėjimas"
                 value={
                   openMember.member.lastPaymentDate
-                    ? formatDateShort(openMember.member.lastPaymentDate)
+                    ? formatDateSlash(openMember.member.lastPaymentDate)
                     : "—"
                 }
               />
