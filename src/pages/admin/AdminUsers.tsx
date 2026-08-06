@@ -238,6 +238,10 @@ export default function AdminUsers() {
               else
                 planLabel = `${plan.name} · ${member?.creditsRemaining ?? 0} kreditai`;
             }
+            const nextPaymentLabel =
+              plan?.planType === "monthly" && member?.paymentDueDate
+                ? formatDateShort(member.paymentDueDate)
+                : null;
             const clickable = u.role === "member" && !!member;
             return (
             <div
@@ -270,6 +274,11 @@ export default function AdminUsers() {
                 {planLabel && (
                   <p className="truncate text-xs text-ink-500 dark:text-ink-400">
                     {planLabel}
+                  </p>
+                )}
+                {nextPaymentLabel && (
+                  <p className="truncate text-xs text-ink-500 dark:text-ink-400">
+                    Kitas mokėjimas: {nextPaymentLabel}
                   </p>
                 )}
               </div>
@@ -423,7 +432,11 @@ export default function AdminUsers() {
                 }
               />
               <DetailRow
-                label="Terminas"
+                label={
+                  openMember.plan?.planType === "monthly"
+                    ? "Kito mokėjimo data"
+                    : "Terminas"
+                }
                 value={
                   openMember.member.paymentDueDate
                     ? formatDateShort(openMember.member.paymentDueDate)
