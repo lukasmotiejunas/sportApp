@@ -160,11 +160,11 @@ export default function Plans() {
     }
   };
 
-  // Rough "next charge" preview shown on the signup steps — 14 days out to
+  // Rough "next charge" preview shown on the signup steps — 30 days out to
   // match the trial. The authoritative next-charge date comes from the server.
   const nextChargeDate = useMemo(() => {
     const d = new Date();
-    d.setDate(d.getDate() + 14);
+    d.setDate(d.getDate() + 30);
     return d.toLocaleDateString("lt-LT", {
       year: "numeric",
       month: "long",
