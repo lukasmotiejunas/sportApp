@@ -124,15 +124,13 @@ export default function Login() {
                 </p>
               </div>
             </div>
-            <button
-              type="button"
-              disabled
-              aria-disabled="true"
-              className="mt-4 flex h-11 w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl bg-ink-950 text-sm font-semibold text-white opacity-50"
+            <Link
+              to="/plans"
+              className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-ink-950 text-sm font-semibold text-white transition-colors hover:bg-ink-800"
             >
               Sukurti klubą
               <ArrowRight className="h-4 w-4" />
-            </button>
+            </Link>
           </div>
 
           <div className="mt-6 flex items-center justify-center gap-4 text-xs text-ink-400">
