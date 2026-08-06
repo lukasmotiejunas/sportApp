@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { CircleDollarSign, ExternalLink, Search } from "lucide-react";
+import Joyride, {
+  STATUS,
+  type CallBackProps,
+  type Step,
+} from "react-joyride";
 import { useStore } from "../../store/useStore";
 import { PageTitle } from "../../components/layout/PageTitle";
 import { StatusBadge } from "../../components/ui/StatusBadge";
@@ -43,11 +48,13 @@ const invoiceLabel: Record<string, string> = {
 
 export default function AdminPayments() {
   const members = useStore((s) => s.members);
+  const authUserId = useStore((s) => s.authUser?.id ?? "");
   const [data, setData] = useState<ClubPaymentsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<InvoiceFilter>("all");
+  const [runTour, setRunTour] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -116,15 +123,113 @@ export default function AdminPayments() {
 
   const notConnected = !loading && data && !data.connected;
 
+  const tourStorageKey = `admin_payments_tour_seen:${authUserId || "anon"}`;
+  const tourSteps: Step[] = [
+    {
+      target: '[data-tour="page-title"]',
+      content:
+        "Sveiki! Mokėjimų puslapyje matote realias klubo pajamas — sumas po Stripe ir platformos mokesčių atskaitymo, t. y. tiek, kiek klubas iš tikrųjų gauna į savo piniginę.",
+      placement: "bottom",
+      disableBeacon: true,
+    },
+    {
+      target: '[data-tour="connect"]',
+      content:
+        "Stripe Connect prijungimas. Kad narių mokėjimai iš tikrųjų pasiektų jūsų banko sąskaitą, čia turite užbaigti Stripe prijungimą. Pinigai kaupsis Stripe piniginėje, kurios lėšas bet kada galėsite išsigryninti.",
+    },
+    {
+      target: '[data-tour="mtd-revenue"]',
+      content:
+        "Šio mėnesio pajamos — tik šį mėnesį sumokėtos ir sėkmingai apmokėtos sąskaitos. Šis skaičius nuolat auga per mėnesį ir kiekvieno mėnesio 1 d. iš naujo pradeda skaičiuoti.",
+    },
+    {
+      target: '[data-tour="mtd-count"]',
+      content:
+        "Šio mėnesio mokėjimai — kiek atskirų sėkmingų mokėjimų priimta šį mėnesį. Padeda greitai matyti, ar visi nariai jau sumokėjo.",
+    },
+    {
+      target: '[data-tour="total-revenue"]',
+      content:
+        "Bendras srautas ir diagrama — visos apmokėtos sumos iki šiol bei santykis tarp apmokėtų ir nesumokėtų sąskaitų. Diagrama padeda greitai pastebėti, kiek narių vėluoja atsiskaityti.",
+      placement: "right",
+    },
+    {
+      target: '[data-tour="search"]',
+      content:
+        "Paieška — įveskite nario vardą, el. paštą arba sąskaitos numerį, kad greitai rastumėte konkretų mokėjimą.",
+    },
+    {
+      target: '[data-tour="filters"]',
+      content:
+        "Filtrai pagal būseną: „Visi“, „Apmokėta“, „Nesumokėta“. Naudinga norint greitai peržiūrėti tik vėluojančius mokėjimus.",
+    },
+    {
+      target: '[data-tour="invoices"]',
+      content:
+        "Sąskaitų sąrašas — kiekviena eilutė yra vienas nario mokėjimas: kas mokėjo, kada, sumą ir būseną. Paspaudę nuorodos ikoną (dešinėje) atversite pačią sąskaitą Stripe sistemoje.",
+      placement: "top",
+    },
+  ];
+
+  useEffect(() => {
+    if (loading) return;
+    try {
+      if (!localStorage.getItem(tourStorageKey)) {
+        setRunTour(true);
+      }
+    } catch {
+      // localStorage blocked — skip silently.
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
+
+  const handleTourCallback = (data: CallBackProps) => {
+    const done: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
+    if (done.includes(data.status)) {
+      setRunTour(false);
+      try {
+        localStorage.setItem(tourStorageKey, "1");
+      } catch {
+        // ignore
+      }
+    }
+  };
+
   return (
     <div>
-      <PageTitle
-        eyebrow="Administratorius"
-        title="Mokėjimai"
-        description="Sumos atskaičius Stripe ir platformos mokesčius — tiek klubas realiai gauna."
+      <Joyride
+        steps={tourSteps}
+        run={runTour}
+        continuous
+        showProgress
+        showSkipButton
+        disableScrolling={false}
+        callback={handleTourCallback}
+        locale={{
+          back: "Atgal",
+          close: "Uždaryti",
+          last: "Baigti",
+          next: "Toliau",
+          skip: "Praleisti",
+        }}
+        styles={{
+          options: {
+            primaryColor: "#5da004",
+            zIndex: 10000,
+          },
+        }}
       />
+      <div data-tour="page-title">
+        <PageTitle
+          eyebrow="Administratorius"
+          title="Mokėjimai"
+          description="Sumos atskaičius Stripe ir platformos mokesčius — tiek klubas realiai gauna."
+        />
+      </div>
 
-      <ConnectSection />
+      <div data-tour="connect">
+        <ConnectSection />
+      </div>
 
       {error && (
         <div className="mb-3 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
@@ -140,22 +245,26 @@ export default function AdminPayments() {
       )}
 
       <div className="grid grid-cols-2 gap-3">
-        <DashboardMetricCard
-          icon={CircleDollarSign}
-          label="Šio mėn. pajamos"
-          value={formatCurrency(data?.mtdRevenue ?? 0)}
-          tone="accent"
-        />
-        <DashboardMetricCard
-          icon={CircleDollarSign}
-          label="Šio mėn. mokėjimai"
-          value={String(data?.mtdCount ?? 0)}
-          tone="info"
-        />
+        <div data-tour="mtd-revenue">
+          <DashboardMetricCard
+            icon={CircleDollarSign}
+            label="Šio mėn. pajamos"
+            value={formatCurrency(data?.mtdRevenue ?? 0)}
+            tone="accent"
+          />
+        </div>
+        <div data-tour="mtd-count">
+          <DashboardMetricCard
+            icon={CircleDollarSign}
+            label="Šio mėn. mokėjimai"
+            value={String(data?.mtdCount ?? 0)}
+            tone="info"
+          />
+        </div>
       </div>
 
       <div className="mt-4 grid gap-3 lg:grid-cols-3">
-        <section className="surface p-4 lg:col-span-1">
+        <section className="surface p-4 lg:col-span-1" data-tour="total-revenue">
           <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">
             Bendras srautas
           </p>
@@ -202,9 +311,12 @@ export default function AdminPayments() {
           </ul>
         </section>
 
-        <section className="surface p-4 lg:col-span-2">
+        <section
+          className="surface p-4 lg:col-span-2"
+          data-tour="invoices"
+        >
           <div className="mb-3 flex flex-wrap items-center gap-2">
-            <div className="relative flex-1 min-w-[220px]">
+            <div className="relative flex-1 min-w-[220px]" data-tour="search">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ink-400" />
               <input
                 type="search"
@@ -215,7 +327,7 @@ export default function AdminPayments() {
                 aria-label="Ieškoti nario"
               />
             </div>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-1.5" data-tour="filters">
               {filters.map((f) => (
                 <FilterChip
                   key={f.id}

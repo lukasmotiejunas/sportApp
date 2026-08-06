@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import clsx from "clsx";
 import {
@@ -9,6 +9,11 @@ import {
   Clock,
   MapPin,
 } from "lucide-react";
+import Joyride, {
+  STATUS,
+  type CallBackProps,
+  type Step,
+} from "react-joyride";
 import { useStore, useCurrentCoach } from "../../store/useStore";
 import { PageTitle } from "../../components/layout/PageTitle";
 import { EmptyState } from "../../components/ui/EmptyState";
@@ -20,12 +25,14 @@ const WEEKDAY_LABELS = ["Pr", "An", "Tr", "Kt", "Pn", "Št", "Sk"];
 export default function CoachSchedule() {
   const coach = useCurrentCoach();
   const trainings = useStore((s) => s.trainingSessions);
+  const authUserId = useStore((s) => s.authUser?.id ?? "");
 
   const today = todayIso();
   const now = new Date(today + "T00:00:00");
   const [viewYear, setViewYear] = useState(now.getFullYear());
   const [viewMonth, setViewMonth] = useState(now.getMonth());
   const [selectedDate, setSelectedDate] = useState<string | null>(today);
+  const [runTour, setRunTour] = useState(false);
 
   const monthTrainings = useMemo(() => {
     if (!coach) return [];
@@ -106,16 +113,99 @@ export default function CoachSchedule() {
     ? sessionsByDate.get(selectedDate) ?? []
     : [];
 
+  const tourStorageKey = `coach_schedule_tour_seen:${authUserId || "anon"}`;
+  const tourSteps: Step[] = [
+    {
+      target: '[data-tour="page-title"]',
+      content:
+        "Mano kalendorius — čia matote, kada šį mėnesį vedate treniruotes. Rodomos tik jums priskirtos treniruotės.",
+      placement: "bottom",
+      disableBeacon: true,
+    },
+    {
+      target: '[data-tour="month-nav"]',
+      content:
+        "Mėnesio navigacija. Strėlytėmis pereikite tarp mėnesių — matysite ir praėjusius, ir būsimus. „Šiandien“ mygtukas iškart sugrąžina į šiandienos datą.",
+    },
+    {
+      target: '[data-tour="calendar-grid"]',
+      content:
+        "Kalendoriaus tinklelis. Užpildytos žalios dienos — jose vedate treniruotes. Skaičiukas viršutiniame dešiniajame kampe rodo, kiek treniruočių tą dieną. Šiandiena pažymėta ryškiu žaliu apvadu. Paspauskite dieną, kad pamatytumėte jos treniruotes apačioje.",
+      placement: "bottom",
+    },
+    {
+      target: '[data-tour="legend"]',
+      content:
+        "Legenda — greita atmintis, ką reiškia spalvos ir apvadas.",
+    },
+    {
+      target: '[data-tour="day-details"]',
+      content:
+        "Pasirinktos dienos treniruotės. Kiekviena kortelė rodo laiką, pavadinimą, vietą ir užsiregistravusių dalyvių skaičių. Paspaudę pereikite į treniruotės detales — ten galite matyti dalyvių sąrašą ir jų individualius planus.",
+      placement: "top",
+    },
+  ];
+
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem(tourStorageKey)) {
+        setRunTour(true);
+      }
+    } catch {
+      // localStorage blocked — skip silently.
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleTourCallback = (data: CallBackProps) => {
+    const done: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
+    if (done.includes(data.status)) {
+      setRunTour(false);
+      try {
+        localStorage.setItem(tourStorageKey, "1");
+      } catch {
+        // ignore
+      }
+    }
+  };
+
   return (
     <div>
-      <PageTitle
-        eyebrow="Treneris"
-        title="Mano kalendorius"
-        description="Peržiūrėkite, kada šį mėnesį vedate treniruotes."
+      <Joyride
+        steps={tourSteps}
+        run={runTour}
+        continuous
+        showProgress
+        showSkipButton
+        disableScrolling={false}
+        callback={handleTourCallback}
+        locale={{
+          back: "Atgal",
+          close: "Uždaryti",
+          last: "Baigti",
+          next: "Toliau",
+          skip: "Praleisti",
+        }}
+        styles={{
+          options: {
+            primaryColor: "#5da004",
+            zIndex: 10000,
+          },
+        }}
       />
+      <div data-tour="page-title">
+        <PageTitle
+          eyebrow="Treneris"
+          title="Mano kalendorius"
+          description="Peržiūrėkite, kada šį mėnesį vedate treniruotes."
+        />
+      </div>
 
       <section className="surface p-4">
-        <div className="mb-4 flex flex-wrap items-center gap-3">
+        <div
+          className="mb-4 flex flex-wrap items-center gap-3"
+          data-tour="month-nav"
+        >
           <button
             type="button"
             onClick={goPrev}
@@ -162,7 +252,7 @@ export default function CoachSchedule() {
           ))}
         </div>
 
-        <div className="grid grid-cols-7 gap-1.5">
+        <div className="grid grid-cols-7 gap-1.5" data-tour="calendar-grid">
           {cells.map((c, i) => {
             if (!c) return <span key={i} className="aspect-square" />;
             const hasSessions = c.sessions.length > 0;
@@ -199,7 +289,10 @@ export default function CoachSchedule() {
           })}
         </div>
 
-        <div className="mt-4 flex items-center gap-3 border-t border-ink-100 pt-3 text-[11px] text-ink-500 dark:border-ink-800">
+        <div
+          className="mt-4 flex items-center gap-3 border-t border-ink-100 pt-3 text-[11px] text-ink-500 dark:border-ink-800"
+          data-tour="legend"
+        >
           <span className="flex items-center gap-1.5">
             <span className="h-3 w-3 rounded-md border border-lime-400 bg-lime-400/20" />
             Vedate treniruotę
@@ -211,7 +304,7 @@ export default function CoachSchedule() {
         </div>
       </section>
 
-      <section className="mt-4">
+      <section className="mt-4" data-tour="day-details">
         <div className="mb-2 flex items-center gap-2">
           <CalendarDays className="h-4 w-4 text-ink-500" />
           <h2 className="font-display text-base font-bold">

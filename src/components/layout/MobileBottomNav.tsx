@@ -3,11 +3,11 @@ import clsx from 'clsx';
 import { CalendarCheck2, CreditCard, Home, Trophy, User } from 'lucide-react';
 
 const items = [
-  { to: '/member', label: 'Pradžia', icon: Home, end: true },
-  { to: '/member/trainings', label: 'Treniruotės', icon: CalendarCheck2 },
-  { to: '/member/leaderboards', label: 'Rezultatai', icon: Trophy },
-  { to: '/member/payments', label: 'Mokėjimai', icon: CreditCard },
-  { to: '/member/profile', label: 'Profilis', icon: User },
+  { to: '/member', label: 'Pradžia', icon: Home, end: true, tourId: 'nav-home' },
+  { to: '/member/trainings', label: 'Treniruotės', icon: CalendarCheck2, tourId: 'nav-trainings' },
+  { to: '/member/leaderboards', label: 'Rezultatai', icon: Trophy, tourId: 'nav-leaderboards' },
+  { to: '/member/payments', label: 'Mokėjimai', icon: CreditCard, tourId: 'nav-payments' },
+  { to: '/member/profile', label: 'Profilis', icon: User, tourId: 'nav-profile' },
 ];
 
 export function MobileBottomNav() {
@@ -22,6 +22,7 @@ export function MobileBottomNav() {
             key={it.to}
             to={it.to}
             end={it.end}
+            data-tour={it.tourId}
             className={({ isActive }) =>
               clsx(
                 'flex flex-col items-center justify-center gap-1 py-2.5 text-[11px] font-semibold transition-colors',

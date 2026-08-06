@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Bell,
@@ -12,6 +12,11 @@ import {
   Trash2,
   User,
 } from "lucide-react";
+import Joyride, {
+  STATUS,
+  type CallBackProps,
+  type Step,
+} from "react-joyride";
 import { PageTitle } from "../../components/layout/PageTitle";
 import { useStore, useCurrentMember } from "../../store/useStore";
 import { Avatar } from "../../components/ui/Avatar";
@@ -31,9 +36,11 @@ export default function MemberProfile() {
   const logout = useStore((s) => s.logout);
   const push = useStore((s) => s.pushToast);
   const navigate = useNavigate();
+  const authUserId = useStore((s) => s.authUser?.id ?? "");
   const [confirmLogout, setConfirmLogout] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [runTour, setRunTour] = useState(false);
 
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -106,15 +113,94 @@ export default function MemberProfile() {
     }
   };
 
+  const tourStorageKey = `member_profile_tour_seen:${authUserId || "anon"}`;
+  const tourSteps: Step[] = [
+    {
+      target: '[data-tour="page-title"]',
+      content:
+        "Profilis — čia matote ir keičiate savo asmeninius duomenis, nuotrauką, slaptažodį bei atsijungiate nuo paskyros.",
+      placement: "bottom",
+      disableBeacon: true,
+    },
+    {
+      target: '[data-tour="avatar-card"]',
+      content:
+        "Nuotrauka ir bendra informacija. Paspauskite fotoaparato ikoną prie avataro, kad įkeltumėte savo nuotrauką — ji atsiras dalyvių sąrašuose ir treniruočių puslapiuose. Čia taip pat matote savo narystės planą ir kada tapote klubo nariu.",
+    },
+    {
+      target: '[data-tour="personal-info"]',
+      content:
+        "Asmeninė informacija. Vardas ir pavardė matomi klubo administratoriui ir treneriams. Telefonas — kad treneris galėtų su jumis susisiekti. Gimimo data — amžiaus grupių paskirstymui klube. Po redagavimo paspauskite „Išsaugoti pakeitimus“.",
+    },
+    {
+      target: '[data-tour="password"]',
+      content:
+        "Slaptažodžio keitimas. Norėdami pakeisti — pirma įveskite dabartinį, po to du kartus naują (bent 6 simboliai). Rekomenduojama keisti retkarčiais saugumui.",
+    },
+    {
+      target: '[data-tour="account"]',
+      content:
+        "Paskyra. Rodo, nuo kada esate klubo narys. Čia taip pat rasite mygtuką „Atsijungti“ — po jo būsite grąžinti į prisijungimo langą.",
+      placement: "top",
+    },
+  ];
+
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem(tourStorageKey)) {
+        setRunTour(true);
+      }
+    } catch {
+      // localStorage blocked — skip silently.
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleTourCallback = (data: CallBackProps) => {
+    const done: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
+    if (done.includes(data.status)) {
+      setRunTour(false);
+      try {
+        localStorage.setItem(tourStorageKey, "1");
+      } catch {
+        // ignore
+      }
+    }
+  };
+
   return (
     <div>
-      <PageTitle
-        title="Profilis"
-        description="Jūsų duomenys ir nustatymai."
-        eyebrow="Narys"
+      <Joyride
+        steps={tourSteps}
+        run={runTour}
+        continuous
+        showProgress
+        showSkipButton
+        disableScrolling={false}
+        callback={handleTourCallback}
+        locale={{
+          back: "Atgal",
+          close: "Uždaryti",
+          last: "Baigti",
+          next: "Toliau",
+          skip: "Praleisti",
+        }}
+        styles={{
+          options: {
+            primaryColor: "#5da004",
+            zIndex: 10000,
+          },
+        }}
       />
+      <div data-tour="page-title">
+        <PageTitle
+          title="Profilis"
+          description="Jūsų duomenys ir nustatymai."
+          eyebrow="Narys"
+        />
+      </div>
 
-      <section className="surface mb-4 p-4">
+      <section className="surface mb-4 p-4" data-tour="avatar-card">
         <div className="flex items-center gap-4">
           <div className="relative">
             <Avatar
@@ -165,7 +251,7 @@ export default function MemberProfile() {
         </div>
       </section>
 
-      <section className="surface mb-4 p-4">
+      <section className="surface mb-4 p-4" data-tour="personal-info">
         <h2 className="mb-3 font-display text-base font-bold">
           Asmeninė informacija
         </h2>
@@ -194,7 +280,7 @@ export default function MemberProfile() {
         </div>
       </section>
 
-      <section className="surface mb-4 p-4">
+      <section className="surface mb-4 p-4" data-tour="password">
         <div className="mb-3 flex items-start gap-3">
           <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-lime-400/15 text-lime-600 dark:text-lime-300">
             <KeyRound className="h-4 w-4" />
@@ -249,7 +335,7 @@ export default function MemberProfile() {
         </form>
       </section>
 
-      <section className="surface p-4">
+      <section className="surface p-4" data-tour="account">
         <h2 className="mb-3 font-display text-base font-bold">Paskyra</h2>
         <div className="grid gap-2 sm:grid-cols-2">
           <div className="flex items-center gap-3 rounded-xl bg-ink-50 p-3 dark:bg-ink-800/60">

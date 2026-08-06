@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Building2, ImageIcon, KeyRound, Trash2, Upload, User } from "lucide-react";
+import Joyride, {
+  STATUS,
+  type CallBackProps,
+  type Step,
+} from "react-joyride";
 import { PageTitle } from "../../components/layout/PageTitle";
 import { FormField } from "../../components/ui/FormField";
 import { useStore } from "../../store/useStore";
@@ -37,6 +42,9 @@ export default function AdminProfile() {
   const logoFileInputRef = useRef<HTMLInputElement>(null);
   const [logoBusy, setLogoBusy] = useState(false);
   const currentLogo = authUser?.clubLogo ?? null;
+
+  const authUserId = authUser?.id ?? "";
+  const [runTour, setRunTour] = useState(false);
 
   // Re-sync local state when authUser refreshes (e.g. after bootstrap).
   useEffect(() => {
@@ -165,16 +173,95 @@ export default function AdminProfile() {
     }
   };
 
+  const tourStorageKey = `admin_profile_tour_seen:${authUserId || "anon"}`;
+  const tourSteps: Step[] = [
+    {
+      target: '[data-tour="page-title"]',
+      content:
+        "Profilis — čia atnaujinate klubo informaciją, savo duomenis ir keičiate slaptažodį.",
+      placement: "bottom",
+      disableBeacon: true,
+    },
+    {
+      target: '[data-tour="club-info"]',
+      content:
+        "Klubo informacija. Klubo pavadinimą matys nariai, treneriai ir jis figūruos siunčiamose sąskaitose. Pakeisti galima bet kada — pakeitimas iškart taikomas visiems.",
+    },
+    {
+      target: '[data-tour="club-logo"]',
+      content:
+        "Klubo logotipas. Įkelkite savo klubo logo — jis taps fonu visiems klubo nariams, treneriams ir administratoriams. Jei nekelsite, bus rodomas numatytas Lumo logotipas. Rekomenduojamas kvadratinis formatas.",
+    },
+    {
+      target: '[data-tour="personal-info"]',
+      content:
+        "Jūsų duomenys. Čia matote ir keičiate savo vardą. El. paštas naudojamas prisijungimui ir yra nekeičiamas.",
+    },
+    {
+      target: '[data-tour="password"]',
+      content:
+        "Slaptažodžio keitimas. Norėdami pakeisti — pirma įveskite dabartinį, po to du kartus naują (bent 6 simboliai). Rekomenduojama keisti retkarčiais saugumui.",
+      placement: "top",
+    },
+  ];
+
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem(tourStorageKey)) {
+        setRunTour(true);
+      }
+    } catch {
+      // localStorage blocked — skip silently.
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleTourCallback = (data: CallBackProps) => {
+    const done: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
+    if (done.includes(data.status)) {
+      setRunTour(false);
+      try {
+        localStorage.setItem(tourStorageKey, "1");
+      } catch {
+        // ignore
+      }
+    }
+  };
+
   return (
     <div className="max-w-3xl">
-      <PageTitle
-        eyebrow="Administratorius"
-        title="Profilis"
-        description="Redaguokite klubo informaciją, savo duomenis ir keiskite slaptažodį."
+      <Joyride
+        steps={tourSteps}
+        run={runTour}
+        continuous
+        showProgress
+        showSkipButton
+        disableScrolling={false}
+        callback={handleTourCallback}
+        locale={{
+          back: "Atgal",
+          close: "Uždaryti",
+          last: "Baigti",
+          next: "Toliau",
+          skip: "Praleisti",
+        }}
+        styles={{
+          options: {
+            primaryColor: "#5da004",
+            zIndex: 10000,
+          },
+        }}
       />
+      <div data-tour="page-title">
+        <PageTitle
+          eyebrow="Administratorius"
+          title="Profilis"
+          description="Redaguokite klubo informaciją, savo duomenis ir keiskite slaptažodį."
+        />
+      </div>
 
       <div className="space-y-6">
-        <section className="surface p-5">
+        <section className="surface p-5" data-tour="club-info">
           <div className="mb-4 flex items-start gap-3">
             <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-lime-400/15 text-lime-600 dark:text-lime-300">
               <Building2 className="h-4 w-4" />
@@ -208,7 +295,10 @@ export default function AdminProfile() {
             </div>
           </form>
 
-          <div className="mt-6 border-t border-ink-100 pt-6 dark:border-ink-800">
+          <div
+            className="mt-6 border-t border-ink-100 pt-6 dark:border-ink-800"
+            data-tour="club-logo"
+          >
             <label className="label mb-3 flex items-center gap-2">
               <ImageIcon className="h-4 w-4 text-ink-500" />
               Klubo logotipas
@@ -262,7 +352,7 @@ export default function AdminProfile() {
           </div>
         </section>
 
-        <section className="surface p-5">
+        <section className="surface p-5" data-tour="personal-info">
           <div className="mb-4 flex items-start gap-3">
             <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-lime-400/15 text-lime-600 dark:text-lime-300">
               <User className="h-4 w-4" />
@@ -306,7 +396,7 @@ export default function AdminProfile() {
           </form>
         </section>
 
-        <section className="surface p-5">
+        <section className="surface p-5" data-tour="password">
           <div className="mb-4 flex items-start gap-3">
             <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-lime-400/15 text-lime-600 dark:text-lime-300">
               <KeyRound className="h-4 w-4" />

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ClipboardList,
@@ -11,6 +11,11 @@ import {
   UserRound,
   XCircle,
 } from "lucide-react";
+import Joyride, {
+  STATUS,
+  type CallBackProps,
+  type Step,
+} from "react-joyride";
 import { useStore, useCurrentMember } from "../../store/useStore";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { CapacityProgress } from "../../components/trainings/CapacityProgress";
@@ -33,6 +38,21 @@ export default function MemberTrainingDetail() {
   const push = useStore((s) => s.pushToast);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [confirmLateRegister, setConfirmLateRegister] = useState(false);
+  const [runTour, setRunTour] = useState(false);
+  const authUserId = useStore((s) => s.authUser?.id ?? "");
+  const tourStorageKey = `member_training_detail_tour_seen:${authUserId || "anon"}`;
+
+  useEffect(() => {
+    if (!training) return;
+    try {
+      if (!localStorage.getItem(tourStorageKey)) {
+        setRunTour(true);
+      }
+    } catch {
+      // localStorage blocked — skip silently.
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [Boolean(training)]);
 
   const plan = useMemo(
     () =>
@@ -191,16 +211,84 @@ export default function MemberTrainingDetail() {
     );
   };
 
+  const tourSteps: Step[] = [
+    {
+      target: '[data-tour="page-title"]',
+      content:
+        "Treniruotės detalės. Čia rasite visą informaciją apie šią treniruotę ir galėsite užsiregistruoti arba atsisakyti dalyvavimo.",
+      placement: "bottom",
+      disableBeacon: true,
+    },
+    {
+      target: '[data-tour="info"]',
+      content:
+        "Informacija apie treniruotę: aprašymas, laikas, vieta, treneris ir jo telefonas. Apačioje — talpos juosta rodo, kiek narių jau užsiregistravo ir kiek dar liko laisvų vietų.",
+    },
+    {
+      target: '[data-tour="personal-plan"]',
+      content:
+        "Asmeninis planas — treneris gali paruošti individualią programą būtent jums. Kol jo dar nėra, čia matysite užrašą, kad planas ruošiamas. Kai bus paskelbtas, matysite pratimus ir trenerio pastabas.",
+    },
+    {
+      target: '[data-tour="participants"]',
+      content:
+        "Užsiregistravę dalyviai. Matote kitus klubo narius, kurie taip pat dalyvaus. Jei atsiranda laukiančiųjų sąrašas, jis rodomas žemiau atskirai.",
+      placement: "top",
+    },
+    {
+      target: '[data-tour="action"]',
+      content:
+        "Pagrindinis veiksmas. Jei nesate užsiregistravę — „Užsiregistruoti“. Jei jau esate — čia galite atšaukti registraciją (iki 1 valandos prieš pradžią). Jei treniruotė užpildyta — įsirašysite į laukiančiųjų sąrašą ir gausite pranešimą, kai atsilaisvins vieta.",
+      placement: "top",
+    },
+  ];
+
+  const handleTourCallback = (data: CallBackProps) => {
+    const done: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
+    if (done.includes(data.status)) {
+      setRunTour(false);
+      try {
+        localStorage.setItem(tourStorageKey, "1");
+      } catch {
+        // ignore
+      }
+    }
+  };
+
   return (
     <div>
-      <PageTitle
-        title={training.title}
-        eyebrow={`${relativeDay(training.date)} · ${training.startTime}`}
-        backTo="/member/trainings"
+      <Joyride
+        steps={tourSteps}
+        run={runTour}
+        continuous
+        showProgress
+        showSkipButton
+        disableScrolling={false}
+        callback={handleTourCallback}
+        locale={{
+          back: "Atgal",
+          close: "Uždaryti",
+          last: "Baigti",
+          next: "Toliau",
+          skip: "Praleisti",
+        }}
+        styles={{
+          options: {
+            primaryColor: "#5da004",
+            zIndex: 10000,
+          },
+        }}
       />
+      <div data-tour="page-title">
+        <PageTitle
+          title={training.title}
+          eyebrow={`${relativeDay(training.date)} · ${training.startTime}`}
+          backTo="/member/trainings"
+        />
+      </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <section className="surface p-4">
+        <section className="surface p-4" data-tour="info">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             {isRegistered && (
               <StatusBadge tone="accent" dot>
@@ -270,7 +358,10 @@ export default function MemberTrainingDetail() {
 
         <PersonalPlanPanel plan={plan} />
 
-        <section className="surface p-4 md:col-span-2">
+        <section
+          className="surface p-4 md:col-span-2"
+          data-tour="participants"
+        >
           <h3 className="mb-3 flex items-center gap-2 font-display text-base font-bold">
             <Sparkles className="h-4 w-4 text-lime-600" />
             Užsiregistravę dalyviai
@@ -331,7 +422,10 @@ export default function MemberTrainingDetail() {
       </div>
 
       {/* Sticky action */}
-      <div className="fixed inset-x-0 bottom-20 z-20 mx-auto max-w-4xl px-4 pb-2 md:static md:mt-4 md:px-0">
+      <div
+        className="fixed inset-x-0 bottom-20 z-20 mx-auto max-w-4xl px-4 pb-2 md:static md:mt-4 md:px-0"
+        data-tour="action"
+      >
         <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-ink-100 bg-white/95 p-2 shadow-pop backdrop-blur md:border-transparent md:bg-transparent md:p-0 md:shadow-none dark:border-ink-800 dark:bg-ink-950/95 md:dark:bg-transparent">
           {primary()}
         </div>
@@ -405,7 +499,10 @@ function InfoRow({
 function PersonalPlanPanel({ plan }: { plan?: TrainingPlan }) {
   if (!plan) {
     return (
-      <section className="surface flex flex-col items-center justify-center p-6 text-center">
+      <section
+        className="surface flex flex-col items-center justify-center p-6 text-center"
+        data-tour="personal-plan"
+      >
         <span className="mb-3 grid h-11 w-11 place-items-center rounded-2xl bg-lime-100 text-lime-800 dark:bg-lime-400/15 dark:text-lime-200">
           <ClipboardList className="h-5 w-5" />
         </span>
@@ -421,7 +518,10 @@ function PersonalPlanPanel({ plan }: { plan?: TrainingPlan }) {
   }
 
   return (
-    <section className="surface relative flex flex-col overflow-hidden p-4">
+    <section
+      className="surface relative flex flex-col overflow-hidden p-4"
+      data-tour="personal-plan"
+    >
       <div className="mb-3 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[11px] font-semibold uppercase tracking-widest text-lime-600 dark:text-lime-300">

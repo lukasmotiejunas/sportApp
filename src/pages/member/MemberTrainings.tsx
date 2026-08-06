@@ -1,5 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { CalendarX } from 'lucide-react';
+import Joyride, {
+  STATUS,
+  type CallBackProps,
+  type Step,
+} from 'react-joyride';
 import { useStore, useCurrentMember } from '../../store/useStore';
 import { TrainingCard } from '../../components/trainings/TrainingCard';
 import { PageTitle } from '../../components/layout/PageTitle';
@@ -11,9 +16,11 @@ export default function MemberTrainings() {
   const trainings = useStore((s) => s.trainingSessions);
   const coaches = useStore((s) => s.coaches);
   const members = useStore((s) => s.members);
+  const authUserId = useStore((s) => s.authUser?.id ?? '');
 
   const today = todayIso();
   const [selectedDate, setSelectedDate] = useState<string>(today);
+  const [runTour, setRunTour] = useState(false);
 
   const dateStrip = useMemo(() => Array.from({ length: 10 }, (_, i) => addDays(today, i)), [today]);
 
@@ -21,16 +28,88 @@ export default function MemberTrainings() {
     .filter((t) => t.date === selectedDate)
     .sort((a, b) => a.startTime.localeCompare(b.startTime));
 
+  const tourStorageKey = `member_trainings_tour_seen:${authUserId || 'anon'}`;
+  const tourSteps: Step[] = [
+    {
+      target: '[data-tour="page-title"]',
+      content:
+        'Treniruotės — čia matote artimiausių 10 dienų tvarkaraštį. Pasirinkite dieną viršuje, o žemiau pamatysite tos dienos treniruotes ir galėsite užsiregistruoti.',
+      placement: 'bottom',
+      disableBeacon: true,
+    },
+    {
+      target: '[data-tour="date-strip"]',
+      content:
+        'Datų juosta — 10 artimiausių dienų. Paspaudę datą pamatysite tos dienos treniruotes. Šiandiena pažymėta žaliu tašku po diena. Slinkite į dešinę, kad pamatytumėte tolimesnes dienas.',
+    },
+    {
+      target: '[data-tour="training-list"]',
+      content:
+        'Pasirinktos dienos treniruotės. Kiekviena kortelė rodo laiką, pavadinimą, trenerį ir dalyvių skaičių. Paspaudę atversite detales — ten galėsite užsiregistruoti arba atsisakyti dalyvavimo.',
+      placement: 'top',
+    },
+  ];
+
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem(tourStorageKey)) {
+        setRunTour(true);
+      }
+    } catch {
+      // localStorage blocked — skip silently.
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleTourCallback = (data: CallBackProps) => {
+    const done: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
+    if (done.includes(data.status)) {
+      setRunTour(false);
+      try {
+        localStorage.setItem(tourStorageKey, '1');
+      } catch {
+        // ignore
+      }
+    }
+  };
+
   return (
     <div>
-      <PageTitle
-        title="Treniruotės"
-        description={formatDateLong(selectedDate)}
-        eyebrow="Tvarkaraštis"
+      <Joyride
+        steps={tourSteps}
+        run={runTour}
+        continuous
+        showProgress
+        showSkipButton
+        disableScrolling={false}
+        callback={handleTourCallback}
+        locale={{
+          back: 'Atgal',
+          close: 'Uždaryti',
+          last: 'Baigti',
+          next: 'Toliau',
+          skip: 'Praleisti',
+        }}
+        styles={{
+          options: {
+            primaryColor: '#5da004',
+            zIndex: 10000,
+          },
+        }}
       />
+      <div data-tour="page-title">
+        <PageTitle
+          title="Treniruotės"
+          description={formatDateLong(selectedDate)}
+          eyebrow="Tvarkaraštis"
+        />
+      </div>
 
       {/* Date strip */}
-      <div className="mb-4 -mx-4 flex snap-x snap-mandatory gap-2 overflow-x-auto px-4 pb-1 no-scrollbar">
+      <div
+        className="mb-4 -mx-4 flex snap-x snap-mandatory gap-2 overflow-x-auto px-4 pb-1 no-scrollbar"
+        data-tour="date-strip"
+      >
         {dateStrip.map((d) => {
           const dt = new Date(d + 'T00:00:00');
           const isActive = d === selectedDate;
@@ -60,13 +139,15 @@ export default function MemberTrainings() {
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState
-          icon={CalendarX}
-          title="Šią dieną treniruočių nėra"
-          description="Pasirinkite kitą datą."
-        />
+        <div data-tour="training-list">
+          <EmptyState
+            icon={CalendarX}
+            title="Šią dieną treniruočių nėra"
+            description="Pasirinkite kitą datą."
+          />
+        </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3" data-tour="training-list">
           {filtered.map((t) => {
             const coach = coaches.find((c) => c.id === t.coachId);
             const activeRegs = t.registrations.filter(

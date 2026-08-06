@@ -9,6 +9,7 @@ import {
   Ticket,
   Trash2,
 } from "lucide-react";
+import Joyride, { STATUS, type CallBackProps, type Step } from "react-joyride";
 import { PageTitle } from "../../components/layout/PageTitle";
 import { FormField } from "../../components/ui/FormField";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
@@ -22,7 +23,9 @@ export default function AdminPlans() {
   const addMembershipPlan = useStore((s) => s.addMembershipPlan);
   const removeMembershipPlan = useStore((s) => s.removeMembershipPlan);
   const push = useStore((s) => s.pushToast);
+  const authUserId = useStore((s) => s.authUser?.id ?? "");
   const [syncing, setSyncing] = useState(false);
+  const [runTour, setRunTour] = useState(false);
 
   const needsSync = plans.some((p) => !p.stripePriceId && p.monthlyFee > 0);
 
@@ -127,13 +130,97 @@ export default function AdminPlans() {
 
   const priceLabel = planType === "credits" ? "Paketo kaina" : "Kaina / mėn.";
 
+  const tourStorageKey = `admin_plans_tour_seen:${authUserId || "anon"}`;
+  const tourSteps: Step[] = [
+    {
+      target: '[data-tour="page-title"]',
+      content:
+        "Narystės planai — čia nustatote, už ką ir kiek nariai mokės. Sukurti planai bus prieinami nariams registracijos metu ir profilyje.",
+      placement: "bottom",
+      disableBeacon: true,
+    },
+    {
+      target: '[data-tour="plan-type"]',
+      content:
+        "Plano tipas. „Mėnesinis“ — narys atsiskaito automatiškai kiekvieną mėnesį (rekomenduojama). „Treniruočių paketas“ — narys vieną kartą sumoka už nustatytą treniruočių skaičių, po kurio kortelė nebeapmokestinama.",
+    },
+    {
+      target: '[data-tour="basic-fields"]',
+      content:
+        "Pavadinimas, kaina ir valiuta. Pavadinimas matomas nariams — turi būti aiškus (pvz. „Neribotas paketas“ arba „5 treniruočių paketas“). Kaina — kiek narys mokės (mėnesį arba už paketą). Valiuta — pagal nutylėjimą EUR.",
+    },
+    {
+      target: '[data-tour="limits"]',
+      content:
+        "Limitai. Mėnesiniam planui — kiek treniruočių per savaitę leidžiama (arba „Neribotai“). Paketiniam planui — kiek treniruočių narys gauna sumokėjęs. Kiekviena nario registracija sumažina paketo likutį vienetu.",
+    },
+    {
+      target: '[data-tour="submit"]',
+      content:
+        "Paspaudus „Sukurti planą“, planas iš karto atsiranda sąraše apačioje. Stripe kaina bus automatiškai sukurta fone — kai ji bus paruošta, nariai galės pradėti mokėti.",
+    },
+    {
+      target: '[data-tour="plans-list"]',
+      content:
+        "Esami planai. Kiekvienas planas rodo kainą, limitą ir Stripe būseną: „Stripe“ (žalias) — planas paruoštas mokėjimams; „Laukiama Stripe“ (geltonas) — laukiama, kol užbaigsite Stripe registraciją. Nereikalingą planą galite ištrinti — bet turintys jį nariai liks be plano.",
+      placement: "top",
+    },
+  ];
+
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem(tourStorageKey)) {
+        setRunTour(true);
+      }
+    } catch {
+      // localStorage blocked — skip silently.
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleTourCallback = (data: CallBackProps) => {
+    const done: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
+    if (done.includes(data.status)) {
+      setRunTour(false);
+      try {
+        localStorage.setItem(tourStorageKey, "1");
+      } catch {
+        // ignore
+      }
+    }
+  };
+
   return (
     <div className="max-w-3xl">
-      <PageTitle
-        eyebrow="Administratorius"
-        title="Narystės planai"
-        description="Kurkite mėnesinius planus arba treniruočių paketus (nuperkate kartą, gaunate iš anksto nustatytą kiekį treniruočių)."
+      <Joyride
+        steps={tourSteps}
+        run={runTour}
+        continuous
+        showProgress
+        showSkipButton
+        disableScrolling={false}
+        callback={handleTourCallback}
+        locale={{
+          back: "Atgal",
+          close: "Uždaryti",
+          last: "Baigti",
+          next: "Toliau",
+          skip: "Praleisti",
+        }}
+        styles={{
+          options: {
+            primaryColor: "#5da004",
+            zIndex: 10000,
+          },
+        }}
       />
+      <div data-tour="page-title">
+        <PageTitle
+          eyebrow="Administratorius"
+          title="Narystės planai"
+          description="Kurkite mėnesinius planus arba treniruočių paketus (nuperkate kartą, gaunate iš anksto nustatytą kiekį treniruočių)."
+        />
+      </div>
 
       <section className="surface mb-4 p-4">
         <h2 className="mb-3 flex items-center gap-2 font-display text-base font-bold">
@@ -141,7 +228,7 @@ export default function AdminPlans() {
         </h2>
 
         <form onSubmit={create} className="space-y-4">
-          <div>
+          <div data-tour="plan-type">
             <label className="label">Plano tipas</label>
             <div className="grid gap-2 sm:grid-cols-2">
               <button
@@ -183,7 +270,10 @@ export default function AdminPlans() {
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-[1fr_160px_120px]">
+          <div
+            className="grid gap-4 sm:grid-cols-[1fr_160px_120px]"
+            data-tour="basic-fields"
+          >
             <FormField
               label="Pavadinimas"
               required
@@ -214,7 +304,7 @@ export default function AdminPlans() {
           </div>
 
           {planType === "credits" ? (
-            <div>
+            <div data-tour="limits">
               <label className="label">Treniruočių pakete</label>
               <div className="flex items-center gap-3">
                 <input
@@ -234,7 +324,7 @@ export default function AdminPlans() {
               </div>
             </div>
           ) : (
-            <div>
+            <div data-tour="limits">
               <label className="label">Treniruotės per savaitę</label>
               <div className="flex items-center gap-3">
                 <label className="inline-flex items-center gap-2 text-sm text-ink-700 dark:text-ink-200">
@@ -272,7 +362,12 @@ export default function AdminPlans() {
             </div>
           )}
           <div>
-            <button type="submit" className="btn-primary" disabled={submitting}>
+            <button
+              type="submit"
+              className="btn-primary"
+              disabled={submitting}
+              data-tour="submit"
+            >
               <Plus className="h-4 w-4" />
               {submitting ? "Kuriama…" : "Sukurti planą"}
             </button>
@@ -280,7 +375,7 @@ export default function AdminPlans() {
         </form>
       </section>
 
-      <section className="surface">
+      <section className="surface" data-tour="plans-list">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ink-100 p-4 dark:border-ink-800">
           <h2 className="flex items-center gap-2 font-display text-base font-bold">
             <CreditCard className="h-4 w-4 text-ink-500" /> Esami planai
@@ -315,9 +410,7 @@ export default function AdminPlans() {
                   <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-500">
                     <span>
                       {formatCurrency(p.monthlyFee, p.currency)}
-                      {p.planType === "credits"
-                        ? " · vienkartinis"
-                        : " / mėn."}
+                      {p.planType === "credits" ? " · vienkartinis" : " / mėn."}
                     </span>
                     <span className="inline-flex items-center gap-1">
                       {p.planType === "credits" ? (

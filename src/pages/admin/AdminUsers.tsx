@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Copy, ExternalLink, LinkIcon, RefreshCw, Trash2, UserPlus } from "lucide-react";
+import Joyride, { STATUS, type CallBackProps, type Step } from "react-joyride";
 import { PageTitle } from "../../components/layout/PageTitle";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { Avatar } from "../../components/ui/Avatar";
@@ -100,6 +101,7 @@ export default function AdminUsers() {
     member: Member;
     plan: MembershipPlan | undefined;
   } | null>(null);
+  const [runTour, setRunTour] = useState(false);
 
   const joinUrl = useMemo(
     () => (clubSlug ? `${window.location.origin}/join/${clubSlug}` : ""),
@@ -156,25 +158,129 @@ export default function AdminUsers() {
   const canDelete = (u: AuthUser) =>
     u.id !== currentUserId && (u.role === "member" || u.role === "coach");
 
+  const tourStorageKey = `admin_users_tour_seen:${currentUserId || "anon"}`;
+  const tourSteps: Step[] = [
+    {
+      target: '[data-tour="page-title"]',
+      content:
+        "Sveiki! Čia — Paskyrų puslapis. Trumpai parodysime, ką galite čia daryti.",
+      placement: "bottom",
+      disableBeacon: true,
+    },
+    {
+      target: '[data-tour="add-coach"]',
+      content:
+        "Naują trenerio paskyrą galite sukurti čia. Treneris gaus prisijungimo duomenis ir galės valdyti treniruotes.",
+    },
+    {
+      target: '[data-tour="join-link"]',
+      content:
+        "Ši nuoroda skirta jūsų klubo nariams — pasidalinkite ja, ir nariai galės užsiregistruoti patys, be jūsų įsikišimo.",
+    },
+    {
+      target: '[data-tour="copy-link"]',
+      content:
+        "Vienu paspaudimu nukopijuokite nuorodą į iškarpinę — patogu dalintis per žinutes ar el. paštą.",
+    },
+    {
+      target: '[data-tour="users-list"]',
+      content:
+        "Visos klubo paskyros — administratoriai, treneriai ir nariai. Paspauskite ant nario, kad pamatytumėte jo detales, planą ir mokėjimų būseną.",
+      placement: "top",
+    },
+    {
+      target: '[data-tour="refresh"]',
+      content:
+        "Duomenys atnaujinami automatiškai, bet jei norite iškart pamatyti pakeitimus — paspauskite Atnaujinti.",
+    },
+    {
+      target: '[data-tour="page-title"]',
+      content:
+        "Tai viskas! Sėkmingo klubo valdymo. Šis vedlys daugiau nepasirodys.",
+      placement: "bottom",
+    },
+  ];
+
+  useEffect(() => {
+    if (loading) return;
+    try {
+      if (!localStorage.getItem(tourStorageKey)) {
+        setRunTour(true);
+      }
+    } catch {
+      // localStorage may be blocked (private mode) — skip silently.
+    }
+    // Only run once per (user × page) after the list has loaded so targets exist.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
+
+  const handleTourCallback = (data: CallBackProps) => {
+    const finished: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
+    if (finished.includes(data.status)) {
+      setRunTour(false);
+      try {
+        localStorage.setItem(tourStorageKey, "1");
+      } catch {
+        // ignore
+      }
+    }
+  };
+
   return (
     <div>
-      <PageTitle
-        eyebrow="Administratorius"
-        title="Paskyros"
-        description="Valdykite trenerių ir narių prisijungimus."
+      <Joyride
+        steps={tourSteps}
+        run={runTour}
+        continuous
+        showProgress
+        showSkipButton
+        disableScrolling={false}
+        callback={handleTourCallback}
+        locale={{
+          back: "Atgal",
+          close: "Uždaryti",
+          last: "Baigti",
+          next: "Toliau",
+          skip: "Praleisti",
+        }}
+        styles={{
+          options: {
+            primaryColor: "#5da004",
+            zIndex: 10000,
+          },
+        }}
       />
+      <div data-tour="page-title">
+        <PageTitle
+          eyebrow="Administratorius"
+          title="Paskyros"
+          description="Valdykite trenerių ir narių prisijungimus."
+        />
+      </div>
 
       <div className="mb-4 flex flex-wrap gap-2">
-        <Link to="/admin/coaches/new" className="btn-primary">
+        <Link
+          to="/admin/coaches/new"
+          className="btn-primary"
+          data-tour="add-coach"
+        >
           <UserPlus className="h-4 w-4" /> Pridėti trenerį
         </Link>
-        <button type="button" className="btn-ghost ml-auto" onClick={load}>
+        <button
+          type="button"
+          className="btn-ghost ml-auto"
+          onClick={load}
+          data-tour="refresh"
+        >
           <RefreshCw className="h-4 w-4" /> Atnaujinti
         </button>
       </div>
 
       {joinUrl && (
-        <div className="mb-4 rounded-2xl border border-lime-300 bg-lime-50 p-4 dark:border-lime-500/30 dark:bg-lime-500/10">
+        <div
+          className="mb-4 rounded-2xl border border-lime-300 bg-lime-50 p-4 dark:border-lime-500/30 dark:bg-lime-500/10"
+          data-tour="join-link"
+        >
           <div className="flex items-start gap-3">
             <div className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-lime-400 text-ink-950 dark:bg-lime-400 dark:text-ink-950">
               <LinkIcon className="h-4 w-4" />
@@ -194,6 +300,7 @@ export default function AdminUsers() {
                   type="button"
                   onClick={copyJoinLink}
                   className="btn-outline h-9 px-3 text-xs"
+                  data-tour="copy-link"
                 >
                   <Copy className="h-3.5 w-3.5" />
                   {copiedLink ? "Nukopijuota" : "Kopijuoti"}
@@ -219,7 +326,10 @@ export default function AdminUsers() {
         </div>
       )}
 
-      <section className="surface divide-y divide-ink-100 dark:divide-ink-800">
+      <section
+        className="surface divide-y divide-ink-100 dark:divide-ink-800"
+        data-tour="users-list"
+      >
         {loading ? (
           <p className="p-4 text-sm text-ink-500">Kraunama…</p>
         ) : users.length === 0 ? (

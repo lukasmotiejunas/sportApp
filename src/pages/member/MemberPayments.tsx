@@ -18,6 +18,11 @@ import {
   useElements,
   useStripe,
 } from "@stripe/react-stripe-js";
+import Joyride, {
+  STATUS,
+  type CallBackProps,
+  type Step,
+} from "react-joyride";
 import { useStore, useCurrentMember } from "../../store/useStore";
 import { PageTitle } from "../../components/layout/PageTitle";
 import { PaymentStatusBanner } from "../../components/payments/PaymentStatusBanner";
@@ -72,6 +77,8 @@ export default function MemberPayments() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const allPlans = useStore((s) => s.membershipPlans);
   const creditPlans = allPlans.filter((p) => p.planType === "credits");
+  const authUserId = useStore((s) => s.authUser?.id ?? "");
+  const [runTour, setRunTour] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -216,16 +223,123 @@ export default function MemberPayments() {
   const creditsRemaining =
     billing?.member?.creditsRemaining ?? member.creditsRemaining ?? 0;
 
+  const tourStorageKey = `member_payments_tour_seen:${authUserId || "anon"}`;
+  const tourSteps: Step[] = isCreditsPlan
+    ? [
+        {
+          target: '[data-tour="page-title"]',
+          content:
+            "Mokėjimai — čia matote savo narystės būseną, kreditų likutį ir visą mokėjimų istoriją.",
+          placement: "bottom",
+          disableBeacon: true,
+        },
+        {
+          target: '[data-tour="credits-balance"]',
+          content:
+            "Kreditų likutis. Jūsų planas — paketinis: kiekviena registracija į treniruotę sunaudoja vieną kreditą. Kai likutis pasibaigia, treniruočių registruotis nebegalėsite, kol nepapildysite.",
+        },
+        {
+          target: '[data-tour="topup-btn"]',
+          content:
+            "Papildyti — paspauskite čia, kad nusipirktumėte naują treniruočių paketą. Mokėjimas vienkartinis, jokių automatinių nurašymų.",
+        },
+        {
+          target: '[data-tour="switch-monthly"]',
+          content:
+            "Norite lankytis dažnai? Perjunkite į mėnesinį planą — gaukite didesnį arba neribotą treniruočių limitą kas mėnesį už fiksuotą kainą.",
+        },
+        {
+          target: '[data-tour="history"]',
+          content:
+            "Mokėjimų istorija. Visos jūsų sumokėtos sąskaitos su data, suma ir būsena. Paspaudę nuorodos ikoną — atversite pilną sąskaitą Stripe sistemoje ir galėsite atsisiųsti PDF apskaitai.",
+          placement: "top",
+        },
+      ]
+    : [
+        {
+          target: '[data-tour="page-title"]',
+          content:
+            "Mokėjimai — čia matote savo narystės būseną, kito mokėjimo datą ir visą mokėjimų istoriją.",
+          placement: "bottom",
+          disableBeacon: true,
+        },
+        {
+          target: '[data-tour="status-banner"]',
+          content:
+            "Mokėjimo būsena. Rodo, ar jūsų narystė apmokėta, kada bus nurašomas kitas mokėjimas ir kokia jo suma. Jei mokėjimas vėluoja — čia matysite raudoną pranešimą.",
+        },
+        {
+          target: '[data-tour="current-plan"]',
+          content:
+            "Dabartinis narystės planas. Rodo plano pavadinimą, mėnesinę kainą, treniruočių limitą per savaitę ir kortelę, iš kurios nurašomi mokėjimai. Apačioje — mygtukas sustabdyti narystę (prieiga liks iki apmokėto laikotarpio pabaigos).",
+        },
+        {
+          target: '[data-tour="history"]',
+          content:
+            "Mokėjimų istorija. Visos jūsų mokėjimų sąskaitos su data, laikotarpiu, suma ir būsena. Paspaudę nuorodos ikoną — atversite pilną sąskaitą Stripe sistemoje ir galėsite atsisiųsti PDF apskaitai.",
+          placement: "top",
+        },
+      ];
+
+  useEffect(() => {
+    if (loading) return;
+    try {
+      if (!localStorage.getItem(tourStorageKey)) {
+        setRunTour(true);
+      }
+    } catch {
+      // localStorage blocked — skip silently.
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
+
+  const handleTourCallback = (data: CallBackProps) => {
+    const done: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
+    if (done.includes(data.status)) {
+      setRunTour(false);
+      try {
+        localStorage.setItem(tourStorageKey, "1");
+      } catch {
+        // ignore
+      }
+    }
+  };
+
   return (
     <div>
-      <PageTitle
-        title="Mokėjimai"
-        description="Jūsų narystės planas ir mokėjimų istorija."
-        eyebrow="Narystė"
+      <Joyride
+        steps={tourSteps}
+        run={runTour}
+        continuous
+        showProgress
+        showSkipButton
+        disableScrolling={false}
+        callback={handleTourCallback}
+        locale={{
+          back: "Atgal",
+          close: "Uždaryti",
+          last: "Baigti",
+          next: "Toliau",
+          skip: "Praleisti",
+        }}
+        styles={{
+          options: {
+            primaryColor: "#5da004",
+            zIndex: 10000,
+          },
+        }}
       />
+      <div data-tour="page-title">
+        <PageTitle
+          title="Mokėjimai"
+          description="Jūsų narystės planas ir mokėjimų istorija."
+          eyebrow="Narystė"
+        />
+      </div>
 
       {isCreditsPlan ? (
         <section
+          data-tour="credits-balance"
           className={
             "rounded-3xl border p-5 shadow-pop " +
             (creditsRemaining > 0
@@ -254,6 +368,7 @@ export default function MemberPayments() {
               type="button"
               onClick={openBuyCredits}
               disabled={creditsLoading !== null}
+              data-tour="topup-btn"
               className="btn-primary h-10 self-center px-3 text-sm"
             >
               <Plus className="h-4 w-4" />
@@ -262,11 +377,13 @@ export default function MemberPayments() {
           </div>
         </section>
       ) : (
-        <PaymentStatusBanner
-          status={status}
-          amount={formatCurrency(upcomingAmount)}
-          dueDate={dueDateIso ? formatDateSlash(dueDateIso) : "—"}
-        />
+        <div data-tour="status-banner">
+          <PaymentStatusBanner
+            status={status}
+            amount={formatCurrency(upcomingAmount)}
+            dueDate={dueDateIso ? formatDateSlash(dueDateIso) : "—"}
+          />
+        </div>
       )}
 
       {billing?.hasSubscription && billing.cancelAtPeriodEnd && (
@@ -301,7 +418,7 @@ export default function MemberPayments() {
       )}
 
       {!isCreditsPlan && (
-        <section className="surface mt-4 p-4">
+        <section className="surface mt-4 p-4" data-tour="current-plan">
           <div className="mb-3 flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">
@@ -364,9 +481,13 @@ export default function MemberPayments() {
         </section>
       )}
 
-      {isCreditsPlan && <SwitchToMonthlyCard onSwitched={onCreditsPaid} />}
+      {isCreditsPlan && (
+        <div data-tour="switch-monthly">
+          <SwitchToMonthlyCard onSwitched={onCreditsPaid} />
+        </div>
+      )}
 
-      <section className="mt-4">
+      <section className="mt-4" data-tour="history">
         <h2 className="mb-2 font-display text-base font-bold">
           Mokėjimų istorija
         </h2>

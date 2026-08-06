@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Camera, KeyRound, Trash2, User } from "lucide-react";
+import Joyride, {
+  STATUS,
+  type CallBackProps,
+  type Step,
+} from "react-joyride";
 import { PageTitle } from "../../components/layout/PageTitle";
 import { FormField } from "../../components/ui/FormField";
 import { Avatar } from "../../components/ui/Avatar";
@@ -32,12 +37,27 @@ export default function CoachProfile() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [photoBusy, setPhotoBusy] = useState(false);
+  const [runTour, setRunTour] = useState(false);
+  const authUserId = authUser?.id ?? "";
+  const tourStorageKey = `coach_profile_tour_seen:${authUserId || "anon"}`;
 
   useEffect(() => {
     setName(coach?.name ?? "");
     setSpecialty(coach?.specialty ?? "");
     setPhone(coach?.phone ?? "");
   }, [coach?.name, coach?.specialty, coach?.phone]);
+
+  useEffect(() => {
+    if (!coach) return;
+    try {
+      if (!localStorage.getItem(tourStorageKey)) {
+        setRunTour(true);
+      }
+    } catch {
+      // localStorage blocked — skip silently.
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [coach]);
 
   if (!coach) {
     return (
@@ -163,16 +183,78 @@ export default function CoachProfile() {
     }
   };
 
+  const tourSteps: Step[] = [
+    {
+      target: '[data-tour="page-title"]',
+      content:
+        "Profilis — čia atnaujinate savo duomenis, nuotrauką ir slaptažodį. Kai kurie duomenys matomi nariams treniruočių puslapiuose.",
+      placement: "bottom",
+      disableBeacon: true,
+    },
+    {
+      target: '[data-tour="photo"]',
+      content:
+        "Nuotrauka. Paspauskite fotoaparato ikoną prie avataro, kad įkeltumėte savo nuotrauką — ji atsiras jūsų vestose treniruotėse ir dalyvių sąrašuose. Rekomenduojama kvadratinė nuotrauka.",
+    },
+    {
+      target: '[data-tour="personal-info"]',
+      content:
+        "Jūsų duomenys. Vardas ir pavardė — kaip jus matys nariai. El. paštas naudojamas prisijungimui ir yra nekeičiamas. Telefono numeris — matomas nariams treniruotės puslapyje, kad galėtų su jumis susisiekti. Specializacija — trumpai apie jūsų sritį (pvz. „Sprintas ir technika“).",
+    },
+    {
+      target: '[data-tour="password"]',
+      content:
+        "Slaptažodžio keitimas. Norėdami pakeisti — pirma įveskite dabartinį, po to du kartus naują (bent 6 simboliai). Rekomenduojama keisti retkarčiais saugumui.",
+      placement: "top",
+    },
+  ];
+
+  const handleTourCallback = (data: CallBackProps) => {
+    const done: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
+    if (done.includes(data.status)) {
+      setRunTour(false);
+      try {
+        localStorage.setItem(tourStorageKey, "1");
+      } catch {
+        // ignore
+      }
+    }
+  };
+
   return (
     <div className="max-w-3xl">
-      <PageTitle
-        eyebrow="Treneris"
-        title="Profilis"
-        description="Redaguokite savo duomenis, nuotrauką ir slaptažodį."
+      <Joyride
+        steps={tourSteps}
+        run={runTour}
+        continuous
+        showProgress
+        showSkipButton
+        disableScrolling={false}
+        callback={handleTourCallback}
+        locale={{
+          back: "Atgal",
+          close: "Uždaryti",
+          last: "Baigti",
+          next: "Toliau",
+          skip: "Praleisti",
+        }}
+        styles={{
+          options: {
+            primaryColor: "#5da004",
+            zIndex: 10000,
+          },
+        }}
       />
+      <div data-tour="page-title">
+        <PageTitle
+          eyebrow="Treneris"
+          title="Profilis"
+          description="Redaguokite savo duomenis, nuotrauką ir slaptažodį."
+        />
+      </div>
 
       <div className="space-y-6">
-        <section className="surface p-5">
+        <section className="surface p-5" data-tour="photo">
           <div className="flex items-center gap-4">
             <div className="relative">
               <Avatar
@@ -218,7 +300,7 @@ export default function CoachProfile() {
           </div>
         </section>
 
-        <section className="surface p-5">
+        <section className="surface p-5" data-tour="personal-info">
           <div className="mb-4 flex items-start gap-3">
             <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-lime-400/15 text-lime-600 dark:text-lime-300">
               <User className="h-4 w-4" />
@@ -276,7 +358,7 @@ export default function CoachProfile() {
           </form>
         </section>
 
-        <section className="surface p-5">
+        <section className="surface p-5" data-tour="password">
           <div className="mb-4 flex items-start gap-3">
             <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-lime-400/15 text-lime-600 dark:text-lime-300">
               <KeyRound className="h-4 w-4" />

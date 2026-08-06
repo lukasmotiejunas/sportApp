@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ClipboardList, Plus, Save, Sparkles, Trash2, X } from 'lucide-react';
+import Joyride, { STATUS, type CallBackProps, type Step } from 'react-joyride';
 import { PageTitle } from '../../components/layout/PageTitle';
 import { FormField, TextareaField } from '../../components/ui/FormField';
 import { EmptyState } from '../../components/ui/EmptyState';
@@ -64,6 +65,7 @@ export default function CoachTrainingTemplates() {
   const updateTemplate = useStore((s) => s.updateTrainingTemplate);
   const removeTemplate = useStore((s) => s.deleteTrainingTemplate);
   const push = useStore((s) => s.pushToast);
+  const authUserId = useStore((s) => s.authUser?.id ?? '');
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -174,19 +176,141 @@ export default function CoachTrainingTemplates() {
 
   const formOpen = creating || editingId !== null;
 
+  const tourEnabled = true;
+  const tourStorageKey = `training_templates_tour_seen:${authUserId || 'anon'}`;
+  const [runTour, setRunTour] = useState(false);
+  const tourSteps: Step[] = [
+    {
+      target: '[data-tour="page-title"]',
+      content:
+        'Sveiki! Čia kuriami treniruočių planai — daugkartiniai šablonai, kuriuos vėliau vienu paspaudimu pritaikysite konkrečiai treniruotei. Užpildysime pavyzdinę formą, o jūs galėsite ją pritaikyti savo klubui.',
+      placement: 'bottom',
+      disableBeacon: true,
+    },
+    {
+      target: '[data-tour="ai-generator"]',
+      content:
+        'AI generatorius — aprašykite treniruotę laisva forma (pvz. „60 min sprinto technikos treniruotė vaikams stadione"), o dirbtinis intelektas užpildys visus laukus. Prieš išsaugant galėsite pakoreguoti.',
+      placement: 'bottom',
+    },
+    {
+      target: '[data-tour="template-name"]',
+      content:
+        'Plano pavadinimas — vidinis vardas, matomas TIK jums renkantis planą (pvz. „Antradienio sprinto sesija"). Nariai jo nemato.',
+    },
+    {
+      target: '[data-tour="training-title"]',
+      content:
+        'Treniruotės pavadinimas — tai jau MATO nariai, kai treniruotė sukuriama pagal šį planą. Turi būti aiškus ir suprantamas.',
+    },
+    {
+      target: '[data-tour="description"]',
+      content:
+        'Aprašymas — ką nariai darys šioje treniruotėje. Padeda apsispręsti prieš registruojantis.',
+    },
+    {
+      target: '[data-tour="location"]',
+      content:
+        'Įprasta vieta, kur vyksta ši treniruotė. Kurdami konkrečią treniruotę pagal šį planą, vietą galėsite pakeisti.',
+    },
+    {
+      target: '[data-tour="times"]',
+      content:
+        'Įprasti pradžios ir pabaigos laikai. Šie laukai užsipildo automatiškai kurdami naują treniruotę — nebereikės kaskart vesti iš naujo.',
+    },
+    {
+      target: '[data-tour="capacity"]',
+      content:
+        'Standartinė talpa — kiek narių gali užsiregistruoti. Pilnai užpildžius, kiti automatiškai patenka į laukiančiųjų sąrašą.',
+    },
+    {
+      target: '[data-tour="default-plan"]',
+      content:
+        'Bendras planas — pratimai, apkrova ir eiliškumas. Kurdami treniruotę pagal šį šabloną, šis planas bus automatiškai priskirtas visiems dalyviams. Vėliau kiekvienam nariui galėsite pritaikyti individualų planą.',
+      placement: 'top',
+    },
+    {
+      target: '[data-tour="save"]',
+      content:
+        'Kai visi laukai užpildyti — paspauskite „Sukurti". Planas atsiras sąraše ir bus prieinamas kuriant treniruotes.',
+      placement: 'top',
+    },
+    {
+      target: '[data-tour="templates-list"]',
+      content:
+        'Čia matysite visus sukurtus planus. Kiekvieną galima redaguoti arba ištrinti. Kurdami naują treniruotę, planą pasirinksite iš išskleidžiamo sąrašo — laukai užsipildys automatiškai.',
+      placement: 'top',
+    },
+  ];
+
+  useEffect(() => {
+    if (!tourEnabled) return;
+    try {
+      if (localStorage.getItem(tourStorageKey)) return;
+    } catch {
+      return;
+    }
+    // Open the form so the field targets exist, then start the tour.
+    if (!formOpen) {
+      setCreating(true);
+      setForm(emptyForm);
+    }
+    const t = setTimeout(() => setRunTour(true), 100);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tourEnabled]);
+
+  const handleTourCallback = (data: CallBackProps) => {
+    const done: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
+    if (done.includes(data.status)) {
+      setRunTour(false);
+      try {
+        localStorage.setItem(tourStorageKey, '1');
+      } catch {
+        // ignore
+      }
+    }
+  };
+
   return (
     <div>
-      <PageTitle
-        title="Treniruočių planai"
-        description="Iš anksto paruošti šablonai — pasirinkę juos, greitai užpildysite naujos treniruotės laukus."
-        action={
-          !formOpen ? (
-            <button type="button" className="btn-primary" onClick={startCreate}>
-              <Plus className="h-4 w-4" /> Naujas planas
-            </button>
-          ) : undefined
-        }
-      />
+      {tourEnabled && (
+        <Joyride
+          steps={tourSteps}
+          run={runTour}
+          continuous
+          showProgress
+          showSkipButton
+          disableScrolling={false}
+          callback={handleTourCallback}
+          locale={{
+            back: 'Atgal',
+            close: 'Uždaryti',
+            last: 'Baigti',
+            next: 'Toliau',
+            skip: 'Praleisti',
+          }}
+          styles={{
+            options: {
+              primaryColor: '#5da004',
+              zIndex: 10000,
+            },
+          }}
+        />
+      )}
+      <div data-tour="page-title">
+        <PageTitle
+          title="Treniruočių planai"
+          description="Iš anksto paruošti šablonai — pasirinkę juos, greitai užpildysite naujos treniruotės laukus."
+          action={
+            !formOpen ? (
+              <button type="button" className="btn-primary" onClick={startCreate}>
+                <Plus className="h-4 w-4" /> Naujas planas
+              </button>
+            ) : undefined
+          }
+        />
+      </div>
 
       {formOpen && (
         <section className="surface mb-4 p-4">
@@ -203,7 +327,10 @@ export default function CoachTrainingTemplates() {
               <X className="h-4 w-4" />
             </button>
           </div>
-          <div className="mb-4 rounded-2xl border border-lime-200 bg-lime-50/60 p-3 dark:border-lime-900/60 dark:bg-lime-950/40">
+          <div
+            className="mb-4 rounded-2xl border border-lime-200 bg-lime-50/60 p-3 dark:border-lime-900/60 dark:bg-lime-950/40"
+            data-tour="ai-generator"
+          >
             <div className="mb-2 flex items-center gap-2 font-display text-sm font-bold text-lime-900 dark:text-lime-200">
               <Sparkles className="h-4 w-4" />
               Generuoti su AI
@@ -235,65 +362,75 @@ export default function CoachTrainingTemplates() {
 
           <form onSubmit={submit} className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-2">
-              <FormField
-                label="Plano pavadinimas"
-                required
-                placeholder="pvz. Sprinto technika — pagrindinė"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="sm:col-span-2"
-                hint="Rodomas tik jums pasirenkant planą — nariai jo nemato."
-              />
-              <FormField
-                label="Treniruotės pavadinimas"
-                placeholder="pvz. Sprinto technika"
-                value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
-                className="sm:col-span-2"
-              />
-              <TextareaField
-                label="Aprašymas"
-                placeholder="Ką nariai darys šioje treniruotėje?"
-                value={form.description}
-                onChange={(e) =>
-                  setForm({ ...form, description: e.target.value })
-                }
-                className="sm:col-span-2"
-              />
-              <FormField
-                label="Vieta"
-                placeholder="pvz. Centrinis takas — A aikštė"
-                value={form.location}
-                onChange={(e) => setForm({ ...form, location: e.target.value })}
-                className="sm:col-span-2"
-              />
-              <FormField
-                label="Pradžios laikas"
-                type="time"
-                value={form.startTime}
-                onChange={(e) => setForm({ ...form, startTime: e.target.value })}
-              />
+              <div data-tour="template-name" className="sm:col-span-2">
+                <FormField
+                  label="Plano pavadinimas"
+                  required
+                  placeholder="pvz. Sprinto technika — pagrindinė"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  hint="Rodomas tik jums pasirenkant planą — nariai jo nemato."
+                />
+              </div>
+              <div data-tour="training-title" className="sm:col-span-2">
+                <FormField
+                  label="Treniruotės pavadinimas"
+                  placeholder="pvz. Sprinto technika"
+                  value={form.title}
+                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                />
+              </div>
+              <div data-tour="description" className="sm:col-span-2">
+                <TextareaField
+                  label="Aprašymas"
+                  placeholder="Ką nariai darys šioje treniruotėje?"
+                  value={form.description}
+                  onChange={(e) =>
+                    setForm({ ...form, description: e.target.value })
+                  }
+                />
+              </div>
+              <div data-tour="location" className="sm:col-span-2">
+                <FormField
+                  label="Vieta"
+                  placeholder="pvz. Centrinis takas — A aikštė"
+                  value={form.location}
+                  onChange={(e) => setForm({ ...form, location: e.target.value })}
+                />
+              </div>
+              <div data-tour="times">
+                <FormField
+                  label="Pradžios laikas"
+                  type="time"
+                  value={form.startTime}
+                  onChange={(e) => setForm({ ...form, startTime: e.target.value })}
+                />
+              </div>
               <FormField
                 label="Pabaigos laikas"
                 type="time"
                 value={form.endTime}
                 onChange={(e) => setForm({ ...form, endTime: e.target.value })}
               />
-              <FormField
-                label="Talpa"
-                type="number"
-                min={1}
-                value={form.capacity}
-                onChange={(e) => setForm({ ...form, capacity: e.target.value })}
+              <div data-tour="capacity">
+                <FormField
+                  label="Talpa"
+                  type="number"
+                  min={1}
+                  value={form.capacity}
+                  onChange={(e) => setForm({ ...form, capacity: e.target.value })}
+                />
+              </div>
+            </div>
+            <div data-tour="default-plan">
+              <TextareaField
+                label="Bendras planas"
+                value={form.defaultPlan}
+                onChange={(e) => setForm({ ...form, defaultPlan: e.target.value })}
+                rows={10}
+                placeholder="Apšilimas · Pagrindinė dalis · Atsipalaidavimas · Pastabos…"
               />
             </div>
-            <TextareaField
-              label="Bendras planas"
-              value={form.defaultPlan}
-              onChange={(e) => setForm({ ...form, defaultPlan: e.target.value })}
-              rows={10}
-              placeholder="Apšilimas · Pagrindinė dalis · Atsipalaidavimas · Pastabos…"
-            />
             {error && (
               <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
             )}
@@ -305,6 +442,7 @@ export default function CoachTrainingTemplates() {
                 type="submit"
                 className="btn-primary"
                 disabled={submitting}
+                data-tour="save"
               >
                 <Save className="h-4 w-4" />
                 {editingId ? 'Išsaugoti' : 'Sukurti'}
@@ -314,6 +452,7 @@ export default function CoachTrainingTemplates() {
         </section>
       )}
 
+      <div data-tour="templates-list">
       {sortedTemplates.length === 0 ? (
         <EmptyState
           icon={ClipboardList}
@@ -369,6 +508,7 @@ export default function CoachTrainingTemplates() {
           ))}
         </div>
       )}
+      </div>
 
       <ConfirmDialog
         open={!!toDelete}

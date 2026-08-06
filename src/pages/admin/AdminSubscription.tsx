@@ -10,6 +10,11 @@ import {
   Sparkles,
   Trash2,
 } from "lucide-react";
+import Joyride, {
+  STATUS,
+  type CallBackProps,
+  type Step,
+} from "react-joyride";
 import { PageTitle } from "../../components/layout/PageTitle";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { Skeleton } from "../../components/ui/Skeleton";
@@ -83,6 +88,7 @@ export default function AdminSubscription() {
   const setSubscriptionStatus = useStore((s) => s.setSubscriptionStatus);
   const logout = useStore((s) => s.logout);
   const clubName = useStore((s) => s.authUser?.clubName ?? "");
+  const authUserId = useStore((s) => s.authUser?.id ?? "");
   const navigate = useNavigate();
 
   const [sub, setSub] = useState<ClubSubscription | null>(null);
@@ -94,6 +100,7 @@ export default function AdminSubscription() {
   >(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [runTour, setRunTour] = useState(false);
 
   const load = async () => {
     setError(null);
@@ -222,13 +229,94 @@ export default function AdminSubscription() {
     }
   };
 
+  const tourStorageKey = `admin_subscription_tour_seen:${authUserId || "anon"}`;
+  const tourSteps: Step[] = [
+    {
+      target: '[data-tour="page-title"]',
+      content:
+        "Prenumerata ir mokėjimai — čia valdote savo klubo Lumo prenumeratą ir matote, kada kartu bus nurašomas mokestis.",
+      placement: "bottom",
+      disableBeacon: true,
+    },
+    {
+      target: '[data-tour="subscription-card"]',
+      content:
+        "Prenumeratos kortelė. Rodo dabartinę būseną (bandomasis / aktyvi / vėluojantis mokėjimas / atšaukta), mokestį, kito mokėjimo datą ir kortelės informaciją. Bandomojo laikotarpio metu — kada baigsis nemokamas mėnuo.",
+    },
+    {
+      target: '[data-tour="subscription-actions"]',
+      content:
+        "Veiksmai. Priklausomai nuo būsenos, čia bus mygtukai atšaukti prenumeratą, ją pratęsti („Nebeatšaukti“), atnaujinti po atšaukimo arba apmokėti vėluojančią sąskaitą. Atšaukus, klubas dar veikia iki einamojo laikotarpio pabaigos.",
+    },
+    {
+      target: '[data-tour="payments-history"]',
+      content:
+        "Mokėjimų istorija. Visos jūsų mokėtos Lumo prenumeratos sąskaitos su suma, būsena ir nuoroda į Stripe sąskaitą (PDF galima atsisiųsti apskaitai).",
+      placement: "top",
+    },
+    {
+      target: '[data-tour="danger-zone"]',
+      content:
+        "Pavojinga zona — čia klubą galima ištrinti visam laikui. Šis veiksmas neatšaukiamas ir prieinamas tik atšaukus prenumeratą. Bus pašalinti visi nariai, treneriai, treniruotės ir rezultatai.",
+      placement: "top",
+    },
+  ];
+
+  useEffect(() => {
+    if (loading) return;
+    try {
+      if (!localStorage.getItem(tourStorageKey)) {
+        setRunTour(true);
+      }
+    } catch {
+      // localStorage blocked — skip silently.
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
+
+  const handleTourCallback = (data: CallBackProps) => {
+    const done: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
+    if (done.includes(data.status)) {
+      setRunTour(false);
+      try {
+        localStorage.setItem(tourStorageKey, "1");
+      } catch {
+        // ignore
+      }
+    }
+  };
+
   return (
     <div className="max-w-4xl">
-      <PageTitle
-        eyebrow="Administratorius"
-        title="Prenumerata ir mokėjimai"
-        description="Valdykite savo klubo Lumo prenumeratą, peržiūrėkite mokėjimų istoriją."
+      <Joyride
+        steps={tourSteps}
+        run={runTour}
+        continuous
+        showProgress
+        showSkipButton
+        disableScrolling={false}
+        callback={handleTourCallback}
+        locale={{
+          back: "Atgal",
+          close: "Uždaryti",
+          last: "Baigti",
+          next: "Toliau",
+          skip: "Praleisti",
+        }}
+        styles={{
+          options: {
+            primaryColor: "#5da004",
+            zIndex: 10000,
+          },
+        }}
       />
+      <div data-tour="page-title">
+        <PageTitle
+          eyebrow="Administratorius"
+          title="Prenumerata ir mokėjimai"
+          description="Valdykite savo klubo Lumo prenumeratą, peržiūrėkite mokėjimų istoriją."
+        />
+      </div>
 
       {loading && (
         <div className="space-y-4">
@@ -245,16 +333,18 @@ export default function AdminSubscription() {
 
       {!loading && sub && (
         <>
-          <SubscriptionCard
-            sub={sub}
-            busy={busy}
-            onCancel={() => setConfirmCancel(true)}
-            onResume={doResume}
-            onReactivate={doReactivate}
-            onPayInvoice={openPayInvoice}
-          />
+          <div data-tour="subscription-card">
+            <SubscriptionCard
+              sub={sub}
+              busy={busy}
+              onCancel={() => setConfirmCancel(true)}
+              onResume={doResume}
+              onReactivate={doReactivate}
+              onPayInvoice={openPayInvoice}
+            />
+          </div>
 
-          <section className="surface mt-6">
+          <section className="surface mt-6" data-tour="payments-history">
             <div className="border-b border-ink-100 p-4 dark:border-ink-800">
               <h2 className="flex items-center gap-2 font-display text-base font-bold">
                 <CreditCard className="h-4 w-4 text-ink-500" /> Mokėjimų istorija
@@ -271,11 +361,13 @@ export default function AdminSubscription() {
             )}
           </section>
 
-          <DangerZone
-            canDelete={sub.status === "cancelled"}
-            busy={busy === "delete"}
-            onDelete={() => setConfirmDelete(true)}
-          />
+          <div data-tour="danger-zone">
+            <DangerZone
+              canDelete={sub.status === "cancelled"}
+              busy={busy === "delete"}
+              onDelete={() => setConfirmDelete(true)}
+            />
+          </div>
         </>
       )}
 
@@ -459,7 +551,10 @@ function SubscriptionCard({
         )}
       </div>
 
-      <div className="mt-5 flex flex-wrap gap-2 border-t border-ink-100 pt-4 dark:border-ink-800">
+      <div
+        className="mt-5 flex flex-wrap gap-2 border-t border-ink-100 pt-4 dark:border-ink-800"
+        data-tour="subscription-actions"
+      >
         {pastDue && (
           <button
             type="button"

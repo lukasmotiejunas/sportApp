@@ -1,6 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Archive, ChevronRight, Plus, Trophy } from "lucide-react";
+import Joyride, {
+  ACTIONS,
+  EVENTS,
+  STATUS,
+  type CallBackProps,
+  type Step,
+} from "react-joyride";
 import { useStore } from "../../store/useStore";
 import { PageTitle } from "../../components/layout/PageTitle";
 import { StatusBadge } from "../../components/ui/StatusBadge";
@@ -17,6 +24,7 @@ export default function CoachLeaderboards() {
   const addCategory = useStore((s) => s.addLeaderboardCategory);
   const archive = useStore((s) => s.archiveLeaderboardCategory);
   const push = useStore((s) => s.pushToast);
+  const authUserId = useStore((s) => s.authUser?.id ?? "");
 
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<Omit<LeaderboardCategory, "id">>({
@@ -51,20 +59,147 @@ export default function CoachLeaderboards() {
     });
   };
 
+  const tourEnabled = true;
+  const tourStorageKey = `leaderboards_tour_seen:${authUserId || "anon"}`;
+  const [runTour, setRunTour] = useState(false);
+  const MODAL_FIRST_STEP = 3;
+  const tourSteps: Step[] = [
+    {
+      target: '[data-tour="page-title"]',
+      content:
+        "Sveiki! Rezultatų lentelės — čia sekami klubo narių pasiekimai pagal rungtis (pvz. 100 m sprintas, štangos spaudimas). Parodysime, kaip veikia kategorijos ir kaip sukurti pirmąją.",
+      placement: "bottom",
+      disableBeacon: true,
+    },
+    {
+      target: '[data-tour="new-btn"]',
+      content:
+        "Kiekviena rezultatų lentelė yra atskira kategorija — pvz. „100 m — vyrai“. Paspauskite šį mygtuką, kad sukurtumėte naują (tuoj automatiškai atversime formą, kad parodytume laukus).",
+    },
+    {
+      target: '[data-tour="list"]',
+      content:
+        "Čia matote visas aktyvias rezultatų lenteles. Paspaudę ant kortelės — pateksite į lentelės detales, kur galėsite pridėti narių rezultatus. Kortelėje matomas rezultatų skaičius ir šiuo metu geriausias pasiekimas.",
+      placement: "top",
+    },
+    {
+      target: '[data-tour="modal-name"]',
+      content:
+        "Pavadinimas — kaip vadinsis lentelė (pvz. „100 m — vyrai“ arba „Štangos spaudimas — visi“). Trumpas ir aiškus, kad nariai iš karto suprastų.",
+    },
+    {
+      target: '[data-tour="modal-event"]',
+      content:
+        "Rungtis — konkreti disciplina (pvz. „100 m“, „5 km“, „Štangos spaudimas“). Ši informacija rodoma kortelės viršuje.",
+    },
+    {
+      target: '[data-tour="modal-measurement"]',
+      content:
+        "Matavimo tipas — kokiais vienetais matuosite rezultatą: sekundės, minutės, metrai, kilometrai ar kilogramai. Nuo šio pasirinkimo priklauso, kaip rezultatai bus rodomi ir kaip skaičiuojama „geriausias“.",
+    },
+    {
+      target: '[data-tour="modal-direction"]',
+      content:
+        "Kryptis — kada rezultatas geresnis: kai jis mažesnis (bėgimo laikas) ar didesnis (svoris, atstumas). Sistema pati parenka pagal matavimo tipą, bet galite pakeisti.",
+    },
+    {
+      target: '[data-tour="modal-gender"]',
+      content:
+        "Lyties kategorija — ar lentelė bendra, ar atskira vyrams/moterims. Filtruoja, kurie nariai gali įrašyti rezultatą.",
+    },
+    {
+      target: '[data-tour="modal-submit"]',
+      content:
+        "Užpildę visus laukus paspauskite „Sukurti kategoriją“. Ji atsiras aktyvių lentelių sąraše ir bus paruošta rezultatams.",
+    },
+  ];
+
+  useEffect(() => {
+    if (!tourEnabled) return;
+    try {
+      if (localStorage.getItem(tourStorageKey)) return;
+    } catch {
+      return;
+    }
+    const t = setTimeout(() => setRunTour(true), 100);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tourEnabled]);
+
+  const handleTourCallback = (data: CallBackProps) => {
+    const done: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
+    if (done.includes(data.status)) {
+      setRunTour(false);
+      setOpen(false);
+      try {
+        localStorage.setItem(tourStorageKey, "1");
+      } catch {
+        // ignore
+      }
+      return;
+    }
+    if (data.type === EVENTS.STEP_AFTER) {
+      // Advancing into the modal: open it so the form fields exist.
+      if (
+        data.action === ACTIONS.NEXT &&
+        data.index === MODAL_FIRST_STEP - 1
+      ) {
+        setOpen(true);
+      }
+      // Stepping back out of the modal: close it again.
+      if (
+        data.action === ACTIONS.PREV &&
+        data.index === MODAL_FIRST_STEP
+      ) {
+        setOpen(false);
+      }
+    }
+  };
+
   return (
     <div>
-      <PageTitle
-        eyebrow={eyebrow}
-        title="Rezultatų lentelės"
-        description="Kurkite kategorijas ir tvarkykite rezultatus."
-        action={
-          <button className="btn-primary" onClick={() => setOpen(true)}>
-            <Plus className="h-4 w-4" /> Nauja rezultatų lentelė
-          </button>
-        }
-      />
+      {tourEnabled && (
+        <Joyride
+          steps={tourSteps}
+          run={runTour}
+          continuous
+          showProgress
+          showSkipButton
+          disableScrolling={false}
+          callback={handleTourCallback}
+          locale={{
+            back: "Atgal",
+            close: "Uždaryti",
+            last: "Baigti",
+            next: "Toliau",
+            skip: "Praleisti",
+          }}
+          styles={{
+            options: {
+              primaryColor: "#5da004",
+              zIndex: 10000,
+            },
+          }}
+        />
+      )}
+      <div data-tour="page-title">
+        <PageTitle
+          eyebrow={eyebrow}
+          title="Rezultatų lentelės"
+          description="Kurkite kategorijas ir tvarkykite rezultatus."
+          action={
+            <button
+              className="btn-primary"
+              onClick={() => setOpen(true)}
+              data-tour="new-btn"
+            >
+              <Plus className="h-4 w-4" /> Nauja rezultatų lentelė
+            </button>
+          }
+        />
+      </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" data-tour="list">
         {active.map((c) => {
           const total = results.filter((r) => r.categoryId === c.id).length;
           const top = results
@@ -161,77 +296,91 @@ export default function CoachLeaderboards() {
             <button className="btn-ghost" onClick={() => setOpen(false)}>
               Atšaukti
             </button>
-            <button className="btn-primary" onClick={create}>
+            <button
+              className="btn-primary"
+              onClick={create}
+              data-tour="modal-submit"
+            >
               Sukurti kategoriją
             </button>
           </>
         }
       >
         <div className="grid gap-3 sm:grid-cols-2">
-          <FormField
-            label="Pavadinimas"
-            required
-            value={draft.name}
-            onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-          />
-          <FormField
-            label="Rungtis"
-            required
-            placeholder="pvz. 100 m"
-            value={draft.event}
-            onChange={(e) => setDraft({ ...draft, event: e.target.value })}
-          />
-          <SelectField
-            label="Matavimo tipas"
-            value={draft.measurementType}
-            onChange={(e) => {
-              const v = e.target
-                .value as LeaderboardCategory["measurementType"];
-              const unit =
-                v === "seconds"
-                  ? "s"
-                  : v === "distance_km"
-                    ? "km"
-                    : v === "distance_m"
-                      ? "m"
-                      : v === "minutes"
-                        ? "min"
-                        : "kg";
-              setDraft({
-                ...draft,
-                measurementType: v,
-                unit,
-                lowerIsBetter: v === "seconds" || v === "minutes",
-              });
-            }}
-          >
-            <option value="seconds">Sekundės</option>
-            <option value="distance_km">Atstumas (km)</option>
-            <option value="distance_m">Atstumas (m)</option>
-            <option value="minutes">Minutės</option>
-            <option value="kg">kg</option>
-          </SelectField>
-          <SelectField
-            label="Kryptis"
-            value={draft.lowerIsBetter ? "lower" : "higher"}
-            onChange={(e) =>
-              setDraft({ ...draft, lowerIsBetter: e.target.value === "lower" })
-            }
-          >
-            <option value="lower">Mažiau — geriau</option>
-            <option value="higher">Daugiau — geriau</option>
-          </SelectField>
-          <SelectField
-            label="Lyties kategorija"
-            value={draft.genderCategory}
-            onChange={(e) =>
-              setDraft({ ...draft, genderCategory: e.target.value as any })
-            }
-          >
-            <option value="all">Visi</option>
-            <option value="male">Vyrai</option>
-            <option value="female">Moterys</option>
-          </SelectField>
+          <div data-tour="modal-name">
+            <FormField
+              label="Pavadinimas"
+              required
+              value={draft.name}
+              onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+            />
+          </div>
+          <div data-tour="modal-event">
+            <FormField
+              label="Rungtis"
+              required
+              placeholder="pvz. 100 m"
+              value={draft.event}
+              onChange={(e) => setDraft({ ...draft, event: e.target.value })}
+            />
+          </div>
+          <div data-tour="modal-measurement">
+            <SelectField
+              label="Matavimo tipas"
+              value={draft.measurementType}
+              onChange={(e) => {
+                const v = e.target
+                  .value as LeaderboardCategory["measurementType"];
+                const unit =
+                  v === "seconds"
+                    ? "s"
+                    : v === "distance_km"
+                      ? "km"
+                      : v === "distance_m"
+                        ? "m"
+                        : v === "minutes"
+                          ? "min"
+                          : "kg";
+                setDraft({
+                  ...draft,
+                  measurementType: v,
+                  unit,
+                  lowerIsBetter: v === "seconds" || v === "minutes",
+                });
+              }}
+            >
+              <option value="seconds">Sekundės</option>
+              <option value="distance_km">Atstumas (km)</option>
+              <option value="distance_m">Atstumas (m)</option>
+              <option value="minutes">Minutės</option>
+              <option value="kg">kg</option>
+            </SelectField>
+          </div>
+          <div data-tour="modal-direction">
+            <SelectField
+              label="Kryptis"
+              value={draft.lowerIsBetter ? "lower" : "higher"}
+              onChange={(e) =>
+                setDraft({ ...draft, lowerIsBetter: e.target.value === "lower" })
+              }
+            >
+              <option value="lower">Mažiau — geriau</option>
+              <option value="higher">Daugiau — geriau</option>
+            </SelectField>
+          </div>
+          <div data-tour="modal-gender">
+            <SelectField
+              label="Lyties kategorija"
+              value={draft.genderCategory}
+              onChange={(e) =>
+                setDraft({ ...draft, genderCategory: e.target.value as any })
+              }
+            >
+              <option value="all">Visi</option>
+              <option value="male">Vyrai</option>
+              <option value="female">Moterys</option>
+            </SelectField>
+          </div>
         </div>
       </Modal>
     </div>

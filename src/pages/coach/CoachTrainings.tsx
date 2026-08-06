@@ -1,6 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CalendarPlus, Copy, Pencil, Plus, Trash2 } from 'lucide-react';
+import Joyride, {
+  STATUS,
+  type CallBackProps,
+  type Step,
+} from 'react-joyride';
 import { useStore } from '../../store/useStore';
 import { PageTitle } from '../../components/layout/PageTitle';
 import { StatusBadge } from '../../components/ui/StatusBadge';
@@ -20,14 +25,16 @@ const timeFilters = [
 const statusLabel = { open: 'Atvira', closed: 'Uždaryta', cancelled: 'Atšaukta' } as const;
 
 export default function CoachTrainings() {
-  const { base, eyebrow } = useTrainingsBase();
+  const { base, eyebrow, isAdmin } = useTrainingsBase();
   const trainings = useStore((s) => s.trainingSessions);
   const coaches = useStore((s) => s.coaches);
   const duplicate = useStore((s) => s.duplicateTraining);
   const remove = useStore((s) => s.deleteTraining);
   const push = useStore((s) => s.pushToast);
+  const authUserId = useStore((s) => s.authUser?.id ?? '');
   const [time, setTime] = useState<(typeof timeFilters)[number]['id']>('upcoming');
   const [toDelete, setToDelete] = useState<string | null>(null);
+  const [runTour, setRunTour] = useState(false);
   const today = todayIso();
 
   const filtered = useMemo(() => {
@@ -41,20 +48,104 @@ export default function CoachTrainings() {
       .sort((a, b) => (a.date + a.startTime).localeCompare(b.date + b.startTime));
   }, [trainings, time, today]);
 
+  const tourEnabled = !isAdmin;
+  const tourStorageKey = `coach_trainings_tour_seen:${authUserId || 'anon'}`;
+  const tourSteps: Step[] = [
+    {
+      target: '[data-tour="page-title"]',
+      content:
+        'Treniruotės — čia matote visų klubo treniruočių sąrašą ir galite jas valdyti: kurti naujas, redaguoti, kopijuoti pasikartojančias arba peržiūrėti dalyvių sąrašą.',
+      placement: 'bottom',
+      disableBeacon: true,
+    },
+    {
+      target: '[data-tour="create"]',
+      content:
+        'Naujos treniruotės kūrimas. Paspauskite čia, kad sukurtumėte naują treniruotę — galėsite užpildyti laukus rankiniu būdu arba pasirinkti anksčiau sukurtą planą, ir laukai užsipildys automatiškai.',
+    },
+    {
+      target: '[data-tour="filters"]',
+      content:
+        'Laiko filtrai. „Artėjančios“ — būsimos treniruotės (pagal nutylėjimą). „Šiandien“ — tik šios dienos. „Ankstesnės“ — jau įvykusios. „Visos“ — pilna istorija.',
+    },
+    {
+      target: '[data-tour="list"]',
+      content:
+        'Treniruočių sąrašas. Kiekvienoje eilutėje — pavadinimas, priskirtas treneris, data ir laikas, talpa (užsiregistravę / bendra) ir būsena (Atvira / Uždaryta / Atšaukta). Talpos spalva parodo užpildymą: žalia — laisva, geltona — beveik pilna, raudona — pilna.',
+      placement: 'top',
+    },
+    {
+      target: '[data-tour="actions"]',
+      content:
+        'Veiksmai. „Atidaryti“ — pereiti į treniruotės detales su dalyvių sąrašu ir individualiais planais. Pieštukas — redaguoti. Kopijos ikona — sukurti identišką treniruotę (patogu pasikartojančioms). Šiukšlinė — ištrinti (užsiregistravę nariai neteks vietos).',
+      placement: 'left',
+    },
+  ];
+
+  useEffect(() => {
+    if (!tourEnabled) return;
+    try {
+      if (!localStorage.getItem(tourStorageKey)) {
+        setRunTour(true);
+      }
+    } catch {
+      // localStorage blocked — skip silently.
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tourEnabled]);
+
+  const handleTourCallback = (data: CallBackProps) => {
+    const done: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
+    if (done.includes(data.status)) {
+      setRunTour(false);
+      try {
+        localStorage.setItem(tourStorageKey, '1');
+      } catch {
+        // ignore
+      }
+    }
+  };
+
   return (
     <div>
-      <PageTitle
-        title="Treniruotės"
-        description="Valdykite visas klubo treniruotes — kurkite, redaguokite, kopijuokite ir peržiūrėkite dalyvių sąrašą."
-        eyebrow={eyebrow}
-        action={
-          <Link to={`${base}/new`} className="btn-primary">
-            <Plus className="h-4 w-4" /> Sukurti treniruotę
-          </Link>
-        }
-      />
+      {tourEnabled && (
+        <Joyride
+          steps={tourSteps}
+          run={runTour}
+          continuous
+          showProgress
+          showSkipButton
+          disableScrolling={false}
+          callback={handleTourCallback}
+          locale={{
+            back: 'Atgal',
+            close: 'Uždaryti',
+            last: 'Baigti',
+            next: 'Toliau',
+            skip: 'Praleisti',
+          }}
+          styles={{
+            options: {
+              primaryColor: '#5da004',
+              zIndex: 10000,
+            },
+          }}
+        />
+      )}
+      <div data-tour="page-title">
+        <PageTitle
+          title="Treniruotės"
+          description="Valdykite visas klubo treniruotes — kurkite, redaguokite, kopijuokite ir peržiūrėkite dalyvių sąrašą."
+          eyebrow={eyebrow}
+          action={
+            <Link to={`${base}/new`} className="btn-primary" data-tour="create">
+              <Plus className="h-4 w-4" /> Sukurti treniruotę
+            </Link>
+          }
+        />
+      </div>
 
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="mb-4 flex flex-wrap gap-2" data-tour="filters">
         {timeFilters.map((tf) => (
           <FilterChip key={tf.id} active={time === tf.id} onClick={() => setTime(tf.id)}>
             {tf.label}
@@ -74,7 +165,10 @@ export default function CoachTrainings() {
           }
         />
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-ink-100 dark:border-ink-800">
+        <div
+          className="overflow-hidden rounded-2xl border border-ink-100 dark:border-ink-800"
+          data-tour="list"
+        >
           <table className="hidden w-full text-sm md:table">
             <thead className="bg-ink-50 text-left text-xs uppercase tracking-wider text-ink-500 dark:bg-ink-900">
               <tr>
@@ -115,7 +209,10 @@ export default function CoachTrainings() {
                       </StatusBadge>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-1">
+                      <div
+                        className="flex items-center justify-end gap-1"
+                        data-tour="actions"
+                      >
                         <Link to={`${base}/${t.id}`} className="btn-ghost h-8 px-2 text-xs">Atidaryti</Link>
                         <Link to={`${base}/${t.id}/edit`} className="btn-ghost h-8 px-2 text-xs">
                           <Pencil className="h-3.5 w-3.5" />

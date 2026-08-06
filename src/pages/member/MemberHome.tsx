@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Zap,
 } from "lucide-react";
+import Joyride, { STATUS, type CallBackProps, type Step } from "react-joyride";
 import { useStore, useCurrentMember } from "../../store/useStore";
 import { PaymentStatusBanner } from "../../components/payments/PaymentStatusBanner";
 import { StatusBadge } from "../../components/ui/StatusBadge";
@@ -34,7 +35,9 @@ export default function MemberHome() {
   const coaches = useStore((s) => s.coaches);
   const membershipPlans = useStore((s) => s.membershipPlans);
   const refreshMyBilling = useStore((s) => s.refreshMyBilling);
+  const authUserId = useStore((s) => s.authUser?.id ?? "");
   const plan = membershipPlans.find((p) => p.id === member.membershipPlanId);
+  const [runTour, setRunTour] = useState(false);
 
   // Pull real Stripe status so the banner doesn't lie when a webhook was
   // missed between "subscription paid" and "our DB updated".
@@ -83,10 +86,130 @@ export default function MemberHome() {
   });
   const weeklySessions = weeklyData.filter((d) => d.attended).length;
 
+  const showPaymentBanner =
+    member.paymentStatus !== "paid" || daysUntil(member.paymentDueDate) <= 7;
+
+  const tourStorageKey = `member_home_tour_seen:${authUserId || "anon"}`;
+  const tourSteps: Step[] = [
+    {
+      target: '[data-tour="hero"]',
+      content:
+        "Sveiki! Čia — jūsų pradžios ekranas. Viršuje matote savo planą arba kreditų likutį, apačioje — savaitės treniruočių apžvalgą.",
+      placement: "bottom",
+      disableBeacon: true,
+    },
+    {
+      target: '[data-tour="week-grid"]',
+      content:
+        "Savaitės tinklelis. Kiekvienas kvadratėlis — savaitės diena. Žalias su varnele — dalyvavote. Šviesus — treniruotė buvo, bet praleidote. Punktyrinis — poilsio diena. Ryškiu žaliu apvadu — šiandien.",
+    },
+    {
+      target: '[data-tour="month-btn"]',
+      content:
+        "„Mėnuo“ mygtukas atveria pilną mėnesio kalendorių — pamatysite savo lankomumo istoriją per visą mėnesį ir kiek treniruočių praleidote.",
+    },
+    ...(showPaymentBanner
+      ? [
+          {
+            target: '[data-tour="payment-banner"]',
+            content:
+              "Mokėjimo priminimas. Šis pranešimas pasirodo, kai artėja mokėjimo diena arba mokėjimas vėluoja. Paspauskite, kad pereitumėte į mokėjimų puslapį ir apmokėtumėte.",
+          } as Step,
+        ]
+      : []),
+    ...(next
+      ? [
+          {
+            target: '[data-tour="next-training"]',
+            content:
+              "Artimiausia treniruotė. Rodo, į ką jau užsiregistravote, arba pirmąją būsimą treniruotę. Paspaudę pateksite į detales, kur galėsite užsiregistruoti arba peržiūrėti planą.",
+          } as Step,
+        ]
+      : []),
+    {
+      target: '[data-tour="nav-home"]',
+      content:
+        "Pradžia — šis puslapis. Greita apžvalga, ką turite šią savaitę ir kokia jūsų mokėjimų būsena.",
+      placement: "top",
+    },
+    {
+      target: '[data-tour="nav-trainings"]',
+      content:
+        "Treniruotės — visos jūsų klubo treniruotės. Čia galite peržiūrėti tvarkaraštį ir užsiregistruoti į būsimas treniruotes.",
+      placement: "top",
+    },
+    {
+      target: '[data-tour="nav-leaderboards"]',
+      content:
+        "Rezultatai — klubo rezultatų lentelės (pvz. 100 m sprintas, štangos spaudimas). Pamatykite savo pasiekimus ir kaip lyginatės su kitais nariais.",
+      placement: "top",
+    },
+    {
+      target: '[data-tour="nav-payments"]',
+      content:
+        "Mokėjimai — jūsų mokėjimų istorija ir kito mokėjimo data. Čia taip pat galite atšaukti arba pratęsti prenumeratą.",
+      placement: "top",
+    },
+    {
+      target: '[data-tour="nav-profile"]',
+      content:
+        "Profilis — jūsų asmeniniai duomenys, nuotrauka ir slaptažodis. Čia keičiate savo informaciją bei pranešimų nustatymus.",
+      placement: "top",
+    },
+  ];
+
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem(tourStorageKey)) {
+        setRunTour(true);
+      }
+    } catch {
+      // localStorage blocked — skip silently.
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleTourCallback = (data: CallBackProps) => {
+    const done: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
+    if (done.includes(data.status)) {
+      setRunTour(false);
+      try {
+        localStorage.setItem(tourStorageKey, "1");
+      } catch {
+        // ignore
+      }
+    }
+  };
+
   return (
     <div className="space-y-4">
+      <Joyride
+        steps={tourSteps}
+        run={runTour}
+        continuous
+        showProgress
+        showSkipButton
+        disableScrolling={false}
+        callback={handleTourCallback}
+        locale={{
+          back: "Atgal",
+          close: "Uždaryti",
+          last: "Baigti",
+          next: "Toliau",
+          skip: "Praleisti",
+        }}
+        styles={{
+          options: {
+            primaryColor: "#5da004",
+            zIndex: 10000,
+          },
+        }}
+      />
       {/* Hero */}
-      <section className="hero-gradient rounded-3xl p-5 text-white shadow-pop">
+      <section
+        className="hero-gradient rounded-3xl p-5 text-white shadow-pop"
+        data-tour="hero"
+      >
         <div className="flex items-center gap-3">
           <Avatar
             name={member.name}
@@ -137,6 +260,7 @@ export default function MemberHome() {
               <button
                 type="button"
                 onClick={() => setCalendarOpen(true)}
+                data-tour="month-btn"
                 className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/[0.06] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-lime-200 transition-colors hover:border-lime-400/40 hover:bg-white/[0.1]"
                 aria-label="Atidaryti mėnesio treniruočių kalendorių"
               >
@@ -145,7 +269,7 @@ export default function MemberHome() {
               </button>
             </div>
           </div>
-          <div className="grid grid-cols-7 gap-1.5">
+          <div className="grid grid-cols-7 gap-1.5" data-tour="week-grid">
             {weeklyData.map((d) => (
               <div
                 key={d.iso}
@@ -192,20 +316,21 @@ export default function MemberHome() {
       </section>
 
       {/* Payment status — show only if unpaid or ≤7 days until next payment */}
-      {(member.paymentStatus !== "paid" ||
-        daysUntil(member.paymentDueDate) <= 7) && (
-        <PaymentStatusBanner
-          status={member.paymentStatus}
-          amount={formatCurrency(plan?.monthlyFee ?? 49)}
-          dueDate={formatDateSlash(member.paymentDueDate)}
-          actionLabel="Peržiūrėti mokėjimus"
-          onAction={() => (window.location.href = "/member/payments")}
-        />
+      {showPaymentBanner && (
+        <div data-tour="payment-banner">
+          <PaymentStatusBanner
+            status={member.paymentStatus}
+            amount={formatCurrency(plan?.monthlyFee ?? 49)}
+            dueDate={formatDateSlash(member.paymentDueDate)}
+            actionLabel="Peržiūrėti mokėjimus"
+            onAction={() => (window.location.href = "/member/payments")}
+          />
+        </div>
       )}
 
       {/* Next training */}
       {next && (
-        <section className="surface p-4">
+        <section className="surface p-4" data-tour="next-training">
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="grid h-8 w-8 place-items-center rounded-xl bg-ink-100 text-ink-800 dark:bg-ink-800 dark:text-ink-100">
