@@ -106,7 +106,7 @@ export default function AdminDashboard() {
       </div>
 
       <div className="mt-4 grid gap-3 lg:grid-cols-3">
-        <section className="surface p-4 lg:col-span-2">
+        <section className="surface min-w-0 p-4 lg:col-span-2">
           <div className="mb-3 flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">
@@ -163,7 +163,7 @@ export default function AdminDashboard() {
           </div>
         </section>
 
-        <section className="surface p-4">
+        <section className="surface min-w-0 p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">
             Mėnesio pajamos
           </p>
@@ -200,7 +200,7 @@ export default function AdminDashboard() {
       </div>
 
       <div className="mt-4 grid gap-3 lg:grid-cols-2">
-        <section className="surface p-4">
+        <section className="surface min-w-0 p-4">
           <h2 className="mb-3 font-display text-base font-bold">
             Šiandienos treniruotės
           </h2>
@@ -241,7 +241,7 @@ export default function AdminDashboard() {
           )}
         </section>
 
-        <section className="surface p-4">
+        <section className="surface min-w-0 p-4">
           <h2 className="mb-3 font-display text-base font-bold">
             Reikia dėmesio dėl mokėjimų
           </h2>
