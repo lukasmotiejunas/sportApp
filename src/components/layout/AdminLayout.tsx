@@ -11,7 +11,10 @@ import {
   BarChart3,
   Trophy,
   ClipboardList,
+  Menu,
+  X,
 } from "lucide-react";
+import { useState } from "react";
 import { UserMenu } from "../ui/UserMenu";
 import { ToastContainer } from "../ui/ToastContainer";
 import { BackgroundLogo } from "./BackgroundLogo";
@@ -31,6 +34,7 @@ const items = [
 ];
 
 export function AdminLayout() {
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const clubName = useStore((s) => s.authUser?.clubName ?? "");
   const clubLogo = useStore((s) => s.authUser?.clubLogo ?? null);
   const logoSrc = clubLogo || "/lumo-logo.png";
@@ -52,26 +56,7 @@ export function AdminLayout() {
               Admin
             </span>
           </div>
-          <nav className="flex flex-col gap-1">
-            {items.map((it) => (
-              <NavLink
-                key={it.to}
-                to={it.to}
-                end={it.end}
-                className={({ isActive }) =>
-                  clsx(
-                    "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors",
-                    isActive
-                      ? "bg-ink-900 text-white dark:bg-lime-400 dark:text-ink-950"
-                      : "text-ink-600 hover:bg-ink-100 dark:text-ink-300 dark:hover:bg-ink-800",
-                  )
-                }
-              >
-                <it.icon className="h-4 w-4" />
-                {it.label}
-              </NavLink>
-            ))}
-          </nav>
+          <SidebarNav />
           <div className="mt-auto space-y-2">
             <UserMenu variant="full" />
           </div>
@@ -80,6 +65,18 @@ export function AdminLayout() {
         <div className="flex flex-1 flex-col min-w-0">
           <header className="sticky top-0 z-20 border-b border-ink-100 bg-white/85 backdrop-blur dark:border-ink-800 dark:bg-ink-950/85 md:hidden">
             <div className="flex items-center gap-2 px-4 py-3">
+              <button
+                type="button"
+                onClick={() => setMobileNavOpen((v) => !v)}
+                className="grid h-9 w-9 place-items-center rounded-full border border-ink-200 dark:border-ink-700"
+                aria-label="Perjungti naršymą"
+              >
+                {mobileNavOpen ? (
+                  <X className="h-4 w-4" />
+                ) : (
+                  <Menu className="h-4 w-4" />
+                )}
+              </button>
               <div className="flex items-center gap-2 font-display text-base font-bold text-ink-900 dark:text-lime-400">
                 {clubName}
                 <span className="rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-ink-600 dark:bg-ink-800 dark:text-ink-300">
@@ -90,26 +87,11 @@ export function AdminLayout() {
                 <UserMenu />
               </div>
             </div>
-            <div className="flex gap-1 border-t border-ink-100 p-2 dark:border-ink-800">
-              {items.map((it) => (
-                <NavLink
-                  key={it.to}
-                  to={it.to}
-                  end={it.end}
-                  className={({ isActive }) =>
-                    clsx(
-                      "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-semibold",
-                      isActive
-                        ? "bg-ink-900 text-white dark:bg-lime-400 dark:text-ink-950"
-                        : "text-ink-600 hover:bg-ink-100 dark:text-ink-300",
-                    )
-                  }
-                >
-                  <it.icon className="h-3.5 w-3.5" />
-                  {it.label}
-                </NavLink>
-              ))}
-            </div>
+            {mobileNavOpen && (
+              <div className="border-t border-ink-100 p-3 dark:border-ink-800">
+                <SidebarNav onNavigate={() => setMobileNavOpen(false)} />
+              </div>
+            )}
           </header>
 
           <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-4 md:py-8">
@@ -119,5 +101,31 @@ export function AdminLayout() {
       </div>
       <ToastContainer />
     </div>
+  );
+}
+
+function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
+  return (
+    <nav className="flex flex-col gap-1">
+      {items.map((it) => (
+        <NavLink
+          key={it.to}
+          to={it.to}
+          end={it.end}
+          onClick={onNavigate}
+          className={({ isActive }) =>
+            clsx(
+              "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors",
+              isActive
+                ? "bg-ink-900 text-white dark:bg-lime-400 dark:text-ink-950"
+                : "text-ink-600 hover:bg-ink-100 dark:text-ink-300 dark:hover:bg-ink-800",
+            )
+          }
+        >
+          <it.icon className="h-4 w-4" />
+          {it.label}
+        </NavLink>
+      ))}
+    </nav>
   );
 }
