@@ -7,7 +7,7 @@ import { StatusBadge } from '../../components/ui/StatusBadge';
 import { FilterChip } from '../../components/ui/FilterChip';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
-import { formatDateShort, todayIso, relativeDay } from '../../utils/dates';
+import { formatDateSlash, todayIso, relativeDay } from '../../utils/dates';
 import { useTrainingsBase } from '../../utils/roleContext';
 
 const timeFilters = [
@@ -98,7 +98,7 @@ export default function CoachTrainings() {
                     </td>
                     <td className="px-4 py-3 text-ink-600 dark:text-ink-300">{coach?.name.replace('Coach ', '') ?? 'Nenurodyta'}</td>
                     <td className="px-4 py-3 text-ink-600 dark:text-ink-300">
-                      <div>{formatDateShort(t.date)}</div>
+                      <div>{formatDateSlash(t.date)}</div>
                       <div className="text-xs">{t.startTime}–{t.endTime}</div>
                     </td>
                     <td className="px-4 py-3">

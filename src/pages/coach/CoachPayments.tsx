@@ -8,7 +8,7 @@ import { StatusBadge } from "../../components/ui/StatusBadge";
 import { Avatar } from "../../components/ui/Avatar";
 import { DashboardMetricCard } from "../../components/dashboard/DashboardMetricCard";
 import { formatCurrency } from "../../utils/format";
-import { formatDateShort } from "../../utils/dates";
+import { formatDateSlash } from "../../utils/dates";
 import type { PaymentStatus } from "../../types";
 import { FilterChip } from "../../components/ui/FilterChip";
 
@@ -247,7 +247,7 @@ export default function CoachPayments() {
                         {plan ? `${plan.name} · ${formatCurrency(plan.monthlyFee)}` : "Be plano"}
                       </p>
                       <p className="text-xs text-ink-500">
-                        Iki {formatDateShort(m.paymentDueDate)}
+                        Iki {formatDateSlash(m.paymentDueDate)}
                       </p>
                     </div>
                     <StatusBadge tone={paymentTone[m.paymentStatus]} dot>

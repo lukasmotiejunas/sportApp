@@ -8,7 +8,7 @@ import { LeaderboardRow } from '../../components/leaderboard/LeaderboardRow';
 import { Modal } from '../../components/ui/Modal';
 import { FormField, SelectField, TextareaField } from '../../components/ui/FormField';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
-import { formatDateShort, todayIso } from '../../utils/dates';
+import { formatDateSlash, todayIso } from '../../utils/dates';
 import { formatResult } from '../../utils/format';
 import { useLeaderboardsBase } from '../../utils/roleContext';
 import type { LeaderboardResult } from '../../types';
@@ -127,7 +127,7 @@ export default function CoachLeaderboardDetail() {
                     <td className="px-4 py-3 font-display text-base font-bold tabular-nums">
                       {formatResult(r.value, category)}
                     </td>
-                    <td className="px-4 py-3 text-ink-600 dark:text-ink-300">{formatDateShort(r.date)}</td>
+                    <td className="px-4 py-3 text-ink-600 dark:text-ink-300">{formatDateSlash(r.date)}</td>
                     <td className="px-4 py-3 text-right">
                       <button className="btn-ghost h-8 px-2 text-xs" onClick={() => setEditing(r)} aria-label="Redaguoti rezultatą">
                         <Pencil className="h-3.5 w-3.5" />

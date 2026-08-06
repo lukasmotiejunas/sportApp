@@ -10,7 +10,7 @@ import { useStore } from "../../store/useStore";
 import { PageTitle } from "../../components/layout/PageTitle";
 import { Avatar } from "../../components/ui/Avatar";
 import { StatusBadge } from "../../components/ui/StatusBadge";
-import { formatDateShort, todayIso } from "../../utils/dates";
+import { formatDateSlash, todayIso } from "../../utils/dates";
 import { formatCurrency, formatResult } from "../../utils/format";
 
 const paymentTone = {
@@ -87,7 +87,7 @@ export default function CoachMemberDetail() {
                 {paymentLabel[member.paymentStatus]}
               </StatusBadge>
               <StatusBadge tone="neutral">
-                Narys nuo {formatDateShort(member.memberSince)}
+                Narys nuo {formatDateSlash(member.memberSince)}
               </StatusBadge>
               <StatusBadge tone="info">
                 {formatCurrency(plan?.monthlyFee ?? 0)} / mėn.
@@ -158,7 +158,7 @@ export default function CoachMemberDetail() {
                   <div>
                     <p className="text-sm font-semibold">{t.title}</p>
                     <p className="text-xs text-ink-500">
-                      {formatDateShort(t.date)} · {t.startTime}
+                      {formatDateSlash(t.date)} · {t.startTime}
                     </p>
                   </div>
                   <Link
@@ -189,7 +189,7 @@ export default function CoachMemberDetail() {
                   <div>
                     <p className="text-sm font-semibold">{t.title}</p>
                     <p className="text-xs text-ink-500">
-                      {formatDateShort(t.date)} · {t.startTime}
+                      {formatDateSlash(t.date)} · {t.startTime}
                     </p>
                   </div>
                   <Link

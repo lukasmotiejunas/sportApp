@@ -3,7 +3,7 @@ import { ArrowDown, ArrowUp, Minus } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
 import type { LeaderboardCategory, LeaderboardResult, Member } from '../../types';
 import { formatResult } from '../../utils/format';
-import { formatDateShort } from '../../utils/dates';
+import { formatDateSlash } from '../../utils/dates';
 
 type Props = {
   rank: number;
@@ -15,7 +15,7 @@ type Props = {
   formatDate?: (iso: string) => string;
 };
 
-export function LeaderboardRow({ rank, result, member, category, movement, highlight, formatDate = formatDateShort }: Props) {
+export function LeaderboardRow({ rank, result, member, category, movement, highlight, formatDate = formatDateSlash }: Props) {
   return (
     <div
       className={clsx(

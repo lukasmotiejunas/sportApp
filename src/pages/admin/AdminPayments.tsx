@@ -8,7 +8,7 @@ import { Avatar } from "../../components/ui/Avatar";
 import { ConnectSection } from "../../components/admin/ConnectSection";
 import { DashboardMetricCard } from "../../components/dashboard/DashboardMetricCard";
 import { formatCurrency } from "../../utils/format";
-import { formatDateShort } from "../../utils/dates";
+import { formatDateSlash } from "../../utils/dates";
 import { FilterChip } from "../../components/ui/FilterChip";
 import {
   fetchClubPaymentsApi,
@@ -295,7 +295,7 @@ export default function AdminPayments() {
                             {inv.number ?? "—"}
                           </td>
                           <td className="py-3 text-ink-600 dark:text-ink-300">
-                            {formatDateShort(inv.paidAt ?? inv.createdDate)}
+                            {formatDateSlash(inv.paidAt ?? inv.createdDate)}
                           </td>
                           <td className="py-3 font-semibold tabular-nums">
                             {formatCurrency(
@@ -358,7 +358,7 @@ export default function AdminPayments() {
                           </p>
                           <p className="text-xs text-ink-500">
                             {inv.number ?? "Sąskaita"} ·{" "}
-                            {formatDateShort(inv.paidAt ?? inv.createdDate)}
+                            {formatDateSlash(inv.paidAt ?? inv.createdDate)}
                           </p>
                           <p className="text-xs text-ink-500">
                             {formatCurrency(

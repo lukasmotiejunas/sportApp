@@ -36,13 +36,6 @@ export function addDays(iso: string, days: number): string {
   return isoDate(d);
 }
 
-export function formatDateShort(iso: string): string {
-  if (!iso) return '—';
-  const d = new Date(iso + 'T00:00:00');
-  if (Number.isNaN(d.getTime())) return '—';
-  return `${DAY_NAMES[d.getDay()]}, ${d.getDate()} ${MONTH_NAMES[d.getMonth()].slice(0, 3)}`;
-}
-
 export function formatDateSlash(iso: string): string {
   if (!iso) return '—';
   const d = new Date(iso + 'T00:00:00');
@@ -74,7 +67,7 @@ export function relativeDay(iso: string, now = new Date()): string {
     (d.getTime() - new Date(today + 'T00:00:00').getTime()) / 86400000,
   );
   if (diff > 1 && diff < 7) return DAY_NAMES_LONG[d.getDay()];
-  return formatDateShort(iso);
+  return formatDateSlash(iso);
 }
 
 export function isPast(iso: string, now = new Date()): boolean {

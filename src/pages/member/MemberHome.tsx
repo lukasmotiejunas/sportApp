@@ -21,7 +21,7 @@ import {
   isoDate,
   relativeDay,
   todayIso,
-  formatDateShort,
+  formatDateSlash,
 } from "../../utils/dates";
 import { Avatar } from "../../components/ui/Avatar";
 import type { TrainingSession } from "../../types";
@@ -197,7 +197,7 @@ export default function MemberHome() {
         <PaymentStatusBanner
           status={member.paymentStatus}
           amount={formatCurrency(plan?.monthlyFee ?? 49)}
-          dueDate={formatDateShort(member.paymentDueDate)}
+          dueDate={formatDateSlash(member.paymentDueDate)}
           actionLabel="Peržiūrėti mokėjimus"
           onAction={() => (window.location.href = "/member/payments")}
         />

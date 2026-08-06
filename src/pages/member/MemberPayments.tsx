@@ -24,7 +24,7 @@ import { PaymentStatusBanner } from "../../components/payments/PaymentStatusBann
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { Modal } from "../../components/ui/Modal";
 import { formatCurrency } from "../../utils/format";
-import { formatDateShort } from "../../utils/dates";
+import { formatDateSlash } from "../../utils/dates";
 import { getConnectedStripe } from "../../utils/stripe";
 import {
   cancelMySubscriptionApi,
@@ -265,7 +265,7 @@ export default function MemberPayments() {
         <PaymentStatusBanner
           status={status}
           amount={formatCurrency(upcomingAmount)}
-          dueDate={dueDateIso ? formatDateShort(dueDateIso) : "—"}
+          dueDate={dueDateIso ? formatDateSlash(dueDateIso) : "—"}
         />
       )}
 
@@ -280,7 +280,7 @@ export default function MemberPayments() {
               <p className="mt-0.5">
                 Prieiga prie treniruočių ir registracijos galios iki{" "}
                 <strong>
-                  {dueDateIso ? formatDateShort(dueDateIso) : "einamojo laikotarpio pabaigos"}
+                  {dueDateIso ? formatDateSlash(dueDateIso) : "einamojo laikotarpio pabaigos"}
                 </strong>
                 . Po to prenumerata bus atšaukta ir mokėjimai nebus nurašomi.
               </p>
@@ -311,7 +311,7 @@ export default function MemberPayments() {
               <p className="text-sm text-ink-500">
                 {billing?.hasSubscription
                   ? billing.cancelAtPeriodEnd
-                    ? `Bus nutraukta ${dueDateIso ? formatDateShort(dueDateIso) : ""}`
+                    ? `Bus nutraukta ${dueDateIso ? formatDateSlash(dueDateIso) : ""}`
                     : "Automatinis mėnesinis atsiskaitymas"
                   : "Mokamas rankiniu būdu"}
               </p>
@@ -409,11 +409,11 @@ export default function MemberPayments() {
                       {inv.number ?? "Sąskaita"}
                     </p>
                     <p className="text-xs text-ink-500">
-                      {formatDateShort(dateIso)}
+                      {formatDateSlash(dateIso)}
                       {inv.periodStart && inv.periodEnd && (
                         <span className="ml-1 text-ink-400">
-                          · {formatDateShort(inv.periodStart)}–
-                          {formatDateShort(inv.periodEnd)}
+                          · {formatDateSlash(inv.periodStart)}–
+                          {formatDateSlash(inv.periodEnd)}
                         </span>
                       )}
                     </p>
@@ -454,7 +454,7 @@ export default function MemberPayments() {
         }
         description={
           dueDateIso
-            ? `Prieiga liks aktyvi iki ${formatDateShort(dueDateIso)}. Po to prenumerata bus atšaukta, mokėjimai nebus nurašomi, o registracija į treniruotes bus išjungta.`
+            ? `Prieiga liks aktyvi iki ${formatDateSlash(dueDateIso)}. Po to prenumerata bus atšaukta, mokėjimai nebus nurašomi, o registracija į treniruotes bus išjungta.`
             : "Prenumerata bus atšaukta einamojo laikotarpio pabaigoje."
         }
         footer={

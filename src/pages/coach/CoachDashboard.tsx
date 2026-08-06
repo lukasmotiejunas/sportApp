@@ -15,7 +15,7 @@ import { PageTitle } from "../../components/layout/PageTitle";
 import { DashboardMetricCard } from "../../components/dashboard/DashboardMetricCard";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { Avatar } from "../../components/ui/Avatar";
-import { formatDateShort, todayIso } from "../../utils/dates";
+import { formatDateSlash, todayIso } from "../../utils/dates";
 import { formatCurrency } from "../../utils/format";
 import {
   fetchClubPaymentsApi,
@@ -272,7 +272,7 @@ export default function CoachDashboard() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold">{m.name}</p>
                     <p className="text-xs text-red-700 dark:text-red-300">
-                      Vėluoja nuo {formatDateShort(m.paymentDueDate)}
+                      Vėluoja nuo {formatDateSlash(m.paymentDueDate)}
                     </p>
                   </div>
                   <Link

@@ -7,7 +7,7 @@ import { Avatar } from '../../components/ui/Avatar';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { FormField, TextareaField } from '../../components/ui/FormField';
 import type { TrainingPlan } from '../../types';
-import { formatDateShort, todayIso } from '../../utils/dates';
+import { formatDateSlash, todayIso } from '../../utils/dates';
 import { useTrainingsBase } from '../../utils/roleContext';
 
 export default function CoachPlanEditor() {
@@ -75,7 +75,7 @@ export default function CoachPlanEditor() {
       <PageTitle
         eyebrow="Asmeninis planas"
         title={plan.title || 'Naujas planas'}
-        description={`${training.title} · ${formatDateShort(training.date)} · ${training.startTime}`}
+        description={`${training.title} · ${formatDateSlash(training.date)} · ${training.startTime}`}
         backTo={`${base}/${training.id}`}
       />
 
