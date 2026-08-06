@@ -66,10 +66,16 @@ export default function AdminDashboard() {
   }, []);
 
   const monthlyRevenue = payments?.mtdRevenue ?? 0;
+  const platformFeePct = payments?.platformFeePct ?? 3;
+  const STRIPE_FEE_PCT = 1.4;
+  const STRIPE_FIXED_FEE = 0.25;
   const expectedRevenue = members.reduce((s, m) => {
     const plan = membershipPlans.find((p) => p.id === m.membershipPlanId);
     if (!plan || plan.planType !== "monthly") return s;
-    return s + plan.monthlyFee;
+    const gross = plan.monthlyFee;
+    const stripeFee = gross * (STRIPE_FEE_PCT / 100) + STRIPE_FIXED_FEE;
+    const platformFee = gross * (platformFeePct / 100);
+    return s + Math.max(0, gross - stripeFee - platformFee);
   }, 0);
   const completion = Math.round(
     (monthlyRevenue / Math.max(expectedRevenue, 1)) * 100,
