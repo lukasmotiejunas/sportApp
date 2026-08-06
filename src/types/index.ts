@@ -151,6 +151,20 @@ export type PlatformFinances = {
     tax: number;
     net: number;
   }[];
+  subscriptionPayments: {
+    id: string;
+    number: string | null;
+    clubId: string | null;
+    clubName: string | null;
+    amount: number;
+    stripeFee: number;
+    tax: number;
+    net: number;
+    currency: string;
+    paidAt: string; // ISO
+    month: string; // "YYYY-MM"
+    hostedInvoiceUrl: string | null;
+  }[];
 };
 
 export type SuperAdminStats = {

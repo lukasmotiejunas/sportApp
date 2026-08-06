@@ -551,6 +551,37 @@ superAdminRouter.get(
     let stripeFeesTotal = 0;
     let taxTotal = 0;
 
+    // Map Stripe customer ID → club so each invoice row can show the club name.
+    const subs = await prisma.clubSubscription.findMany({
+      where: { stripeCustomerId: { not: null } },
+      select: {
+        stripeCustomerId: true,
+        club: { select: { id: true, name: true } },
+      },
+    });
+    const clubByCustomer = new Map<string, { id: string; name: string }>();
+    for (const s of subs) {
+      if (s.stripeCustomerId && s.club) {
+        clubByCustomer.set(s.stripeCustomerId, s.club);
+      }
+    }
+
+    type SubscriptionPayment = {
+      id: string;
+      number: string | null;
+      clubId: string | null;
+      clubName: string | null;
+      amount: number;
+      stripeFee: number;
+      tax: number;
+      net: number;
+      currency: string;
+      paidAt: string;
+      month: string;
+      hostedInvoiceUrl: string | null;
+    };
+    const subscriptionPayments: SubscriptionPayment[] = [];
+
     try {
       const stripe = getStripe();
 
@@ -583,7 +614,8 @@ superAdminRouter.get(
         const gross = inv.amount_paid ?? 0;
         if (!gross) continue;
         const paidAt = inv.status_transitions?.paid_at ?? inv.created;
-        const b = bucket(monthKey(paidAt));
+        const monthStr = monthKey(paidAt);
+        const b = bucket(monthStr);
         b.clubSubscriptions += gross;
         clubSubTotal += gross;
 
@@ -601,10 +633,30 @@ superAdminRouter.get(
         const tax = invoiceTaxCents(inv);
         b.tax += tax;
         taxTotal += tax;
+
+        const customerId =
+          typeof inv.customer === 'string' ? inv.customer : null;
+        const club = customerId ? clubByCustomer.get(customerId) : undefined;
+        subscriptionPayments.push({
+          id: inv.id,
+          number: inv.number ?? null,
+          clubId: club?.id ?? null,
+          clubName: club?.name ?? null,
+          amount: gross / 100,
+          stripeFee: stripeFee / 100,
+          tax: tax / 100,
+          net: (gross - stripeFee) / 100,
+          currency: inv.currency.toUpperCase(),
+          paidAt: new Date(paidAt * 1000).toISOString(),
+          month: monthStr,
+          hostedInvoiceUrl: inv.hosted_invoice_url ?? null,
+        });
       }
     } catch (err) {
       console.warn('finances aggregation failed:', err);
     }
+
+    subscriptionPayments.sort((a, b) => b.paidAt.localeCompare(a.paidAt));
 
     const months = [...monthMap.entries()]
       .map(([month, agg]) => ({
@@ -630,6 +682,7 @@ superAdminRouter.get(
         net: (grossTotal - stripeFeesTotal - taxTotal) / 100,
       },
       months,
+      subscriptionPayments,
     });
   }),
 );

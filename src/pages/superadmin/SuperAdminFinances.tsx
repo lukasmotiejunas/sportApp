@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Euro,
   Wallet,
@@ -11,6 +11,7 @@ import { PageTitle } from "../../components/layout/PageTitle";
 import { ApiError } from "../../api/client";
 import { fetchSuperAdminFinances } from "../../api/superadmin";
 import { formatCurrency } from "../../utils/format";
+import { formatDateSlash } from "../../utils/dates";
 import type { PlatformFinances } from "../../types";
 
 const MONTH_NAMES_LT = [
@@ -80,6 +81,7 @@ export default function SuperAdminFinances() {
   const [data, setData] = useState<PlatformFinances | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [monthFilter, setMonthFilter] = useState<string>("all");
 
   const load = () => {
     setLoading(true);
@@ -95,6 +97,18 @@ export default function SuperAdminFinances() {
   };
 
   useEffect(load, []);
+
+  const filterOptions = useMemo(() => {
+    const months = new Set<string>();
+    (data?.subscriptionPayments ?? []).forEach((p) => months.add(p.month));
+    return [...months].sort((a, b) => b.localeCompare(a));
+  }, [data]);
+
+  const filteredPayments = useMemo(() => {
+    const list = data?.subscriptionPayments ?? [];
+    if (monthFilter === "all") return list;
+    return list.filter((p) => p.month === monthFilter);
+  }, [data, monthFilter]);
 
   return (
     <div>
@@ -227,6 +241,100 @@ export default function SuperAdminFinances() {
                         </td>
                         <td className="whitespace-nowrap px-4 py-2 text-right font-semibold tabular-nums text-lime-700 dark:text-lime-300">
                           {formatCurrency(m.net)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+
+          <section className="surface mt-4">
+            <header className="flex flex-wrap items-center justify-between gap-3 border-b border-ink-100 px-4 py-3 dark:border-ink-800">
+              <div>
+                <h2 className="font-display text-base font-bold text-ink-950 dark:text-ink-50">
+                  Prenumeratų mokėjimai
+                </h2>
+                <p className="text-xs text-ink-500">
+                  Kiekvienas klubo prenumeratos mokėjimas per Stripe.
+                </p>
+              </div>
+              <label className="flex items-center gap-2 text-xs font-semibold text-ink-500">
+                Mėnuo:
+                <select
+                  value={monthFilter}
+                  onChange={(e) => setMonthFilter(e.target.value)}
+                  className="rounded-lg border border-ink-200 bg-white px-2 py-1.5 text-sm font-normal text-ink-900 dark:border-ink-700 dark:bg-ink-900 dark:text-ink-50"
+                >
+                  <option value="all">Visi</option>
+                  {filterOptions.map((m) => (
+                    <option key={m} value={m}>
+                      {formatMonth(m)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </header>
+            {filteredPayments.length === 0 ? (
+              <p className="p-4 text-sm text-ink-500">
+                {monthFilter === "all"
+                  ? "Mokėjimų dar nėra."
+                  : "Šio mėnesio mokėjimų nėra."}
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="text-left text-xs uppercase tracking-wide text-ink-500">
+                    <tr className="border-b border-ink-100 dark:border-ink-800">
+                      <th className="px-4 py-2 font-semibold">Data</th>
+                      <th className="px-4 py-2 font-semibold">Klubas</th>
+                      <th className="px-4 py-2 font-semibold">Sąskaita</th>
+                      <th className="px-4 py-2 font-semibold text-right">
+                        Suma
+                      </th>
+                      <th className="px-4 py-2 font-semibold text-right">
+                        Stripe
+                      </th>
+                      <th className="px-4 py-2 font-semibold text-right">
+                        Pelnas
+                      </th>
+                      <th className="px-4 py-2 font-semibold" />
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
+                    {filteredPayments.map((p) => (
+                      <tr key={p.id}>
+                        <td className="whitespace-nowrap px-4 py-2 text-ink-900 dark:text-ink-100">
+                          {formatDateSlash(p.paidAt.slice(0, 10))}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-2 font-semibold text-ink-900 dark:text-ink-50">
+                          {p.clubName ?? "—"}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-2 font-mono text-xs text-ink-500">
+                          {p.number ?? p.id}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-2 text-right tabular-nums">
+                          {formatCurrency(p.amount)}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-2 text-right tabular-nums text-red-600 dark:text-red-400">
+                          −{formatCurrency(p.stripeFee)}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-2 text-right font-semibold tabular-nums text-lime-700 dark:text-lime-300">
+                          {formatCurrency(p.net)}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-2 text-right">
+                          {p.hostedInvoiceUrl && (
+                            <a
+                              href={p.hostedInvoiceUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 text-xs font-semibold text-ink-500 hover:text-ink-900 dark:hover:text-ink-100"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5" />
+                              Atidaryti
+                            </a>
+                          )}
                         </td>
                       </tr>
                     ))}
