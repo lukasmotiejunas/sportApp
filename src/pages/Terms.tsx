@@ -57,27 +57,30 @@ export default function Terms() {
           <Section title="2. Paslaugos aprašymas">
             <p>
               Paslauga suteikia sporto klubams įrankius narių, trenerių,
-              treniruočių tvarkaraščių, individualių treniruočių planų,
-              rezultatų lyderių lentelių ir narystės mokesčių valdymui.
-              Prieigą prie Paslaugos suteikiame internetu (SaaS modelis).
+              treniruočių tvarkaraščių, dirbtinio intelekto pagalba generuojamų
+              ir individualių treniruočių planų, rezultatų lyderių lentelių,
+              automatinio narystės mokesčių surinkimo per Stripe ir klubo
+              finansinės apskaitos valdymui. Prieigą prie Paslaugos suteikiame
+              internetu (SaaS modelis).
             </p>
           </Section>
 
           <Section title="3. Prenumerata ir mokėjimai">
             <ul className="list-disc space-y-2 pl-5">
               <li>
-                Prenumeratos kaina — <strong>0,50 € per mėnesį</strong> už visą
+                Prenumeratos kaina — <strong>100 € per mėnesį</strong> už visą
                 klubą (PVM neapmokestinama iki 45 000 € metinių pajamų
                 slenksčio).
               </li>
               <li>
-                Mokėjimai nurašomi automatiškai kas mėnesį iš registracijos
-                metu pateiktos mokėjimo kortelės. Mokėjimų apdorojimą vykdo
-                Stripe (Airija).
+                <strong>Pirmas mėnuo (30 dienų) — nemokamai.</strong>{" "}
+                Registracijos metu pridedate mokėjimo kortelę, tačiau nemokamu
+                laikotarpiu nieko neapmokestiname.
               </li>
               <li>
-                Pirmasis mokestis nurašomas iš karto registracijos metu, tada
-                kartojasi kiekvieno kito mėnesio tą pačią dieną.
+                Praėjus nemokamam laikotarpiui, pirmasis mokestis nurašomas
+                automatiškai, tada kartojasi kiekvieno kito mėnesio tą pačią
+                dieną. Mokėjimų apdorojimą vykdo Stripe (Airija).
               </li>
               <li>
                 Nepavykus nurašyti mokesčio, klubo paskyra suspenduojama, kol

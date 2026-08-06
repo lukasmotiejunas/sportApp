@@ -34,7 +34,7 @@ const signupSchema = z.object({
 });
 
 const MONTHLY_FEE = 0.5;
-const TRIAL_DAYS = 14;
+const TRIAL_DAYS = 30;
 
 // Creates the club + admin user + Stripe customer + subscription with a
 // 14-day free trial. `payment_behavior: default_incomplete` + a trial period

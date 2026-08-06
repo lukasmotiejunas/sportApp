@@ -119,8 +119,8 @@ export default function Login() {
                   Turite sporto klubą?
                 </p>
                 <p className="mt-1 text-xs text-ink-700">
-                  Prenumeruokite Lumo už €0,50 per mėnesį — sukurkite savo klubą
-                  per kelias minutes.
+                  AI treniruočių planai, automatiniai mokėjimai, aiški finansų
+                  apskaita. Pirmas mėnuo nemokamai, po to 100 € už visą klubą.
                 </p>
               </div>
             </div>

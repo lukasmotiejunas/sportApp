@@ -6,12 +6,15 @@ import {
   CreditCard,
   Sparkles,
   Users,
-  Trophy,
+  Wallet,
   CalendarDays,
-  ShieldCheck,
+  LineChart,
   Copy,
   ChevronLeft,
   Lock,
+  Bot,
+  UserCheck,
+  Zap,
 } from "lucide-react";
 import {
   Elements,
@@ -23,7 +26,7 @@ import { signupApi, type SignupResult } from "../api/signup";
 import { ApiError } from "../api/client";
 import { getStripePromise } from "../utils/stripe";
 
-const MONTHLY_FEE = 0.5;
+const MONTHLY_FEE = 100;
 
 const FEATURES: {
   icon: React.ComponentType<{ className?: string }>;
@@ -31,47 +34,52 @@ const FEATURES: {
   text: string;
 }[] = [
   {
-    icon: Users,
-    title: "Neribotai narių ir trenerių",
-    text: "Pridėkite visą klubo komandą — narius, trenerius ir administratorius vienoje sistemoje.",
+    icon: Bot,
+    title: "AI treniruočių planai",
+    text: "Sugeneruokite pilną treniruotės planą per sekundes. Dirbtinis intelektas parenka pratimus, apkrovą ir progresiją pagal jūsų klubo tikslus.",
   },
   {
     icon: CalendarDays,
-    title: "Treniruočių planavimas",
-    text: "Kurkite treniruočių tvarkaraščius, priimkite registracijas ir sekite lankomumą.",
+    title: "Savi planai ir tvarkaraštis",
+    text: "Kurkite savo treniruočių planus, priskirkite juos treniruotėms, valdykite tvarkaraštį, registracijas ir laukiančiųjų eiles vienoje vietoje.",
   },
   {
-    icon: Trophy,
-    title: "Rezultatai ir lyderių lentelės",
-    text: "Fiksuokite rezultatus pagal rungtis, palyginkite narių pažangą, motyvuokite konkurencija.",
+    icon: UserCheck,
+    title: "Individualūs planai kiekvienam",
+    text: "Priskirkite asmeninį planą kiekvienam dalyviui — nuo pradedančiojo iki atleto. Kiekvienas narys mato būtent savo planą treniruotės metu.",
   },
   {
-    icon: CreditCard,
-    title: "Narystės ir mokėjimai",
-    text: "Sekite narystės mokesčius, priminkite apie skolas ir stebėkite klubo pajamas.",
+    icon: Wallet,
+    title: "Stripe piniginė — pinigai jūsų",
+    text: "Nariai apmoka narystes automatiškai. Pinigai patenka į jūsų klubo Stripe piniginę — bet kada išsigryninkite juos į banko sąskaitą.",
   },
   {
-    icon: ShieldCheck,
-    title: "Atskiri prisijungimai kiekvienam",
-    text: "Nariai mato tik savo duomenis, treneriai — savo grupes, jūs — visą klubą.",
+    icon: LineChart,
+    title: "Aiški finansų apskaita",
+    text: "Klubo pajamos realiu laiku, kiekvieno nario mokėjimų istorija, uždarbio ataskaitos — pilna finansinė kontrolė viename skydelyje.",
   },
   {
-    icon: Sparkles,
-    title: "Nuolat tobulinama",
-    text: "Reguliarūs atnaujinimai be papildomų mokesčių. Jūsų klubui — naujos funkcijos kiekvieną mėnesį.",
+    icon: Zap,
+    title: "Viskas automatiškai",
+    text: "Sąskaitos, priminimai apie skolas, atnaujinimai, atsarginės kopijos — sistema veikia už jus. Stebėkite klubą ir mėgaukitės.",
   },
 ];
 
 const INCLUDED: string[] = [
-  "Neriboto narių, trenerių ir treniruočių skaičius",
-  "Treniruočių tvarkaraštis ir registracijos",
-  "Individualūs treniruočių planai nariams",
-  "Lyderių lentelės pagal rungtis",
-  "Narystės mokesčių valdymas",
-  "El. pašto priminimai nariams",
+  "Neribotai narių, trenerių ir treniruočių",
+  "AI generuojami treniruočių planai",
+  "Savi treniruočių planai ir šablonai",
+  "Individualūs planai kiekvienam nariui",
+  "Automatinis narystės mokesčių surinkimas per Stripe",
+  "Stripe piniginė — bet kada išsigryninkite pinigus",
+  "Realaus laiko pajamų ir mokėjimų suvestinė",
+  "Pilna klubo ir narių mokėjimų istorija",
+  "Automatiniai priminimai apie vėluojančius mokėjimus",
+  "Lyderių lentelės ir rezultatų sekimas",
+  "Atskiri prisijungimai administratoriui, treneriams ir nariams",
   "Techninė pagalba lietuviškai",
-  "Automatiniai duomenų atsarginiai kopijos",
-  "Galimybė bet kada atsisakyti prenumeratos",
+  "Automatinės duomenų atsarginės kopijos",
+  "Bet kada galima atsisakyti prenumeratos",
 ];
 
 type InfoForm = {
@@ -215,11 +223,12 @@ export default function Plans() {
               <Sparkles className="h-3.5 w-3.5" /> Sportui gimusi platforma
             </span>
             <h1 className="mt-4 font-display text-4xl font-bold tracking-tight sm:text-5xl">
-              Vieninga sistema jūsų sporto klubui.
+              Valdykite sporto klubą automatiškai.
             </h1>
             <p className="mt-4 max-w-xl text-lg text-white/70">
-              Nariai, treniruotės, mokėjimai ir rezultatai vienoje vietoje.
-              Pirmos <strong>2 savaitės — nemokamai</strong>, o po to vos{" "}
+              AI treniruočių planai, individualios programos, automatiniai
+              mokėjimai ir Stripe piniginė — viskas vienoje sistemoje.
+              <strong> Pirmas mėnuo — nemokamai</strong>, po to{" "}
               <strong>{formatPrice(MONTHLY_FEE)} per mėnesį</strong> už visą
               klubą.
             </p>
@@ -228,7 +237,7 @@ export default function Plans() {
                 onClick={startSignup}
                 className="btn-accent group h-12 px-6 text-base"
               >
-                Išbandyti nemokamai 2 savaites
+                Išbandyti nemokamai 30 dienų
                 <ArrowRight className="h-4 w-4 transition-transform" />
               </button>
               <a
@@ -256,10 +265,11 @@ export default function Plans() {
                 {formatPrice(MONTHLY_FEE)} / mėn.
               </p>
               <p className="mt-1 text-sm text-white/70">
-                Vienoda kaina visam klubui. Bet kada galima atsisakyti.
+                Pirmas mėnuo nemokamai. Viena kaina — visas klubas. Bet kada
+                galima atsisakyti.
               </p>
               <ul className="mt-5 space-y-2 text-sm">
-                {INCLUDED.slice(0, 5).map((item) => (
+                {INCLUDED.slice(0, 6).map((item) => (
                   <li key={item} className="flex items-start gap-2">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-lime-300" />
                     <span className="text-white/80">{item}</span>
@@ -278,11 +288,12 @@ export default function Plans() {
 
         <section className="py-12">
           <h2 className="font-display text-2xl font-bold sm:text-3xl">
-            Ką gausite savo klube.
+            Sekite klubą, nesirūpinkite niekuo kitu.
           </h2>
           <p className="mt-2 max-w-2xl text-white/70">
-            Viskas, ko reikia klubui valdyti — nuo treniruočių iki mokėjimų.
-            Nereikia atskirų įrankių ar Excel lentelių.
+            Nuo AI generuojamų treniruočių planų iki automatinių mokėjimų —
+            viskas, ko reikia sporto klubui, vienoje sistemoje. Jokių Excel
+            lentelių, jokių atskirų įrankių.
           </p>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map((f) => (
@@ -316,7 +327,7 @@ export default function Plans() {
                 <span className="mb-2 text-lg text-white/60">/ mėn.</span>
               </div>
               <p className="mt-2 text-sm text-white/70">
-                Pirmos 2 savaitės — nemokamai. Po to prenumerata automatiškai
+                Pirmas mėnuo — nemokamai. Po to prenumerata automatiškai
                 kartojasi kas mėnesį, kol atšauksite.
               </p>
             </div>
@@ -338,7 +349,7 @@ export default function Plans() {
                 onClick={startSignup}
                 className="btn-accent h-12 w-full max-w-sm px-6 text-base"
               >
-                Išbandyti nemokamai 2 savaites
+                Išbandyti nemokamai 30 dienų
                 <ArrowRight className="h-4 w-4" />
               </button>
               <p className="text-xs text-white/50">
@@ -356,7 +367,19 @@ export default function Plans() {
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <Faq
               q="Kada bus nurašytas pirmas mokėjimas?"
-              a={`Pirmos 2 savaitės — nemokamai. Registracijos metu tik įvesite kortelės duomenis, tačiau šiandien nieko neapmokestiname. Praėjus 14 dienų, kortelė bus automatiškai apmokestinama ${formatPrice(MONTHLY_FEE)}.`}
+              a={`Pirmas mėnuo — nemokamai. Registracijos metu tik įvesite kortelės duomenis, tačiau šiandien nieko neapmokestiname. Praėjus 30 dienų, kortelė bus automatiškai apmokestinama ${formatPrice(MONTHLY_FEE)}.`}
+            />
+            <Faq
+              q="Kaip veikia narių mokėjimai?"
+              a="Jūsų nariai apmoka narystes tiesiogiai per Stripe. Pinigai patenka į jūsų klubo Stripe piniginę, iš kurios bet kada galite juos išsigryninti į savo banko sąskaitą. Sistema automatiškai išrašo sąskaitas ir siunčia priminimus apie vėluojančius mokėjimus."
+            />
+            <Faq
+              q="Kaip veikia AI treniruočių planai?"
+              a="Nurodote tikslą, trukmę ir grupės lygį — dirbtinis intelektas sugeneruoja pilną treniruotės planą su pratimais, apkrova ir progresija. Planą galite redaguoti, išsaugoti kaip šabloną arba priskirti konkrečiam nariui."
+            />
+            <Faq
+              q="Ar galiu kurti individualius planus kiekvienam nariui?"
+              a="Taip. Kiekvienam dalyviui galite priskirti asmeninį planą — nuo pradedančiojo iki atleto. Treniruotės metu kiekvienas narys matys būtent jam skirtą planą savo telefone."
             />
             <Faq
               q="Kas nutinka kas mėnesį?"
@@ -368,7 +391,7 @@ export default function Plans() {
             />
             <Faq
               q="Kiek narių galiu turėti?"
-              a={`Neribotai. ${formatPrice(MONTHLY_FEE)} per mėnesį — už visą klubą, nesvarbu, ar turite 20, ar 500 narių.`}
+              a={`Neribotai. ${formatPrice(MONTHLY_FEE)} per mėnesį — už visą klubą, nesvarbu, ar turite 20, ar 500 narių. Treniruočių, trenerių ir planų skaičius taip pat neribojamas.`}
             />
           </div>
         </section>
@@ -445,7 +468,7 @@ function InfoStep(props: {
             Sukurkite savo klubo paskyrą.
           </h1>
           <p className="mt-2 text-sm text-white/70">
-            Pirmos 2 savaitės — nemokamai. Pirmasis mokėjimas{" "}
+            Pirmas mėnuo — nemokamai. Pirmasis mokėjimas{" "}
             <strong className="text-white">{formatPrice(MONTHLY_FEE)}</strong>{" "}
             bus <strong className="text-white">{nextChargeDate}</strong>, ir
             kartosis kas mėnesį, kol atšauksite prenumeratą.
@@ -503,7 +526,8 @@ function InfoStep(props: {
 
           <div className="rounded-2xl border border-lime-400/30 bg-lime-400/10 p-5 text-sm">
             <p className="font-display text-base font-bold text-lime-200">
-              2 savaitės nemokamai, po to {formatPrice(MONTHLY_FEE)} per mėnesį.
+              Pirmas mėnuo nemokamai, po to {formatPrice(MONTHLY_FEE)} per
+              mėnesį.
             </p>
             <p className="mt-1.5 text-white/70">
               Kitame žingsnyje pridėsite mokėjimo kortelę — šiandien nieko
@@ -631,9 +655,9 @@ function PaymentShell({
             Pridėkite mokėjimo kortelę.
           </h1>
           <p className="mt-2 text-sm text-white/70">
-            Pirmos{" "}
-            <strong className="text-white">2 savaitės — nemokamai</strong>. Po
-            to kortelė bus apmokestinta{" "}
+            Pirmas{" "}
+            <strong className="text-white">mėnuo — nemokamai</strong>. Po to
+            kortelė bus apmokestinta{" "}
             <strong className="text-white">{formatPrice(MONTHLY_FEE)}</strong>{" "}
             kas mėnesį, kol atšauksite prenumeratą. Šiandien nieko
             neapmokestiname.
@@ -723,7 +747,7 @@ function PaymentForm({
 
       <div className="rounded-2xl border border-lime-400/30 bg-lime-400/10 p-5 text-sm">
         <p className="font-display text-base font-bold text-lime-200">
-          2 savaitės nemokamai. Šiandien nieko neapmokestiname.
+          Pirmas mėnuo nemokamai. Šiandien nieko neapmokestiname.
         </p>
         <p className="mt-1.5 text-white/70">
           Paspausdami „Aktyvuoti bandymo laikotarpį" sutinkate, kad po nemokamo
