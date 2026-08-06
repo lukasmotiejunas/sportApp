@@ -85,7 +85,7 @@ export default function CoachTrainingDetail() {
             </Link>
             <button
               type="button"
-              className="btn-ghost"
+              className="btn-ghost hidden sm:inline-flex"
               onClick={() => {
                 duplicate(training.id);
                 push({ kind: 'success', message: 'Treniruotė nukopijuota.' });

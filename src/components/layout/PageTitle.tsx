@@ -11,7 +11,7 @@ type Props = {
 
 export function PageTitle({ title, description, backTo, action, eyebrow }: Props) {
   return (
-    <div className="mb-4 flex items-start justify-between gap-3">
+    <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0 flex-1">
         {backTo && (
           <Link
@@ -33,7 +33,7 @@ export function PageTitle({ title, description, backTo, action, eyebrow }: Props
           <p className="mt-1 text-sm text-ink-500 dark:text-ink-400">{description}</p>
         )}
       </div>
-      {action && <div className="shrink-0">{action}</div>}
+      {action && <div className="shrink-0 sm:ml-auto">{action}</div>}
     </div>
   );
 }
