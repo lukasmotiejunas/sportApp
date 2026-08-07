@@ -493,22 +493,32 @@ function SubscriptionCard({
           </div>
           <h2 className="font-display text-2xl font-bold text-ink-900 dark:text-ink-50">
             {formatMoney(sub.monthlyFee, sub.currency)}{" "}
-            <span className="text-base font-normal text-ink-500">/ parą</span>
+            <span className="text-base font-normal text-ink-500">/ mėn.</span>
           </h2>
           {trialing && (
-            <p className="mt-1 text-sm text-ink-500">
-              Bandomasis laikotarpis iki{" "}
-              <strong className="text-ink-800 dark:text-ink-100">
-                {formatDate(sub.trialEndsAt)}
-              </strong>
-            </p>
+            <>
+              <p className="mt-1 text-sm text-ink-500">
+                Bandomasis laikotarpis iki{" "}
+                <strong className="text-ink-800 dark:text-ink-100">
+                  {formatDate(sub.trialEndsAt)}
+                </strong>
+              </p>
+              <p className="mt-0.5 text-sm text-ink-500">
+                Pirmasis mokėjimas —{" "}
+                <strong className="text-ink-800 dark:text-ink-100">
+                  {formatDate(sub.currentPeriodEnd)}
+                </strong>{" "}
+                ({formatMoney(sub.monthlyFee, sub.currency)})
+              </p>
+            </>
           )}
           {active && !willCancel && (
             <p className="mt-1 text-sm text-ink-500">
               Kitas mokėjimas —{" "}
               <strong className="text-ink-800 dark:text-ink-100">
                 {formatDate(sub.currentPeriodEnd)}
-              </strong>
+              </strong>{" "}
+              ({formatMoney(sub.monthlyFee, sub.currency)})
             </p>
           )}
           {willCancel && (
