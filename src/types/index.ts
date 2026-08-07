@@ -92,6 +92,14 @@ export type ClubDetail = Club & {
     specialty: string;
     userId: string | null;
   }[];
+  subscription: {
+    status: SubscriptionStatus;
+    currentPeriodEnd: string;
+    trialEndsAt: string;
+    cancelledAt: string | null;
+    monthlyFee: number;
+    currency: string;
+  } | null;
 };
 
 export type FinancePayment = {

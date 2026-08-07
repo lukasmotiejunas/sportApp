@@ -147,6 +147,16 @@ superAdminRouter.get(
           where: { role: 'admin' },
           select: { id: true, email: true, name: true, createdAt: true },
         },
+        subscription: {
+          select: {
+            status: true,
+            currentPeriodEnd: true,
+            trialEndsAt: true,
+            cancelledAt: true,
+            monthlyFee: true,
+            currency: true,
+          },
+        },
       },
     });
     if (!club) throw new HttpError(404, 'Club not found');
@@ -187,6 +197,17 @@ superAdminRouter.get(
         specialty: c.specialty ?? '',
         userId: c.user?.id ?? null,
       })),
+      subscription: club.subscription
+        ? {
+            status: club.subscription.status,
+            currentPeriodEnd: club.subscription.currentPeriodEnd.toISOString(),
+            trialEndsAt: club.subscription.trialEndsAt.toISOString(),
+            cancelledAt:
+              club.subscription.cancelledAt?.toISOString() ?? null,
+            monthlyFee: Number(club.subscription.monthlyFee),
+            currency: club.subscription.currency,
+          }
+        : null,
     });
   }),
 );

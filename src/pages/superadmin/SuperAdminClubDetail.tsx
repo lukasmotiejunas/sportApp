@@ -24,13 +24,32 @@ import {
 } from "../../api/superadmin";
 import { useStore } from "../../store/useStore";
 import { formatCurrency } from "../../utils/format";
+import { formatDateSlash } from "../../utils/dates";
 import type {
   ClubDetail,
   ClubFinances,
   FinancePayment,
   FinanceTotals,
   PaymentStatus,
+  SubscriptionStatus,
 } from "../../types";
+
+const SUBSCRIPTION_LABEL: Record<SubscriptionStatus, string> = {
+  trialing: "Bandomasis",
+  active: "Aktyvi",
+  past_due: "Vėluoja mokėjimas",
+  cancelled: "Atšaukta",
+};
+
+const SUBSCRIPTION_TONE: Record<
+  SubscriptionStatus,
+  "success" | "warning" | "danger" | "info" | "accent"
+> = {
+  trialing: "accent",
+  active: "success",
+  past_due: "danger",
+  cancelled: "info",
+};
 
 const currency = (n: number) => `${n.toFixed(2)} €`;
 
@@ -518,6 +537,63 @@ export default function SuperAdminClubDetail() {
                 showAppFee
                 defaultExpanded
               />
+              {club.subscription && (
+                <div className="rounded-2xl border border-ink-100 bg-ink-50/60 p-3 dark:border-ink-800 dark:bg-ink-900/60">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <Receipt className="h-4 w-4 text-ink-500" />
+                      <span className="font-display text-sm font-bold text-ink-900 dark:text-ink-50">
+                        Prenumeratos būsena
+                      </span>
+                      <StatusBadge
+                        tone={SUBSCRIPTION_TONE[club.subscription.status]}
+                        dot
+                      >
+                        {SUBSCRIPTION_LABEL[club.subscription.status]}
+                      </StatusBadge>
+                    </div>
+                    <div className="text-right text-xs text-ink-500">
+                      {club.subscription.status === "cancelled" ? (
+                        <>
+                          Atšaukta{" "}
+                          <strong className="text-ink-800 dark:text-ink-100">
+                            {club.subscription.cancelledAt
+                              ? formatDateSlash(
+                                  club.subscription.cancelledAt.slice(0, 10),
+                                )
+                              : "—"}
+                          </strong>
+                        </>
+                      ) : club.subscription.status === "trialing" ? (
+                        <>
+                          Bandymo pabaiga —{" "}
+                          <strong className="text-ink-800 dark:text-ink-100">
+                            {formatDateSlash(
+                              club.subscription.trialEndsAt.slice(0, 10),
+                            )}
+                          </strong>
+                        </>
+                      ) : (
+                        <>
+                          Kitas mokėjimas —{" "}
+                          <strong className="text-ink-800 dark:text-ink-100">
+                            {formatDateSlash(
+                              club.subscription.currentPeriodEnd.slice(0, 10),
+                            )}
+                          </strong>
+                          <span className="ml-2 text-ink-400">
+                            ·{" "}
+                            {formatCurrency(
+                              club.subscription.monthlyFee,
+                              club.subscription.currency,
+                            )}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
               <FinanceSection
                 title="Klubo prenumerata (SportApp)"
                 icon={Receipt}
