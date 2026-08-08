@@ -39,17 +39,18 @@ export default function CoachDashboard() {
   );
   const overdue = members.filter((m) => m.paymentStatus === "overdue");
 
+  const LT_DAYS = ['Sk', 'Pr', 'An', 'Tr', 'Kt', 'Pn', 'Šš'];
   const registrationTrend = Array.from({ length: 7 }, (_, i) => {
+    const date = new Date(new Date().getTime() - (6 - i) * 86400000);
     const dayCount = trainings
-      .filter(
-        (t) =>
-          t.date ===
-          todayIso(new Date(new Date().getTime() - (6 - i) * 86400000)),
-      )
+      .filter((t) => t.date === todayIso(date))
       .reduce((s, t) => s + t.registrations.length, 0);
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
     return {
-      day: `D-${6 - i}`,
-      registrations: dayCount + (i === 6 ? todayRegistrations : 0),
+      day: LT_DAYS[date.getDay()],
+      date: `${dd}/${mm}`,
+      registrations: dayCount,
     };
   });
 
@@ -140,6 +141,8 @@ export default function CoachDashboard() {
                   tick={{ fontSize: 11 }}
                   axisLine={false}
                   tickLine={false}
+                  allowDecimals={false}
+                  domain={[0, (max: number) => Math.max(max, 4)]}
                 />
                 <Tooltip
                   contentStyle={{
@@ -147,6 +150,8 @@ export default function CoachDashboard() {
                     border: "1px solid rgba(0,0,0,0.08)",
                     fontSize: 12,
                   }}
+                  labelFormatter={(_label, payload) => payload?.[0]?.payload?.date ?? _label}
+                  formatter={(value: number) => [value, 'Registracijos']}
                 />
                 <Area
                   dataKey="registrations"

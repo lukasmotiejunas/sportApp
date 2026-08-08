@@ -27,6 +27,7 @@ export default function CoachLeaderboardDetail() {
   const [addOpen, setAddOpen] = useState(false);
   const [editing, setEditing] = useState<LeaderboardResult | null>(null);
   const [toDelete, setToDelete] = useState<string | null>(null);
+  const [historyMemberId, setHistoryMemberId] = useState<string | null>(null);
 
   const [draft, setDraft] = useState({
     memberId: members[0]?.id ?? '',
@@ -35,13 +36,33 @@ export default function CoachLeaderboardDetail() {
     note: '',
   });
 
+  // Best result per member, ranked
   const ranked = useMemo(() => {
     if (!category) return [];
-    const list = results
-      .filter((r) => r.categoryId === category.id)
+    const categoryResults = results.filter((r) => r.categoryId === category.id);
+    const bestByMember = new Map<string, LeaderboardResult>();
+    for (const r of categoryResults) {
+      const existing = bestByMember.get(r.memberId);
+      if (!existing) {
+        bestByMember.set(r.memberId, r);
+      } else {
+        const isBetter = category.lowerIsBetter ? r.value < existing.value : r.value > existing.value;
+        if (isBetter) bestByMember.set(r.memberId, r);
+      }
+    }
+    const list = Array.from(bestByMember.values())
       .sort((a, b) => (category.lowerIsBetter ? a.value - b.value : b.value - a.value));
     return list.map((r, i) => ({ rank: i + 1, r, m: members.find((x) => x.id === r.memberId) }));
   }, [category, results, members]);
+
+  // All results for the history dialog member
+  const historyMember = historyMemberId ? members.find((m) => m.id === historyMemberId) : null;
+  const historyResults = useMemo(() => {
+    if (!historyMemberId || !category) return [];
+    return results
+      .filter((r) => r.categoryId === category.id && r.memberId === historyMemberId)
+      .sort((a, b) => (category.lowerIsBetter ? a.value - b.value : b.value - a.value));
+  }, [historyMemberId, category, results]);
 
   if (!category) {
     return (
@@ -55,7 +76,6 @@ export default function CoachLeaderboardDetail() {
     const trimmed = raw.trim();
     if (!trimmed) return null;
     if (category.measurementType === 'seconds') {
-      // support mm:ss or seconds
       if (trimmed.includes(':')) {
         const [m, s] = trimmed.split(':').map((x) => Number(x));
         if (isNaN(m) || isNaN(s)) return null;
@@ -105,7 +125,7 @@ export default function CoachLeaderboardDetail() {
               <tr>
                 <th className="px-4 py-2">#</th>
                 <th className="px-4 py-2">Narys</th>
-                <th className="px-4 py-2">Rezultatas</th>
+                <th className="px-4 py-2">Geriausias rezultatas</th>
                 <th className="px-4 py-2">Data</th>
                 <th className="px-4 py-2 text-right">Veiksmai</th>
               </tr>
@@ -113,7 +133,11 @@ export default function CoachLeaderboardDetail() {
             <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
               {ranked.map(({ rank, r, m }) => (
                 m && (
-                  <tr key={r.id} className="bg-white dark:bg-ink-900">
+                  <tr
+                    key={r.id}
+                    className="cursor-pointer bg-white transition-colors hover:bg-ink-50 dark:bg-ink-900 dark:hover:bg-ink-800"
+                    onClick={() => setHistoryMemberId(m.id)}
+                  >
                     <td className="px-4 py-3 font-bold">{rank}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
@@ -128,7 +152,7 @@ export default function CoachLeaderboardDetail() {
                       {formatResult(r.value, category)}
                     </td>
                     <td className="px-4 py-3 text-ink-600 dark:text-ink-300">{formatDateSlash(r.date)}</td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
                       <button className="btn-ghost h-8 px-2 text-xs" onClick={() => setEditing(r)} aria-label="Redaguoti rezultatą">
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
@@ -145,12 +169,66 @@ export default function CoachLeaderboardDetail() {
 
         <ul className="space-y-2 p-3 md:hidden">
           {ranked.map(({ rank, r, m }) => m && (
-            <li key={r.id}>
+            <li key={r.id} className="cursor-pointer" onClick={() => setHistoryMemberId(m.id)}>
               <LeaderboardRow rank={rank} result={r} member={m} category={category} />
             </li>
           ))}
         </ul>
       </section>
+
+      {/* Member history dialog */}
+      <Modal
+        open={!!historyMemberId}
+        onClose={() => setHistoryMemberId(null)}
+        title={historyMember?.name ?? ''}
+        description="Visi šio nario rezultatai šioje kategorijoje"
+        footer={
+          <button className="btn-ghost" onClick={() => setHistoryMemberId(null)}>Uždaryti</button>
+        }
+      >
+        {historyResults.length === 0 ? (
+          <p className="text-sm text-ink-500">Nėra rezultatų.</p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead className="text-left text-xs uppercase tracking-wider text-ink-500">
+              <tr>
+                <th className="pb-2 pr-4">#</th>
+                <th className="pb-2 pr-4">Rezultatas</th>
+                <th className="pb-2 pr-4">Data</th>
+                <th className="pb-2 text-right">Veiksmai</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
+              {historyResults.map((r, i) => (
+                <tr key={r.id}>
+                  <td className="py-2 pr-4 font-bold text-ink-500">{i + 1}</td>
+                  <td className="py-2 pr-4 font-display text-base font-bold tabular-nums">
+                    {i === 0 && <span className="mr-1.5 text-xs text-lime-600 dark:text-lime-400">★</span>}
+                    {formatResult(r.value, category)}
+                  </td>
+                  <td className="py-2 pr-4 text-ink-500">{formatDateSlash(r.date)}</td>
+                  <td className="py-2 text-right">
+                    <button
+                      className="btn-ghost h-8 px-2 text-xs"
+                      onClick={() => { setEditing(r); setHistoryMemberId(null); }}
+                      aria-label="Redaguoti rezultatą"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      className="btn-ghost h-8 px-2 text-xs text-red-600"
+                      onClick={() => { setToDelete(r.id); setHistoryMemberId(null); }}
+                      aria-label="Ištrinti rezultatą"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </Modal>
 
       <Modal
         open={addOpen}

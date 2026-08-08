@@ -91,6 +91,7 @@
   }
   .dark .input {
     @apply bg-ink-900 border-ink-700 text-ink-100 placeholder-ink-500 focus:ring-lime-400/20 focus:border-lime-400;
+    color-scheme: dark;
   }
 
   .label {
