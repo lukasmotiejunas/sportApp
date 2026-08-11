@@ -187,31 +187,31 @@ export default function CoachTrainings() {
               </tr>
             </thead>
             <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
-              {filtered.map((t) => {
-                const coach = coaches.find((c) => c.id === t.coachId);
-                const activeCount = t.registrations.filter((r) => r.status === 'registered').length;
-                const pct = Math.round((activeCount / t.capacity) * 100);
+              {filtered.map((tr) => {
+                const coach = coaches.find((c) => c.id === tr.coachId);
+                const activeCount = tr.registrations.filter((r) => r.status === 'registered').length;
+                const pct = Math.round((activeCount / tr.capacity) * 100);
                 return (
-                  <tr key={t.id} className="bg-white hover:bg-ink-50 dark:bg-ink-900 dark:hover:bg-ink-800/60">
+                  <tr key={tr.id} className="bg-white hover:bg-ink-50 dark:bg-ink-900 dark:hover:bg-ink-800/60">
                     <td className="px-4 py-3">
-                      <p className="font-semibold text-ink-900 dark:text-ink-50">{t.title}</p>
+                      <p className="font-semibold text-ink-900 dark:text-ink-50">{tr.title}</p>
                     </td>
-                    <td className="px-4 py-3 text-ink-600 dark:text-ink-300">{coach?.name.replace('Coach ', '') ?? t('member_join.gender_unspecified')}</td>
+                    <td className="px-4 py-3 text-ink-600 dark:text-ink-300">{coach?.name.replace('Coach ', '') ?? '—'}</td>
                     <td className="px-4 py-3 text-ink-600 dark:text-ink-300">
-                      <div>{formatDateSlash(t.date)}</div>
-                      <div className="text-xs">{t.startTime}–{t.endTime}</div>
+                      <div>{formatDateSlash(tr.date)}</div>
+                      <div className="text-xs">{tr.startTime}–{tr.endTime}</div>
                     </td>
                     <td className="px-4 py-3">
                       <StatusBadge tone={pct >= 100 ? 'danger' : pct >= 90 ? 'warning' : 'success'}>
-                        {activeCount}/{t.capacity}
+                        {activeCount}/{tr.capacity}
                       </StatusBadge>
                     </td>
                     <td className="px-4 py-3">
                       <StatusBadge
-                        tone={t.status === 'open' ? 'accent' : t.status === 'closed' ? 'warning' : 'danger'}
+                        tone={tr.status === 'open' ? 'accent' : tr.status === 'closed' ? 'warning' : 'danger'}
                         dot
                       >
-                        {statusLabel[t.status]}
+                        {statusLabel[tr.status]}
                       </StatusBadge>
                     </td>
                     <td className="px-4 py-3">
@@ -219,15 +219,15 @@ export default function CoachTrainings() {
                         className="flex items-center justify-end gap-1"
                         data-tour="actions"
                       >
-                        <Link to={`${base}/${t.id}`} className="btn-ghost h-8 px-2 text-xs">{t('common.open')}</Link>
-                        <Link to={`${base}/${t.id}/edit`} className="btn-ghost h-8 px-2 text-xs">
+                        <Link to={`${base}/${tr.id}`} className="btn-ghost h-8 px-2 text-xs">{t('common.open')}</Link>
+                        <Link to={`${base}/${tr.id}/edit`} className="btn-ghost h-8 px-2 text-xs">
                           <Pencil className="h-3.5 w-3.5" />
                         </Link>
                         <button
                           type="button"
                           className="btn-ghost h-8 px-2 text-xs"
                           onClick={() => {
-                            duplicate(t.id);
+                            duplicate(tr.id);
                             push({ kind: 'success', message: t('coach_trainings.duplicate') });
                           }}
                           aria-label={t('coach_trainings.duplicate')}
@@ -237,7 +237,7 @@ export default function CoachTrainings() {
                         <button
                           type="button"
                           className="btn-ghost h-8 px-2 text-xs text-red-600"
-                          onClick={() => setToDelete(t.id)}
+                          onClick={() => setToDelete(tr.id)}
                           aria-label={t('common.delete')}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -252,35 +252,35 @@ export default function CoachTrainings() {
 
           {/* Mobile cards */}
           <ul className="divide-y divide-ink-100 md:hidden dark:divide-ink-800">
-            {filtered.map((t) => {
-              const coach = coaches.find((c) => c.id === t.coachId);
-              const pct = Math.round((t.registrations.length / t.capacity) * 100);
+            {filtered.map((tr) => {
+              const coach = coaches.find((c) => c.id === tr.coachId);
+              const pct = Math.round((tr.registrations.length / tr.capacity) * 100);
               return (
-                <li key={t.id} className="bg-white p-4 dark:bg-ink-900">
+                <li key={tr.id} className="bg-white p-4 dark:bg-ink-900">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">
-                        {relativeDay(t.date)} · {t.startTime}
+                        {relativeDay(tr.date)} · {tr.startTime}
                       </p>
-                      <p className="truncate font-semibold">{t.title}</p>
+                      <p className="truncate font-semibold">{tr.title}</p>
                       <p className="text-xs text-ink-500">
-                        {coach?.name.replace('Coach ', '') ?? t('member_join.gender_unspecified')}
+                        {coach?.name.replace('Coach ', '') ?? '—'}
                       </p>
                     </div>
                     <StatusBadge tone={pct >= 100 ? 'danger' : pct >= 90 ? 'warning' : 'success'}>
-                      {t.registrations.length}/{t.capacity}
+                      {tr.registrations.length}/{tr.capacity}
                     </StatusBadge>
                   </div>
                   <div className="mt-3 flex flex-wrap items-center gap-1">
-                    <Link to={`${base}/${t.id}`} className="btn-ghost h-8 px-2 text-xs">{t('common.open')}</Link>
-                    <Link to={`${base}/${t.id}/edit`} className="btn-ghost h-8 px-2 text-xs">
+                    <Link to={`${base}/${tr.id}`} className="btn-ghost h-8 px-2 text-xs">{t('common.open')}</Link>
+                    <Link to={`${base}/${tr.id}/edit`} className="btn-ghost h-8 px-2 text-xs">
                       <Pencil className="h-3.5 w-3.5" /> {t('common.edit')}
                     </Link>
                     <button
                       type="button"
                       className="btn-ghost h-8 px-2 text-xs"
                       onClick={() => {
-                        duplicate(t.id);
+                        duplicate(tr.id);
                         push({ kind: 'success', message: t('coach_trainings.duplicate') });
                       }}
                     >
@@ -289,7 +289,7 @@ export default function CoachTrainings() {
                     <button
                       type="button"
                       className="btn-ghost h-8 px-2 text-xs text-red-600"
-                      onClick={() => setToDelete(t.id)}
+                      onClick={() => setToDelete(tr.id)}
                     >
                       <Trash2 className="h-3.5 w-3.5" /> {t('common.delete')}
                     </button>

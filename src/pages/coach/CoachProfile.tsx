@@ -201,7 +201,7 @@ export default function CoachProfile() {
     {
       target: '[data-tour="personal-info"]',
       content:
-        "Jūsų duomenys. Vardas ir pavardė — kaip jus matys nariai. El. paštas naudojamas prisijungimui ir yra nekeičiamas. Telefono numeris — matomas nariams treniruotės puslapyje, kad galėtų su jumis susisiekti. Specializacija — trumpai apie jūsų sritį (pvz. „Sprintas ir technika").",
+        "Jūsų duomenys. Vardas ir pavardė — kaip jus matys nariai. El. paštas naudojamas prisijungimui ir yra nekeičiamas. Telefono numeris — matomas nariams treniruotės puslapyje, kad galėtų su jumis susisiekti. Specializacija — trumpai apie jūsų sritį (pvz. 'Sprintas ir technika').",
     },
     {
       target: '[data-tour="password"]',
