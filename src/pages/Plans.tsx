@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "../components/ui/LanguageSwitcher";
 import {
   ArrowRight,
@@ -23,202 +24,11 @@ import { getStripePromise } from "../utils/stripe";
 
 const MONTHLY_FEE = 100;
 
-const INCLUDED: string[] = [
-  "Neribotai narių, trenerių ir treniruočių",
-  "AI generuojami treniruočių planai",
-  "Individualūs planai kiekvienam nariui",
-  "Automatinis narystės mokesčių surinkimas per Stripe",
-  "Stripe piniginė — bet kada išsigryninkite pinigus",
-  "Lyderių lentelės ir rezultatų sekimas",
-  "Techninė pagalba lietuviškai",
-  "Bet kada galima atsisakyti prenumeratos",
-];
-
 type RoleTab = "admin" | "coach" | "member";
 
-const ROLES: {
-  id: RoleTab;
-  label: string;
-  eyebrow: string;
-  bullets: string[];
-  screens: { src: string; alt: string; phone?: boolean }[];
-}[] = [
-  {
-    id: "admin",
-    label: "Administratorius",
-    eyebrow: "Visas klubas vienoje vietoje",
-    bullets: [
-      "Pajamos, registracijos ir nariai — realiu laiku viename skydelyje.",
-      "Nustatykite narystės planus, surinkite mokėjimus automatiškai per Stripe.",
-      "Valdykite trenerius, treniruočių tvarkaraštį ir narius be Excel.",
-    ],
-    screens: [
-      {
-        src: "/screenshots/admin-dashboard.png",
-        alt: "Administratoriaus skydelis",
-      },
-      { src: "/screenshots/admin-payments.png", alt: "Mokėjimų valdymas" },
-    ],
-  },
-  {
-    id: "coach",
-    label: "Treneris",
-    eyebrow: "Planuok, vesk, stebėk",
-    bullets: [
-      "Sugeneruokite treniruotės planą su AI per 10 sekundžių.",
-      "Kalendorius, registracijų sąrašas ir narių planai — viskas tiesiai telefone.",
-      "Priskirk kiekvienam nariui individualų planą treniruotei.",
-    ],
-    screens: [
-      { src: "/screenshots/admin-ai-plan.png", alt: "AI treniruočių planai" },
-      { src: "/screenshots/coach-calendar.png", alt: "Trenerio kalendorius" },
-    ],
-  },
-  {
-    id: "member",
-    label: "Narys",
-    eyebrow: "Narių programa telefone",
-    bullets: [
-      "Nariai registruojasi į treniruotes, mato tvarkaraštį ir savo planą.",
-      "Treniruočių istorija, lyderių lentelės ir asmeniniai rekordai.",
-      "Narystė ir mokėjimai — viskas vienoje programėlėje.",
-    ],
-    screens: [
-      {
-        src: "/screenshots/member-trainings.jpg",
-        alt: "Treniruočių tvarkaraštis",
-        phone: true,
-      },
-      {
-        src: "/screenshots/member-results.jpg",
-        alt: "Rezultatų lentelės",
-        phone: true,
-      },
-    ],
-  },
-];
-
-const FEATURES_SHOWCASE: {
-  tag: string;
-  title: string;
-  description: string;
-  bullets: string[];
-  images: { src: string; alt: string }[];
-}[] = [
-  {
-    tag: "Nariai",
-    title: "Visi nariai — vienoje vietoje.",
-    description:
-      "Stebėkite kiekvieno nario narystę, mokėjimo statusą ir treniruočių aktyvumą.",
-    bullets: [
-      "Matote visų narių narystės statusą ir mokėjimus realiu laiku.",
-      "Gaukite nuorodą naujiems nariams — jie registruojasi tiesiai į jūsų klubą patys.",
-      "Filtruokite pagal vėluojančius mokėjimus ir greitai imkitės veiksmų.",
-    ],
-    images: [{ src: "/screenshots/admin-members.png", alt: "Narių sąrašas" }],
-  },
-  {
-    tag: "Treniruočių planai",
-    title: "Sukurkite planą vieną kartą — naudokite visada.",
-    description:
-      "Rašykite planus patys arba sugeneruokite su AI. Išsaugokite kaip šabloną ir naudokite kiekvienoje treniruotėje.",
-    bullets: [
-      "AI sugeneruoja pilną treniruotės planą pagal jūsų aprašymą per kelias sekundes.",
-      "Išsaugoti planai tampa šablonais — pasirinkite ir priskirkite naujoms treniruotėms.",
-      "Kiekvienas narys mato savo individualų planą telefone treniruotės metu.",
-    ],
-    images: [
-      {
-        src: "/screenshots/admin-ai-plan.png",
-        alt: "AI treniruočių planų kūrimas",
-      },
-    ],
-  },
-  {
-    tag: "Finansai",
-    title: "Pilna mokėjimų kontrolė.",
-    description:
-      "Matote visas klubo pajamas, kiekvieno nario mokėjimo istoriją ir prognozuojamas pajamas iš turimų prenumeratų.",
-    bullets: [
-      "Realaus laiko pajamų suvestinė — kiek surinkta, kiek laukiama.",
-      "Kiekvieno nario mokėjimų istorija ir sąskaitos vienoje vietoje.",
-      "Automatiniai priminimai nariams, kurie vėluoja su mokėjimu.",
-    ],
-    images: [
-      { src: "/screenshots/admin-payments.png", alt: "Mokėjimų valdymas" },
-    ],
-  },
-  {
-    tag: "Stripe piniginė",
-    title: "Pinigai tiesiai į jūsų sąskaitą.",
-    description:
-      "Jūsų klubas gauna savo Stripe piniginę. Nariai moka — pinigai patenka pas jus. Išsigryninkite į banką bet kada.",
-    bullets: [
-      "Jūsų klubo Stripe piniginė — pinigai nepatenka per Lumo.",
-      "Išsigryninkite pajamas į banko sąskaitą bet kuriuo metu.",
-      "Pilna transakcijų istorija ir ataskaitos tiesiai iš Stripe.",
-    ],
-    images: [
-      { src: "/screenshots/stripe-wallet.png", alt: "Stripe pajamų suvestinė" },
-    ],
-  },
-  {
-    tag: "Narystės planai",
-    title: "Jūs nusprendžiate, kiek kainuoja narystė.",
-    description:
-      "Kurkite mėnesinius planus su automatiniu nurašymu arba vienkartinių treniruočių paketus — pasirinkite, kas tinka jūsų klubui.",
-    bullets: [
-      "Mėnesiniai planai su automatiniu Stripe atsiskaitymu kas mėnesį.",
-      "Vienkartiniai paketai — nariai perka N treniruočių iš anksto.",
-      "Keli planai vienu metu — skirtingos kainos skirtingoms grupėms.",
-    ],
-    images: [
-      {
-        src: "/screenshots/admin-membership.png",
-        alt: "Narystės planų kūrimas",
-      },
-    ],
-  },
-  {
-    tag: "Treneriai",
-    title: "Pridėkite trenerius ir stebėkite jų darbą.",
-    description:
-      "Kiekvienas treneris gauna savo paskyrą su savo tvarkaraščiu, treniruotėmis ir nariams skirtais planais.",
-    bullets: [
-      "Treneris prisijungia su savo paskyra ir mato tik savo treniruotes.",
-      "Kiekvienas treneris turi savo darbo kalendorių su visomis treniruotėmis.",
-      "Treneris sukuria ir priskiria planus, tvarko registracijas ir lankomumą.",
-    ],
-    images: [
-      {
-        src: "/screenshots/admin-add-coach.png",
-        alt: "Trenerio paskyros kūrimas",
-      },
-      {
-        src: "/screenshots/coach-calendar.png",
-        alt: "Trenerio darbo kalendorius",
-      },
-    ],
-  },
-];
-
-type InfoForm = {
-  clubName: string;
-  adminName: string;
-  adminEmail: string;
-  adminPassword: string;
-};
-
-const initialInfo: InfoForm = {
-  clubName: "",
-  adminName: "",
-  adminEmail: "",
-  adminPassword: "",
-};
-
-function formatDate(iso: string): string {
+function formatDate(iso: string, locale: string): string {
   try {
-    return new Date(iso).toLocaleDateString("lt-LT", {
+    return new Date(iso).toLocaleDateString(locale, {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -239,6 +49,8 @@ function formatPrice(v: number): string {
 type Step = "landing" | "info" | "payment" | "success";
 
 export default function Plans() {
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language.startsWith("en") ? "en-US" : "lt-LT";
   const [info, setInfo] = useState<InfoForm>(initialInfo);
   const [step, setStep] = useState<Step>("landing");
   const [submitting, setSubmitting] = useState(false);
@@ -254,7 +66,6 @@ export default function Plans() {
   const setField = <K extends keyof InfoForm>(key: K, value: InfoForm[K]) =>
     setInfo((prev) => ({ ...prev, [key]: value }));
 
-  // Step 1 submit: create club + Stripe subscription, get PaymentIntent secret.
   const submitInfo = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -273,27 +84,25 @@ export default function Plans() {
       setError(
         err instanceof ApiError
           ? err.message
-          : "Nepavyko sukurti klubo. Bandykite dar kartą.",
+          : t("plans.error_create_club"),
       );
     } finally {
       setSubmitting(false);
     }
   };
 
-  // Rough "next charge" preview shown on the signup steps — 30 days out to
-  // match the trial. The authoritative next-charge date comes from the server.
   const nextChargeDate = useMemo(() => {
     const d = new Date();
     d.setDate(d.getDate() + 30);
-    return d.toLocaleDateString("lt-LT", {
+    return d.toLocaleDateString(locale, {
       year: "numeric",
       month: "long",
       day: "numeric",
     });
-  }, []);
+  }, [locale]);
 
   if (step === "success" && result) {
-    return <SuccessScreen result={result} password={savedPassword} />;
+    return <SuccessScreen result={result} password={savedPassword} locale={locale} />;
   }
 
   if (step === "payment" && result) {
@@ -362,7 +171,104 @@ const JSON_LD = JSON.stringify({
 });
 
 function LandingPage({ onStart }: { onStart: () => void }) {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<RoleTab>("admin");
+
+  const ROLES: {
+    id: RoleTab;
+    label: string;
+    eyebrow: string;
+    bullets: string[];
+    screens: { src: string; alt: string; phone?: boolean }[];
+  }[] = [
+    {
+      id: "admin",
+      label: t("plans.role_admin_label"),
+      eyebrow: t("plans.role_admin_eyebrow"),
+      bullets: [t("plans.role_admin_b1"), t("plans.role_admin_b2"), t("plans.role_admin_b3")],
+      screens: [
+        { src: "/screenshots/admin-dashboard.png", alt: "Admin dashboard" },
+        { src: "/screenshots/admin-payments.png", alt: "Payment management" },
+      ],
+    },
+    {
+      id: "coach",
+      label: t("plans.role_coach_label"),
+      eyebrow: t("plans.role_coach_eyebrow"),
+      bullets: [t("plans.role_coach_b1"), t("plans.role_coach_b2"), t("plans.role_coach_b3")],
+      screens: [
+        { src: "/screenshots/admin-ai-plan.png", alt: "AI training plans" },
+        { src: "/screenshots/coach-calendar.png", alt: "Coach calendar" },
+      ],
+    },
+    {
+      id: "member",
+      label: t("plans.role_member_label"),
+      eyebrow: t("plans.role_member_eyebrow"),
+      bullets: [t("plans.role_member_b1"), t("plans.role_member_b2"), t("plans.role_member_b3")],
+      screens: [
+        { src: "/screenshots/member-trainings.jpg", alt: "Training schedule", phone: true },
+        { src: "/screenshots/member-results.jpg", alt: "Results leaderboard", phone: true },
+      ],
+    },
+  ];
+
+  const FEATURES_SHOWCASE: {
+    tag: string;
+    title: string;
+    description: string;
+    bullets: string[];
+    images: { src: string; alt: string }[];
+  }[] = [
+    {
+      tag: t("plans.feat_members_tag"),
+      title: t("plans.feat_members_title"),
+      description: t("plans.feat_members_desc"),
+      bullets: [t("plans.feat_members_b1"), t("plans.feat_members_b2"), t("plans.feat_members_b3")],
+      images: [{ src: "/screenshots/admin-members.png", alt: "Members list" }],
+    },
+    {
+      tag: t("plans.feat_plans_tag"),
+      title: t("plans.feat_plans_title"),
+      description: t("plans.feat_plans_desc"),
+      bullets: [t("plans.feat_plans_b1"), t("plans.feat_plans_b2"), t("plans.feat_plans_b3")],
+      images: [{ src: "/screenshots/admin-ai-plan.png", alt: "AI training plan builder" }],
+    },
+    {
+      tag: t("plans.feat_finance_tag"),
+      title: t("plans.feat_finance_title"),
+      description: t("plans.feat_finance_desc"),
+      bullets: [t("plans.feat_finance_b1"), t("plans.feat_finance_b2"), t("plans.feat_finance_b3")],
+      images: [{ src: "/screenshots/admin-payments.png", alt: "Payment management" }],
+    },
+    {
+      tag: t("plans.feat_stripe_tag"),
+      title: t("plans.feat_stripe_title"),
+      description: t("plans.feat_stripe_desc"),
+      bullets: [t("plans.feat_stripe_b1"), t("plans.feat_stripe_b2"), t("plans.feat_stripe_b3")],
+      images: [{ src: "/screenshots/stripe-wallet.png", alt: "Stripe revenue dashboard" }],
+    },
+    {
+      tag: t("plans.feat_membership_tag"),
+      title: t("plans.feat_membership_title"),
+      description: t("plans.feat_membership_desc"),
+      bullets: [t("plans.feat_membership_b1"), t("plans.feat_membership_b2"), t("plans.feat_membership_b3")],
+      images: [{ src: "/screenshots/admin-membership.png", alt: "Membership plan creation" }],
+    },
+    {
+      tag: t("plans.feat_coaches_tag"),
+      title: t("plans.feat_coaches_title"),
+      description: t("plans.feat_coaches_desc"),
+      bullets: [t("plans.feat_coaches_b1"), t("plans.feat_coaches_b2"), t("plans.feat_coaches_b3")],
+      images: [
+        { src: "/screenshots/admin-add-coach.png", alt: "Add coach account" },
+        { src: "/screenshots/coach-calendar.png", alt: "Coach work calendar" },
+      ],
+    },
+  ];
+
+  const INCLUDED = t("plans.included_features", { returnObjects: true }) as string[];
+
   const role = ROLES.find((r) => r.id === activeTab)!;
 
   return (
@@ -398,7 +304,7 @@ function LandingPage({ onStart }: { onStart: () => void }) {
             to="/login"
             className="text-sm font-semibold text-white/60 hover:text-white"
           >
-            Prisijungti
+            {t("plans.footer_login")}
           </Link>
         </div>
       </header>
@@ -407,33 +313,31 @@ function LandingPage({ onStart }: { onStart: () => void }) {
         {/* Hero */}
         <section className="py-14 text-center lg:py-20">
           <span className="inline-flex items-center gap-2 rounded-full border border-lime-400/30 bg-lime-400/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-lime-300">
-            <Sparkles className="h-3.5 w-3.5" /> Sporto klubų platforma
+            <Sparkles className="h-3.5 w-3.5" /> {t("plans.badge")}
           </span>
           <h1 className="mx-auto mt-5 max-w-3xl font-display text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-            Valdykite klubą.
-            <br className="hidden sm:block" /> Stebėkite rezultatus.
+            {t("plans.hero_title_1")}
+            <br className="hidden sm:block" /> {t("plans.hero_title_2")}
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-lg text-white/60">
-            Tvarkaraštis, mokėjimai, AI planai ir narių programa — visa tai
-            vienoje sistemoje.
+            {t("plans.hero_subtitle")}
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <button
               onClick={onStart}
               className="btn-accent h-12 px-8 text-base"
             >
-              Išbandyti nemokamai 30 dienų <ArrowRight className="h-4 w-4" />
+              {t("plans.try_free")} <ArrowRight className="h-4 w-4" />
             </button>
             <a
               href="#kaina"
               className="inline-flex h-12 items-center gap-2 rounded-xl border border-white/20 px-6 text-sm font-semibold text-white hover:bg-white/5"
             >
-              Žiūrėti kainą
+              {t("plans.see_price")}
             </a>
           </div>
           <p className="mt-3 text-xs text-white/40">
-            Pirmas mėnuo nemokamai · Jokių slaptų mokesčių · Bet kada galima
-            atšaukti
+            {t("plans.disclaimer")}
           </p>
         </section>
 
@@ -446,7 +350,7 @@ function LandingPage({ onStart }: { onStart: () => void }) {
           <div className="relative overflow-hidden rounded-2xl border border-white/10 shadow-2xl">
             <img
               src="/screenshots/admin-dashboard.png"
-              alt="Lumo administratoriaus skydelis"
+              alt="Lumo admin dashboard"
               className="w-full object-cover"
               loading="eager"
             />
@@ -457,11 +361,10 @@ function LandingPage({ onStart }: { onStart: () => void }) {
         <section className="py-8">
           <div className="mb-6 text-center">
             <h2 className="font-display text-2xl font-bold sm:text-3xl">
-              Kiekvienam – savo erdvė.
+              {t("plans.roles_title")}
             </h2>
             <p className="mt-2 text-white/60">
-              Administratorius, treneris ir narys — visi gauna tai, ko jiems
-              reikia.
+              {t("plans.roles_subtitle")}
             </p>
           </div>
 
@@ -525,7 +428,7 @@ function LandingPage({ onStart }: { onStart: () => void }) {
                 onClick={onStart}
                 className="mt-8 inline-flex h-11 w-fit items-center gap-2 rounded-xl bg-white/10 px-5 text-sm font-semibold text-white hover:bg-white/15"
               >
-                Pradėti nemokamai <ArrowRight className="h-4 w-4" />
+                {t("plans.start_free")} <ArrowRight className="h-4 w-4" />
               </button>
             </div>
           </div>
@@ -585,7 +488,7 @@ function LandingPage({ onStart }: { onStart: () => void }) {
         {/* CTA between features and pricing */}
         <div className="py-10 text-center">
           <button onClick={onStart} className="btn-accent h-13 px-8 text-base">
-            Pradėti nemokamai — pirmas mėnuo dovanų{" "}
+            {t("plans.cta")}{" "}
             <ArrowRight className="h-4 w-4" />
           </button>
         </div>
@@ -595,16 +498,16 @@ function LandingPage({ onStart }: { onStart: () => void }) {
           <div className="mx-auto max-w-2xl rounded-3xl border border-lime-400/30 bg-gradient-to-b from-white/[0.06] to-white/[0.02] p-8 sm:p-10">
             <div className="text-center">
               <span className="inline-flex items-center gap-2 rounded-full border border-lime-400/30 bg-lime-400/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-lime-300">
-                Klubo prenumerata
+                {t("plans.pricing_badge")}
               </span>
               <div className="mt-5 flex items-end justify-center gap-2">
                 <span className="font-display text-6xl font-bold">
                   {formatPrice(MONTHLY_FEE)}
                 </span>
-                <span className="mb-2 text-lg text-white/50">/ mėn.</span>
+                <span className="mb-2 text-lg text-white/50">{t("plans.per_month")}</span>
               </div>
               <p className="mt-2 text-sm text-white/60">
-                Pirmas mėnuo nemokamai. Viena kaina — visas klubas.
+                {t("plans.pricing_note")}
               </p>
             </div>
 
@@ -625,10 +528,10 @@ function LandingPage({ onStart }: { onStart: () => void }) {
                 onClick={onStart}
                 className="btn-accent h-12 w-full max-w-sm px-6 text-base"
               >
-                Išbandyti nemokamai 30 dienų <ArrowRight className="h-4 w-4" />
+                {t("plans.try_free")} <ArrowRight className="h-4 w-4" />
               </button>
               <p className="text-xs text-white/40">
-                Šiandien nieko neapmokestiname · Bet kada galima atšaukti
+                {t("plans.no_charge_cancel")}
               </p>
             </div>
           </div>
@@ -637,24 +540,24 @@ function LandingPage({ onStart }: { onStart: () => void }) {
         {/* FAQ */}
         <section className="py-8">
           <h2 className="mb-6 font-display text-xl font-bold sm:text-2xl">
-            Dažni klausimai
+            {t("plans.faq_title")}
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <Faq
-              q="Kada bus nurašytas pirmas mokėjimas?"
-              a={`Pirmas mėnuo nemokamai — kortelė apmokestinama tik po 30 dienų (${formatPrice(MONTHLY_FEE)}).`}
+              q={t("plans.faq_q1")}
+              a={t("plans.faq_a1", { price: formatPrice(MONTHLY_FEE) })}
             />
             <Faq
-              q="Kaip veikia narių mokėjimai?"
-              a="Nariai moka per Stripe. Pinigai patenka tiesiai į jūsų klubo piniginę — bet kada išsigryninkite."
+              q={t("plans.faq_q2")}
+              a={t("plans.faq_a2")}
             />
             <Faq
-              q="Kaip veikia AI treniruočių planai?"
-              a="Nurodote tikslą ir lygį — AI sugeneruoja planą su pratimais, apkrova ir progresija per kelias sekundes."
+              q={t("plans.faq_q3")}
+              a={t("plans.faq_a3")}
             />
             <Faq
-              q="Kiek narių galiu turėti?"
-              a={`Neribotai — ${formatPrice(MONTHLY_FEE)} už visą klubą, nesvarbu, ar turite 20 ar 500 narių.`}
+              q={t("plans.faq_q4")}
+              a={t("plans.faq_a4", { price: formatPrice(MONTHLY_FEE) })}
             />
           </div>
         </section>
@@ -665,13 +568,13 @@ function LandingPage({ onStart }: { onStart: () => void }) {
           <div>© {new Date().getFullYear()} Lumo</div>
           <div className="flex items-center gap-5">
             <Link to="/terms" className="hover:text-white">
-              Paslaugų sąlygos
+              {t("plans.footer_terms")}
             </Link>
             <Link to="/privacy" className="hover:text-white">
-              Privatumo politika
+              {t("plans.footer_privacy")}
             </Link>
             <Link to="/login" className="hover:text-white">
-              Prisijungti
+              {t("plans.footer_login")}
             </Link>
           </div>
         </div>
@@ -689,6 +592,20 @@ function Faq({ q, a }: { q: string; a: string }) {
   );
 }
 
+type InfoForm = {
+  clubName: string;
+  adminName: string;
+  adminEmail: string;
+  adminPassword: string;
+};
+
+const initialInfo: InfoForm = {
+  clubName: "",
+  adminName: "",
+  adminEmail: "",
+  adminPassword: "",
+};
+
 type SetInfo = <K extends keyof InfoForm>(key: K, value: InfoForm[K]) => void;
 
 function InfoStep(props: {
@@ -700,6 +617,7 @@ function InfoStep(props: {
   nextChargeDate: string;
   onBack: () => void;
 }) {
+  const { t } = useTranslation();
   const { info, setField, submit, submitting, error, nextChargeDate, onBack } =
     props;
   return (
@@ -712,7 +630,7 @@ function InfoStep(props: {
             onClick={onBack}
             className="inline-flex items-center gap-1 text-sm font-semibold text-white/60 hover:text-white"
           >
-            <ChevronLeft className="h-4 w-4" /> Atgal
+            <ChevronLeft className="h-4 w-4" /> {t("plans.back")}
           </button>
           <Link to="/" className="flex items-center gap-2">
             <img src="/lumo-logo.png" alt="Lumo" className="h-7 w-auto" />
@@ -725,63 +643,63 @@ function InfoStep(props: {
         <StepHeader current={1} total={2} />
         <div className="mb-8">
           <span className="inline-flex items-center gap-2 rounded-full border border-lime-400/30 bg-lime-400/10 px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-lime-300">
-            <Sparkles className="h-3.5 w-3.5" /> Klubo prenumerata
+            <Sparkles className="h-3.5 w-3.5" /> {t("plans.club_subscription_badge")}
           </span>
           <h1 className="mt-3 font-display text-3xl font-bold sm:text-4xl">
-            Sukurkite savo klubo paskyrą.
+            {t("plans.create_account_title")}
           </h1>
           <p className="mt-2 text-sm text-white/70">
-            Pirmas mėnuo — nemokamai. Pirmasis mokėjimas{" "}
-            <strong className="text-white">{formatPrice(MONTHLY_FEE)}</strong>{" "}
-            bus <strong className="text-white">{nextChargeDate}</strong>, ir
-            kartosis kas mėnesį, kol atšauksite prenumeratą.
+            {t("plans.create_account_subtitle", {
+              price: formatPrice(MONTHLY_FEE),
+              date: nextChargeDate,
+            })}
           </p>
         </div>
 
         <form onSubmit={submit} className="space-y-5">
           <FormSection
             step={1}
-            title="Klubo informacija"
-            description="Šis vardas matysis jūsų nariams ir treneriams."
+            title={t("plans.club_info_title")}
+            description={t("plans.club_info_desc")}
           >
             <Field
-              label="Klubo pavadinimas"
+              label={t("plans.club_name_field")}
               required
               value={info.clubName}
               onChange={(v) => setField("clubName", v)}
-              placeholder="pvz. SportApp Vilnius"
+              placeholder={t("plans.club_name_placeholder")}
             />
           </FormSection>
 
           <FormSection
             step={2}
-            title="Jūsų administratoriaus paskyra"
-            description="Šiais duomenimis prisijungsite prie savo klubo administravimo."
+            title={t("plans.admin_account_title")}
+            description={t("plans.admin_account_desc")}
           >
             <div className="grid gap-4 sm:grid-cols-2">
               <Field
-                label="Vardas ir pavardė"
+                label={t("plans.admin_name_label")}
                 required
                 value={info.adminName}
                 onChange={(v) => setField("adminName", v)}
-                placeholder="Vardenis Pavardenis"
+                placeholder={t("plans.admin_name_placeholder")}
               />
               <Field
-                label="El. paštas"
+                label={t("plans.admin_email_label")}
                 required
                 type="email"
                 value={info.adminEmail}
                 onChange={(v) => setField("adminEmail", v)}
-                placeholder="jus@klubas.lt"
+                placeholder={t("plans.admin_email_placeholder")}
               />
               <Field
-                label="Slaptažodis"
+                label={t("plans.password_label")}
                 required
                 type="password"
                 value={info.adminPassword}
                 onChange={(v) => setField("adminPassword", v)}
-                placeholder="Bent 6 simboliai"
-                hint="Jį naudosite prisijungimui."
+                placeholder={t("plans.password_min")}
+                hint={t("plans.password_hint")}
                 className="sm:col-span-2"
               />
             </div>
@@ -789,15 +707,13 @@ function InfoStep(props: {
 
           <div className="rounded-2xl border border-lime-400/30 bg-lime-400/10 p-5 text-sm">
             <p className="font-display text-base font-bold text-lime-200">
-              Pirmas mėnuo nemokamai, po to {formatPrice(MONTHLY_FEE)} per
-              mėnesį.
+              {t("plans.pricing_box_title", { price: formatPrice(MONTHLY_FEE) })}
             </p>
             <p className="mt-1.5 text-white/70">
-              Kitame žingsnyje pridėsite mokėjimo kortelę — šiandien nieko
-              neapmokestiname. Pirmasis mokėjimas{" "}
-              <strong className="text-white">{formatPrice(MONTHLY_FEE)}</strong>{" "}
-              bus <strong className="text-white">{nextChargeDate}</strong>, ir
-              kartosis kas mėnesį, kol atšauksite.
+              {t("plans.pricing_box_desc", {
+                price: formatPrice(MONTHLY_FEE),
+                date: nextChargeDate,
+              })}
             </p>
           </div>
 
@@ -812,7 +728,7 @@ function InfoStep(props: {
             disabled={submitting}
             className="btn-accent h-12 w-full text-base"
           >
-            {submitting ? "Ruošiamasi…" : "Tęsti į mokėjimą"}
+            {submitting ? t("plans.continuing") : t("plans.continue_to_payment")}
             {!submitting && <ArrowRight className="h-4 w-4" />}
           </button>
         </form>
@@ -827,6 +743,7 @@ function PaymentStep(props: {
   onSuccess: () => void;
   onBack: () => void;
 }) {
+  const { t } = useTranslation();
   const { clientSecret, nextChargeDate, onSuccess, onBack } = props;
   const promise = getStripePromise();
 
@@ -834,8 +751,7 @@ function PaymentStep(props: {
     return (
       <PaymentShell onBack={onBack}>
         <div className="rounded-xl border border-red-400/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-          Trūksta „VITE_STRIPE_PUBLISHABLE_KEY" aplinkos kintamojo. Praneškite
-          administratoriui.
+          {t("plans.missing_stripe_key")}
         </div>
       </PaymentShell>
     );
@@ -889,6 +805,7 @@ function PaymentShell({
   onBack: () => void;
   children: React.ReactNode;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="relative min-h-screen bg-ink-950 text-white">
       <div className="hero-gradient absolute inset-0 -z-10" />
@@ -899,7 +816,7 @@ function PaymentShell({
             onClick={onBack}
             className="inline-flex items-center gap-1 text-sm font-semibold text-white/60 hover:text-white"
           >
-            <ChevronLeft className="h-4 w-4" /> Atgal
+            <ChevronLeft className="h-4 w-4" /> {t("plans.back")}
           </button>
           <Link to="/" className="flex items-center gap-2">
             <img src="/lumo-logo.png" alt="Lumo" className="h-7 w-auto" />
@@ -912,17 +829,13 @@ function PaymentShell({
         <StepHeader current={2} total={2} />
         <div className="mb-8">
           <span className="inline-flex items-center gap-2 rounded-full border border-lime-400/30 bg-lime-400/10 px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-lime-300">
-            <Lock className="h-3.5 w-3.5" /> Saugus mokėjimas
+            <Lock className="h-3.5 w-3.5" /> {t("plans.secure_badge")}
           </span>
           <h1 className="mt-3 font-display text-3xl font-bold sm:text-4xl">
-            Pridėkite mokėjimo kortelę.
+            {t("plans.payment_title")}
           </h1>
           <p className="mt-2 text-sm text-white/70">
-            Pirmas <strong className="text-white">mėnuo — nemokamai</strong>. Po
-            to kortelė bus apmokestinta{" "}
-            <strong className="text-white">{formatPrice(MONTHLY_FEE)}</strong>{" "}
-            kas mėnesį, kol atšauksite prenumeratą. Šiandien nieko
-            neapmokestiname.
+            {t("plans.payment_subtitle", { price: formatPrice(MONTHLY_FEE) })}
           </p>
         </div>
         {children}
@@ -938,15 +851,12 @@ function PaymentForm({
   onSuccess: () => void;
   nextChargeDate: string;
 }) {
+  const { t } = useTranslation();
   const stripe = useStripe();
   const elements = useElements();
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Stripe may redirect the user (3DS challenge, wallets) and return to
-  // /plans?setup_intent=...&redirect_status=succeeded. If we detect that,
-  // treat it as success. redirect: 'if_required' avoids the redirect for
-  // simple cards.
   useEffect(() => {
     const url = new URL(window.location.href);
     if (url.searchParams.get("redirect_status") === "succeeded") {
@@ -969,7 +879,7 @@ function PaymentForm({
     });
 
     if (err) {
-      setError(err.message ?? "Nepavyko išsaugoti kortelės.");
+      setError(err.message ?? t("plans.error_save_card"));
       setSubmitting(false);
       return;
     }
@@ -991,10 +901,10 @@ function PaymentForm({
           </div>
           <div>
             <h2 className="font-display text-lg font-bold text-white">
-              Mokėjimo kortelė
+              {t("plans.card_title")}
             </h2>
             <p className="mt-1 text-sm text-white/60">
-              Kortelės duomenys apdorojami Stripe — mūsų serveryje nesaugomi.
+              {t("plans.card_desc")}
             </p>
           </div>
         </div>
@@ -1009,15 +919,13 @@ function PaymentForm({
 
       <div className="rounded-2xl border border-lime-400/30 bg-lime-400/10 p-5 text-sm">
         <p className="font-display text-base font-bold text-lime-200">
-          Pirmas mėnuo nemokamai. Šiandien nieko neapmokestiname.
+          {t("plans.trial_note_title")}
         </p>
         <p className="mt-1.5 text-white/70">
-          Paspausdami „Aktyvuoti bandymo laikotarpį" sutinkate, kad po nemokamo
-          laikotarpio ( <strong className="text-white">{nextChargeDate}</strong>
-          ) jūsų kortelė bus apmokestinta{" "}
-          <strong className="text-white">{formatPrice(MONTHLY_FEE)}</strong> per
-          mėnesį. Prenumerata kartojasi kas mėnesį, kol atšauksite ją iš klubo
-          administravimo skydelio.
+          {t("plans.trial_note_desc", {
+            date: nextChargeDate,
+            price: formatPrice(MONTHLY_FEE),
+          })}
         </p>
       </div>
 
@@ -1032,12 +940,12 @@ function PaymentForm({
         disabled={!stripe || !elements || submitting}
         className="btn-accent h-12 w-full text-base"
       >
-        {submitting ? "Tvirtinama…" : "Aktyvuoti bandymo laikotarpį"}
+        {submitting ? t("plans.confirming") : t("plans.activate_trial")}
         {!submitting && <ArrowRight className="h-4 w-4" />}
       </button>
 
       <p className="pb-6 text-center text-xs text-white/50">
-        Užšifruotas ryšys. Kortelės duomenys apsaugoti Stripe.
+        {t("plans.secure_note")}
       </p>
     </form>
   );
@@ -1144,10 +1052,13 @@ function Field({
 function SuccessScreen({
   result,
   password,
+  locale,
 }: {
   result: SignupResult;
   password: string;
+  locale: string;
 }) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState<"email" | "password" | null>(null);
   const copy = async (which: "email" | "password", value: string) => {
     try {
@@ -1184,42 +1095,36 @@ function SuccessScreen({
 
         <div className="text-center">
           <p className="text-[11px] font-bold uppercase tracking-widest text-lime-300">
-            Sveikiname
+            {t("plans.success_badge")}
           </p>
           <h1 className="mt-2 font-display text-3xl font-bold sm:text-4xl">
-            Klubas „{result.club.name}" sukurtas.
+            {t("plans.success_title", { name: result.club.name })}
           </h1>
           <p className="mt-3 text-sm text-white/70">
-            Prenumerata aktyvuota. Kitas mokėjimas —{" "}
-            <strong className="text-white">
-              {formatDate(result.subscription.trialEndsAt)}
-            </strong>
-            . Kas mėnesį automatiškai nurašysime{" "}
-            <strong className="text-white">
-              {formatPrice(result.subscription.monthlyFee)}
-            </strong>
-            .
+            {t("plans.success_desc", {
+              date: formatDate(result.subscription.trialEndsAt, locale),
+              price: formatPrice(result.subscription.monthlyFee),
+            })}
           </p>
         </div>
 
         <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur">
           <h2 className="font-display text-base font-bold text-white">
-            Jūsų prisijungimo duomenys
+            {t("plans.credentials_title")}
           </h2>
           <p className="mt-1 text-sm text-white/60">
-            Išsaugokite šiuos duomenis — jais prisijungsite prie savo klubo
-            administravimo.
+            {t("plans.credentials_desc")}
           </p>
 
           <div className="mt-4 space-y-3">
             <CredentialRow
-              label="El. paštas"
+              label={t("plans.credential_email_label")}
               value={result.admin.email}
               copied={copied === "email"}
               onCopy={() => copy("email", result.admin.email)}
             />
             <CredentialRow
-              label="Slaptažodis"
+              label={t("plans.credential_password_label")}
               value={password}
               copied={copied === "password"}
               onCopy={() => copy("password", password)}
@@ -1230,27 +1135,27 @@ function SuccessScreen({
             to={result.loginUrl}
             className="btn-accent mt-6 h-12 w-full text-base"
           >
-            Prisijungti prie klubo
+            {t("plans.go_to_club")}
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
 
         <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-sm text-white/70">
           <p className="font-display text-base font-bold text-white">
-            Kas toliau?
+            {t("plans.whats_next")}
           </p>
           <ul className="mt-2 space-y-1.5">
             <li className="flex items-start gap-2">
               <Check className="mt-0.5 h-4 w-4 shrink-0 text-lime-300" />
-              <span>Pridėkite trenerius ir narius į savo klubą.</span>
+              <span>{t("plans.next_add_members")}</span>
             </li>
             <li className="flex items-start gap-2">
               <Check className="mt-0.5 h-4 w-4 shrink-0 text-lime-300" />
-              <span>Suplanuokite pirmąsias treniruotes.</span>
+              <span>{t("plans.next_plan_trainings")}</span>
             </li>
             <li className="flex items-start gap-2">
               <Check className="mt-0.5 h-4 w-4 shrink-0 text-lime-300" />
-              <span>Nustatykite narystės mokesčius.</span>
+              <span>{t("plans.next_set_fees")}</span>
             </li>
           </ul>
         </div>
@@ -1270,6 +1175,7 @@ function CredentialRow({
   copied: boolean;
   onCopy: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3">
       <div className="min-w-0 flex-1">
@@ -1286,7 +1192,7 @@ function CredentialRow({
         className="inline-flex items-center gap-1 rounded-lg border border-white/15 bg-white/[0.05] px-3 py-1.5 text-xs font-semibold text-white/80 transition-colors hover:bg-white/10 hover:text-white"
       >
         <Copy className="h-3.5 w-3.5" />
-        {copied ? "Nukopijuota" : "Kopijuoti"}
+        {copied ? t("plans.copied") : t("plans.copy")}
       </button>
     </div>
   );
