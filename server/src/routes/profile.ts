@@ -5,7 +5,7 @@ import { asyncHandler, HttpError } from '../middleware/errorHandler.js';
 import { requireRole } from '../middleware/auth.js';
 import { hashPassword, verifyPassword } from '../auth/password.js';
 import { serializeCoach, serializeUser } from '../serialize.js';
-import { initialsFromName } from '../util.js';
+import { initialsFromName, randomAvatarColor } from '../util.js';
 
 export const profileRouter = Router();
 
@@ -122,6 +122,35 @@ profileRouter.put(
     }
 
     res.json(serializeCoach(updated));
+  }),
+);
+
+// POST /ensure-coach — idempotent. Creates a Coach record for the admin user
+// if they don't have one, so they can be selected as a trainer in sessions.
+profileRouter.post(
+  '/ensure-coach',
+  requireRole('admin'),
+  asyncHandler(async (req, res) => {
+    const userId = req.user!.userId;
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new HttpError(404, 'Vartotojas nerastas.');
+    if (!user.clubId) throw new HttpError(403, 'Šiai paskyrai nepriskirtas klubas.');
+
+    if (user.coachId) {
+      const existing = await prisma.coach.findUnique({ where: { id: user.coachId } });
+      if (existing) return res.json(serializeCoach(existing));
+    }
+
+    const coach = await prisma.coach.create({
+      data: {
+        clubId: user.clubId,
+        name: user.name ?? 'Administratorius',
+        initials: initialsFromName(user.name ?? 'Administratorius'),
+        avatarColor: randomAvatarColor(),
+      },
+    });
+    await prisma.user.update({ where: { id: userId }, data: { coachId: coach.id } });
+    res.json(serializeCoach(coach));
   }),
 );
 

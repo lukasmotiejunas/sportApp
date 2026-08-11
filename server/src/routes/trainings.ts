@@ -116,7 +116,9 @@ trainingsRouter.post(
     const adminInfo = await getClubAdminInfo(clubId);
     if (adminInfo?.club.notifyNewTraining) {
       const dateStr = new Date(data.date).toLocaleDateString('lt-LT');
-      await sendNewTrainingEmail(adminInfo.adminEmail, data.title, dateStr, adminInfo.club.name).catch(() => {});
+      await sendNewTrainingEmail(adminInfo.adminEmail, data.title, dateStr, adminInfo.club.name).catch((err) => {
+        console.error('[notify] sendNewTrainingEmail failed:', err);
+      });
     }
 
     res.status(201).json(serializeTraining(training));
