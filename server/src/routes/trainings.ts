@@ -131,7 +131,7 @@ trainingsRouter.post(
     });
     await Promise.allSettled(
       optedInMembers.map((m) =>
-        sendNewTrainingToMemberEmail(m.email, m.name, data.title, dateStr, trainingUrl, adminInfo?.club.name ?? ''),
+        sendNewTrainingToMemberEmail(m.email, m.name, data.title, dateStr, data.startTime, trainingUrl, adminInfo?.club.name ?? ''),
       ),
     );
 
