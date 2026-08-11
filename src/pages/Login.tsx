@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, Sparkles } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useStore } from "../store/useStore";
 import type { Role } from "../types";
 
@@ -12,6 +13,7 @@ const roleHome: Record<Role, string> = {
 };
 
 export default function Login() {
+  const { t } = useTranslation();
   const login = useStore((s) => s.login);
   const navigate = useNavigate();
 
@@ -30,7 +32,7 @@ export default function Login() {
       const role = useStore.getState().authUser?.role ?? "member";
       navigate(roleHome[role]);
     } else {
-      setError(res.error ?? "Nepavyko prisijungti.");
+      setError(res.error ?? t("auth.error_default"));
     }
   };
 
@@ -46,21 +48,21 @@ export default function Login() {
           />
           <div className="max-w-md text-center">
             <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
-              Prisijunkite prie savo paskyros.
+              {t("auth.sign_in_title")}
             </h1>
           </div>
         </div>
 
         <div className="flex flex-col justify-center gap-4 rounded-t-3xl bg-white p-6 text-ink-900 shadow-pop sm:p-10 lg:rounded-none lg:rounded-l-3xl">
-          <h2 className="font-display text-xl font-bold">Prisijungimas</h2>
+          <h2 className="font-display text-xl font-bold">{t("auth.form_title")}</h2>
           <p className="text-sm text-ink-500">
-            Įveskite savo prisijungimo duomenis.
+            {t("auth.form_subtitle")}
           </p>
 
           <form onSubmit={submit} className="mt-2 space-y-4">
             <div>
               <label className="mb-1 block text-sm font-semibold text-ink-700">
-                El. paštas
+                {t("common.email")}
               </label>
               <input
                 type="email"
@@ -75,13 +77,13 @@ export default function Login() {
             <div>
               <div className="mb-1 flex items-center justify-between">
                 <label className="text-sm font-semibold text-ink-700">
-                  Slaptažodis
+                  {t("common.password")}
                 </label>
                 <Link
                   to="/forgot-password"
                   className="text-xs text-ink-400 hover:text-ink-700"
                 >
-                  Pamiršote slaptažodį?
+                  {t("auth.forgot_password")}
                 </Link>
               </div>
               <input
@@ -106,14 +108,14 @@ export default function Login() {
               disabled={submitting}
               className="group flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-ink-950 font-semibold text-white transition-all hover:bg-ink-800 disabled:opacity-60"
             >
-              {submitting ? "Jungiamasi…" : "Prisijungti"}
+              {submitting ? t("auth.signing_in") : t("auth.sign_in_btn")}
               {!submitting && <ArrowRight className="h-4 w-4" />}
             </button>
           </form>
 
           <div className="mt-6 flex items-center gap-3 text-xs font-semibold uppercase tracking-widest text-ink-400">
             <span className="h-px flex-1 bg-ink-200" />
-            arba
+            {t("common.or")}
             <span className="h-px flex-1 bg-ink-200" />
           </div>
 
@@ -124,11 +126,10 @@ export default function Login() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="font-display text-sm font-bold text-ink-900">
-                  Turite sporto klubą?
+                  {t("auth.club_promo_title")}
                 </p>
                 <p className="mt-1 text-xs text-ink-700">
-                  AI treniruočių planai, automatiniai mokėjimai, aiški finansų
-                  apskaita. Pirmas mėnuo nemokamai, po to 100 € už visą klubą.
+                  {t("auth.club_promo_desc")}
                 </p>
               </div>
             </div>
@@ -136,18 +137,18 @@ export default function Login() {
               to="/plans"
               className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-ink-950 text-sm font-semibold text-white transition-colors hover:bg-ink-800"
             >
-              Sukurti klubą
+              {t("auth.create_club")}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
 
           <div className="mt-6 flex items-center justify-center gap-4 text-xs text-ink-400">
             <Link to="/terms" className="hover:text-ink-700">
-              Paslaugų sąlygos
+              {t("common.terms")}
             </Link>
             <span>·</span>
             <Link to="/privacy" className="hover:text-ink-700">
-              Privatumo politika
+              {t("common.privacy")}
             </Link>
           </div>
         </div>

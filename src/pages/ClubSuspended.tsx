@@ -10,6 +10,7 @@ import {
   RefreshCw,
   Trash2,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { ConfirmDialog } from "../components/ui/ConfirmDialog";
 import { useStore } from "../store/useStore";
 import {
@@ -24,6 +25,7 @@ import { ApiError } from "../api/client";
 // Admins can pay/reactivate directly from here. Coaches/members get a
 // message asking them to contact the admin.
 export default function ClubSuspended() {
+  const { t } = useTranslation();
   const authUser = useStore((s) => s.authUser);
   const status = useStore((s) => s.subscriptionStatus);
   const logout = useStore((s) => s.logout);
@@ -146,7 +148,7 @@ export default function ClubSuspended() {
             onClick={logout}
             className="inline-flex items-center gap-1 text-sm font-semibold text-white/60 hover:text-white"
           >
-            <LogOut className="h-4 w-4" /> Atsijungti
+            <LogOut className="h-4 w-4" /> {t("common.logout")}
           </button>
         </div>
       </header>
@@ -170,30 +172,21 @@ export default function ClubSuspended() {
 
         <div className="text-center">
           <p className="text-[11px] font-bold uppercase tracking-widest text-red-300">
-            {cancelled ? "Prenumerata atšaukta" : "Suspenduota"}
+            {cancelled ? t("admin_subscription.cancelled") : t("club_suspended.title")}
           </p>
           <h1 className="mt-2 font-display text-3xl font-bold sm:text-4xl">
-            Klubas šiuo metu neveikia.
+            {t("club_suspended.title")}
           </h1>
           <p className="mt-3 text-sm text-white/70">
-            {cancelled
-              ? `Klubo „${clubName}" prenumerata buvo atšaukta. Kol ji nebus atnaujinta, nariai ir treneriai negalės naudotis sistema.`
-              : pastDue
-                ? `Nepavyko nurašyti mokėjimo už klubo „${clubName}" prenumeratą. Kol sąskaita nebus apmokėta, nariai ir treneriai negalės naudotis sistema.`
-                : `Klubo „${clubName}" prenumerata šiuo metu neaktyvi.`}
+            {isAdmin ? t("club_suspended.admin_desc") : t("club_suspended.desc")}
           </p>
         </div>
 
         {isAdmin ? (
           <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur">
             <h2 className="font-display text-base font-bold text-white">
-              Ką galite padaryti
+              {t("club_suspended.manage_subscription")}
             </h2>
-            <p className="mt-1 text-sm text-white/60">
-              {pastDue
-                ? "Apmokėkite laukiančią sąskaitą — klubas bus atkurtas automatiškai."
-                : "Atnaujinkite prenumeratą su ta pačia kortele — klubas iš karto pradės veikti."}
-            </p>
 
             <div className="mt-5 flex flex-col gap-2">
               {pastDue && (
@@ -204,7 +197,7 @@ export default function ClubSuspended() {
                   className="btn-accent h-12 w-full text-base"
                 >
                   <ExternalLink className="h-4 w-4" />
-                  {busy === "pay" ? "Kraunama…" : "Apmokėti sąskaitą"}
+                  {busy === "pay" ? t("common.loading") : t("admin_subscription.cancel")}
                 </button>
               )}
               {cancelled && (
@@ -216,8 +209,8 @@ export default function ClubSuspended() {
                 >
                   <ArrowRight className="h-4 w-4" />
                   {busy === "reactivate"
-                    ? "Kuriama…"
-                    : "Atnaujinti prenumeratą"}
+                    ? t("common.loading")
+                    : t("admin_subscription.resume")}
                 </button>
               )}
               <Link
@@ -228,7 +221,7 @@ export default function ClubSuspended() {
                   borderColor: "rgba(255,255,255,0.2)",
                 }}
               >
-                Peržiūrėti prenumeratą
+                {t("admin_subscription.stripe_dashboard")}
               </Link>
               <button
                 type="button"
@@ -239,15 +232,12 @@ export default function ClubSuspended() {
                 <RefreshCw
                   className={`h-4 w-4 ${busy === "refresh" ? "animate-spin" : ""}`}
                 />
-                Patikrinti iš naujo
+                {t("common.update")}
               </button>
             </div>
 
             {cancelled && (
               <div className="mt-6 border-t border-white/10 pt-5">
-                <p className="text-sm text-white/60">
-                  Nebeplanuojate naudotis Lumo? Ištrinkite klubą visam laikui.
-                </p>
                 <button
                   type="button"
                   onClick={() => setConfirmDelete(true)}
@@ -255,7 +245,7 @@ export default function ClubSuspended() {
                   className="mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-red-400/40 bg-red-500/10 text-sm font-semibold text-red-200 transition-colors hover:bg-red-500/20"
                 >
                   <Trash2 className="h-4 w-4" />
-                  {busy === "delete" ? "Trinama…" : "Ištrinti klubą visam laikui"}
+                  {busy === "delete" ? t("common.loading") : t("common.delete")}
                 </button>
               </div>
             )}
@@ -268,15 +258,11 @@ export default function ClubSuspended() {
               </div>
               <div>
                 <h2 className="font-display text-base font-bold text-white">
-                  Susisiekite su klubo administratoriumi
+                  {t("club_suspended.desc")}
                 </h2>
-                <p className="mt-1 text-sm text-white/60">
-                  Kad būtų atkurtas priėjimas, klubo administratorius turi
-                  apmokėti prenumeratą Lumo platformoje.
-                </p>
                 {adminEmail && (
                   <p className="mt-3 text-sm text-white">
-                    <strong>El. paštas:</strong>{" "}
+                    <strong>{t("common.email")}:</strong>{" "}
                     <a
                       href={`mailto:${adminEmail}`}
                       className="text-lime-300 hover:underline"
@@ -296,7 +282,7 @@ export default function ClubSuspended() {
               <RefreshCw
                 className={`h-4 w-4 ${busy === "refresh" ? "animate-spin" : ""}`}
               />
-              Patikrinti iš naujo
+              {t("common.update")}
             </button>
           </div>
         )}
@@ -308,9 +294,9 @@ export default function ClubSuspended() {
         onConfirm={() => {
           void doDelete();
         }}
-        title={`Ištrinti klubą „${clubName}"?`}
-        message="Bus visam laikui ištrinti klubo nariai, treneriai, treniruotės, planai, rezultatai ir prisijungimo paskyros. Šio veiksmo atšaukti nebus galima."
-        confirmLabel="Taip, ištrinti visam laikui"
+        title={t("admin_subscription.cancel_confirm")}
+        message={t("club_suspended.admin_desc")}
+        confirmLabel={t("common.yes")}
         destructive
       />
     </div>

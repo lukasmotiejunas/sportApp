@@ -6,6 +6,7 @@ import Joyride, {
   type CallBackProps,
   type Step,
 } from 'react-joyride';
+import { useTranslation } from 'react-i18next';
 import { useStore } from '../../store/useStore';
 import { PageTitle } from '../../components/layout/PageTitle';
 import { StatusBadge } from '../../components/ui/StatusBadge';
@@ -15,16 +16,8 @@ import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { formatDateSlash, todayIso, relativeDay } from '../../utils/dates';
 import { useTrainingsBase } from '../../utils/roleContext';
 
-const timeFilters = [
-  { id: 'upcoming', label: 'Artėjančios' },
-  { id: 'today', label: 'Šiandien' },
-  { id: 'past', label: 'Ankstesnės' },
-  { id: 'all', label: 'Visos' },
-] as const;
-
-const statusLabel = { open: 'Atvira', closed: 'Uždaryta', cancelled: 'Atšaukta' } as const;
-
 export default function CoachTrainings() {
+  const { t } = useTranslation();
   const { base, eyebrow, isAdmin } = useTrainingsBase();
   const trainings = useStore((s) => s.trainingSessions);
   const coaches = useStore((s) => s.coaches);
@@ -32,7 +25,20 @@ export default function CoachTrainings() {
   const remove = useStore((s) => s.deleteTraining);
   const push = useStore((s) => s.pushToast);
   const authUserId = useStore((s) => s.authUser?.id ?? '');
-  const [time, setTime] = useState<(typeof timeFilters)[number]['id']>('upcoming');
+
+  const timeFilters = [
+    { id: 'upcoming' as const, label: t('coach_trainings.filter_upcoming') },
+    { id: 'today' as const, label: t('coach_trainings.filter_today') },
+    { id: 'past' as const, label: t('coach_trainings.filter_past') },
+    { id: 'all' as const, label: t('coach_trainings.filter_all') },
+  ];
+  const statusLabel = {
+    open: t('coach_trainings.status_open'),
+    closed: t('coach_trainings.status_closed'),
+    cancelled: t('coach_trainings.status_cancelled'),
+  };
+
+  const [time, setTime] = useState<'upcoming' | 'today' | 'past' | 'all'>('upcoming');
   const [toDelete, setToDelete] = useState<string | null>(null);
   const [runTour, setRunTour] = useState(false);
   const today = todayIso();
@@ -118,11 +124,11 @@ export default function CoachTrainings() {
           disableScrolling={false}
           callback={handleTourCallback}
           locale={{
-            back: 'Atgal',
-            close: 'Uždaryti',
-            last: 'Baigti',
-            next: 'Toliau',
-            skip: 'Praleisti',
+            back: t('joyride.back'),
+            close: t('joyride.close'),
+            last: t('joyride.last'),
+            next: t('joyride.next'),
+            skip: t('joyride.skip'),
           }}
           styles={{
             options: {
@@ -134,12 +140,12 @@ export default function CoachTrainings() {
       )}
       <div data-tour="page-title">
         <PageTitle
-          title="Treniruotės"
-          description="Valdykite visas klubo treniruotes — kurkite, redaguokite, kopijuokite ir peržiūrėkite dalyvių sąrašą."
+          title={t('coach_trainings.title')}
+          description={t('coach_trainings.empty')}
           eyebrow={eyebrow}
           action={
             <Link to={`${base}/new`} className="btn-primary" data-tour="create">
-              <Plus className="h-4 w-4" /> Sukurti treniruotę
+              <Plus className="h-4 w-4" /> {t('coach_trainings.new')}
             </Link>
           }
         />
@@ -156,11 +162,11 @@ export default function CoachTrainings() {
       {filtered.length === 0 ? (
         <EmptyState
           icon={CalendarPlus}
-          title="Nė viena treniruotė neatitinka filtrų"
-          description="Pabandykite išplėsti laikotarpį."
+          title={t('coach_trainings.empty')}
+          description={t('common.no_results')}
           action={
             <Link to={`${base}/new`} className="btn-primary">
-              <Plus className="h-4 w-4" /> Sukurti treniruotę
+              <Plus className="h-4 w-4" /> {t('coach_trainings.new')}
             </Link>
           }
         />
@@ -172,12 +178,12 @@ export default function CoachTrainings() {
           <table className="hidden w-full text-sm md:table">
             <thead className="bg-ink-50 text-left text-xs uppercase tracking-wider text-ink-500 dark:bg-ink-900">
               <tr>
-                <th className="px-4 py-2 font-semibold">Treniruotė</th>
-                <th className="px-4 py-2 font-semibold">Treneris</th>
-                <th className="px-4 py-2 font-semibold">Data</th>
-                <th className="px-4 py-2 font-semibold">Talpa</th>
-                <th className="px-4 py-2 font-semibold">Būsena</th>
-                <th className="px-4 py-2 text-right font-semibold">Veiksmai</th>
+                <th className="px-4 py-2 font-semibold">{t('coach_trainings.title')}</th>
+                <th className="px-4 py-2 font-semibold">{t('member_training_detail.coach')}</th>
+                <th className="px-4 py-2 font-semibold">{t('common.date')}</th>
+                <th className="px-4 py-2 font-semibold">{t('coach_training_detail.capacity')}</th>
+                <th className="px-4 py-2 font-semibold">{t('common.status')}</th>
+                <th className="px-4 py-2 text-right font-semibold">{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
@@ -190,7 +196,7 @@ export default function CoachTrainings() {
                     <td className="px-4 py-3">
                       <p className="font-semibold text-ink-900 dark:text-ink-50">{t.title}</p>
                     </td>
-                    <td className="px-4 py-3 text-ink-600 dark:text-ink-300">{coach?.name.replace('Coach ', '') ?? 'Nenurodyta'}</td>
+                    <td className="px-4 py-3 text-ink-600 dark:text-ink-300">{coach?.name.replace('Coach ', '') ?? t('member_join.gender_unspecified')}</td>
                     <td className="px-4 py-3 text-ink-600 dark:text-ink-300">
                       <div>{formatDateSlash(t.date)}</div>
                       <div className="text-xs">{t.startTime}–{t.endTime}</div>
@@ -213,7 +219,7 @@ export default function CoachTrainings() {
                         className="flex items-center justify-end gap-1"
                         data-tour="actions"
                       >
-                        <Link to={`${base}/${t.id}`} className="btn-ghost h-8 px-2 text-xs">Atidaryti</Link>
+                        <Link to={`${base}/${t.id}`} className="btn-ghost h-8 px-2 text-xs">{t('common.open')}</Link>
                         <Link to={`${base}/${t.id}/edit`} className="btn-ghost h-8 px-2 text-xs">
                           <Pencil className="h-3.5 w-3.5" />
                         </Link>
@@ -222,9 +228,9 @@ export default function CoachTrainings() {
                           className="btn-ghost h-8 px-2 text-xs"
                           onClick={() => {
                             duplicate(t.id);
-                            push({ kind: 'success', message: 'Treniruotė nukopijuota.' });
+                            push({ kind: 'success', message: t('coach_trainings.duplicate') });
                           }}
-                          aria-label="Kopijuoti"
+                          aria-label={t('coach_trainings.duplicate')}
                         >
                           <Copy className="h-3.5 w-3.5" />
                         </button>
@@ -232,7 +238,7 @@ export default function CoachTrainings() {
                           type="button"
                           className="btn-ghost h-8 px-2 text-xs text-red-600"
                           onClick={() => setToDelete(t.id)}
-                          aria-label="Ištrinti"
+                          aria-label={t('common.delete')}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -258,7 +264,7 @@ export default function CoachTrainings() {
                       </p>
                       <p className="truncate font-semibold">{t.title}</p>
                       <p className="text-xs text-ink-500">
-                        {coach?.name.replace('Coach ', '') ?? 'Nenurodyta'}
+                        {coach?.name.replace('Coach ', '') ?? t('member_join.gender_unspecified')}
                       </p>
                     </div>
                     <StatusBadge tone={pct >= 100 ? 'danger' : pct >= 90 ? 'warning' : 'success'}>
@@ -266,26 +272,26 @@ export default function CoachTrainings() {
                     </StatusBadge>
                   </div>
                   <div className="mt-3 flex flex-wrap items-center gap-1">
-                    <Link to={`${base}/${t.id}`} className="btn-ghost h-8 px-2 text-xs">Atidaryti</Link>
+                    <Link to={`${base}/${t.id}`} className="btn-ghost h-8 px-2 text-xs">{t('common.open')}</Link>
                     <Link to={`${base}/${t.id}/edit`} className="btn-ghost h-8 px-2 text-xs">
-                      <Pencil className="h-3.5 w-3.5" /> Redaguoti
+                      <Pencil className="h-3.5 w-3.5" /> {t('common.edit')}
                     </Link>
                     <button
                       type="button"
                       className="btn-ghost h-8 px-2 text-xs"
                       onClick={() => {
                         duplicate(t.id);
-                        push({ kind: 'success', message: 'Treniruotė nukopijuota.' });
+                        push({ kind: 'success', message: t('coach_trainings.duplicate') });
                       }}
                     >
-                      <Copy className="h-3.5 w-3.5" /> Kopijuoti
+                      <Copy className="h-3.5 w-3.5" /> {t('coach_trainings.duplicate')}
                     </button>
                     <button
                       type="button"
                       className="btn-ghost h-8 px-2 text-xs text-red-600"
                       onClick={() => setToDelete(t.id)}
                     >
-                      <Trash2 className="h-3.5 w-3.5" /> Ištrinti
+                      <Trash2 className="h-3.5 w-3.5" /> {t('common.delete')}
                     </button>
                   </div>
                 </li>
@@ -301,12 +307,12 @@ export default function CoachTrainings() {
         onConfirm={() => {
           if (toDelete) {
             remove(toDelete);
-            push({ kind: 'info', message: 'Treniruotė ištrinta.' });
+            push({ kind: 'info', message: t('coach_trainings.delete') });
           }
         }}
-        title="Ištrinti treniruotę?"
-        message="Bus pašalinta treniruotė ir jos registracijos. Užsiregistravę nariai neteks savo vietos."
-        confirmLabel="Ištrinti"
+        title={t('coach_training_form.delete_confirm')}
+        message={t('coach_training_form.delete_confirm')}
+        confirmLabel={t('common.delete')}
         destructive
       />
     </div>

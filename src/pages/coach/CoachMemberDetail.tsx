@@ -6,6 +6,7 @@ import {
   Phone,
   Trophy,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useStore } from "../../store/useStore";
 import { PageTitle } from "../../components/layout/PageTitle";
 import { Avatar } from "../../components/ui/Avatar";
@@ -19,9 +20,8 @@ const paymentTone = {
   pending: "warning",
 } as const;
 
-const paymentLabel = { paid: "Apmokėta", overdue: "Vėluoja", pending: "Laukiama" } as const;
-
 export default function CoachMemberDetail() {
+  const { t } = useTranslation();
   const { id = "" } = useParams();
   const member = useStore((s) => s.members.find((m) => m.id === id));
   const trainings = useStore((s) => s.trainingSessions);
@@ -29,26 +29,32 @@ export default function CoachMemberDetail() {
   const categories = useStore((s) => s.leaderboardCategories);
   const membershipPlans = useStore((s) => s.membershipPlans);
 
+  const paymentLabel = {
+    paid: t("common.paid"),
+    overdue: t("common.overdue"),
+    pending: t("common.pending"),
+  } as const;
+
   if (!member) {
     return (
       <div>
-        <PageTitle title="Narys nerastas" backTo="/coach/members" />
+        <PageTitle title={t("coach_member_detail.not_found")} backTo="/coach/members" />
       </div>
     );
   }
 
   const plan = membershipPlans.find((p) => p.id === member.membershipPlanId);
   const upcoming = trainings.filter(
-    (t) =>
-      t.date >= todayIso() &&
-      t.registrations.some(
+    (tr) =>
+      tr.date >= todayIso() &&
+      tr.registrations.some(
         (r) => r.memberId === member.id && r.status === "registered",
       ),
   );
   const past = trainings.filter(
-    (t) =>
-      t.date < todayIso() &&
-      t.registrations.some(
+    (tr) =>
+      tr.date < todayIso() &&
+      tr.registrations.some(
         (r) => r.memberId === member.id && r.status === "registered",
       ),
   );
@@ -70,7 +76,7 @@ export default function CoachMemberDetail() {
     <div>
       <PageTitle
         title={member.name}
-        eyebrow="Nario profilis"
+        eyebrow={t("coach_member_detail.eyebrow")}
         backTo="/coach/members"
       />
 
@@ -87,10 +93,10 @@ export default function CoachMemberDetail() {
                 {paymentLabel[member.paymentStatus]}
               </StatusBadge>
               <StatusBadge tone="neutral">
-                Narys nuo {formatDateSlash(member.memberSince)}
+                {t("coach_member_detail.member_since", { date: formatDateSlash(member.memberSince) })}
               </StatusBadge>
               <StatusBadge tone="info">
-                {formatCurrency(plan?.monthlyFee ?? 0)} / mėn.
+                {formatCurrency(plan?.monthlyFee ?? 0)} {t("common.per_month")}
               </StatusBadge>
             </div>
           </div>
@@ -100,7 +106,7 @@ export default function CoachMemberDetail() {
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="surface p-4">
           <h2 className="mb-3 flex items-center gap-2 font-display text-base font-bold">
-            <Mail className="h-4 w-4 text-ink-500" /> Kontaktai
+            <Mail className="h-4 w-4 text-ink-500" /> {t("coach_member_detail.contacts")}
           </h2>
           <ul className="space-y-2 text-sm">
             <li className="flex items-center gap-2 text-ink-700 dark:text-ink-200">
@@ -114,11 +120,11 @@ export default function CoachMemberDetail() {
 
         <section className="surface p-4">
           <h2 className="mb-3 flex items-center gap-2 font-display text-base font-bold">
-            <Trophy className="h-4 w-4 text-ink-500" /> Asmeniniai rekordai
+            <Trophy className="h-4 w-4 text-ink-500" /> {t("coach_member_detail.personal_bests")}
           </h2>
           {bests.length === 0 ? (
             <p className="text-sm text-ink-500">
-              Rezultatų dar nėra.
+              {t("coach_member_detail.no_results")}
             </p>
           ) : (
             <ul className="grid gap-2 sm:grid-cols-2">
@@ -141,31 +147,30 @@ export default function CoachMemberDetail() {
 
         <section className="surface p-4">
           <h2 className="mb-3 flex items-center gap-2 font-display text-base font-bold">
-            <CalendarCheck2 className="h-4 w-4 text-ink-500" /> Artėjančios
-            registracijos
+            <CalendarCheck2 className="h-4 w-4 text-ink-500" /> {t("coach_member_detail.upcoming_registrations")}
           </h2>
           {upcoming.length === 0 ? (
             <p className="text-sm text-ink-500">
-              Nieko nesuplanuota — pakvieskite šį narį į treniruotę.
+              {t("coach_member_detail.no_upcoming")}
             </p>
           ) : (
             <ul className="space-y-2">
-              {upcoming.map((t) => (
+              {upcoming.map((tr) => (
                 <li
-                  key={t.id}
+                  key={tr.id}
                   className="flex items-center justify-between rounded-xl border border-ink-100 p-2.5 dark:border-ink-800"
                 >
                   <div>
-                    <p className="text-sm font-semibold">{t.title}</p>
+                    <p className="text-sm font-semibold">{tr.title}</p>
                     <p className="text-xs text-ink-500">
-                      {formatDateSlash(t.date)} · {t.startTime}
+                      {formatDateSlash(tr.date)} · {tr.startTime}
                     </p>
                   </div>
                   <Link
-                    to={`/coach/trainings/${t.id}`}
+                    to={`/coach/trainings/${tr.id}`}
                     className="btn-ghost h-8 px-2 text-xs"
                   >
-                    Atidaryti
+                    {t("common.open")}
                   </Link>
                 </li>
               ))}
@@ -175,28 +180,28 @@ export default function CoachMemberDetail() {
 
         <section className="surface p-4">
           <h2 className="mb-3 flex items-center gap-2 font-display text-base font-bold">
-            <CreditCard className="h-4 w-4 text-ink-500" /> Ankstesnės treniruotės
+            <CreditCard className="h-4 w-4 text-ink-500" /> {t("coach_member_detail.past_trainings")}
           </h2>
           {past.length === 0 ? (
-            <p className="text-sm text-ink-500">Ankstesnių treniruočių dar nėra.</p>
+            <p className="text-sm text-ink-500">{t("coach_member_detail.no_past")}</p>
           ) : (
             <ul className="space-y-2">
-              {past.slice(0, 6).map((t) => (
+              {past.slice(0, 6).map((tr) => (
                 <li
-                  key={t.id}
+                  key={tr.id}
                   className="flex items-center justify-between rounded-xl border border-ink-100 p-2.5 dark:border-ink-800"
                 >
                   <div>
-                    <p className="text-sm font-semibold">{t.title}</p>
+                    <p className="text-sm font-semibold">{tr.title}</p>
                     <p className="text-xs text-ink-500">
-                      {formatDateSlash(t.date)} · {t.startTime}
+                      {formatDateSlash(tr.date)} · {tr.startTime}
                     </p>
                   </div>
                   <Link
-                    to={`/coach/trainings/${t.id}`}
+                    to={`/coach/trainings/${tr.id}`}
                     className="btn-ghost h-8 px-2 text-xs"
                   >
-                    Atidaryti
+                    {t("common.open")}
                   </Link>
                 </li>
               ))}

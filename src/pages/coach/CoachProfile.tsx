@@ -5,6 +5,7 @@ import Joyride, {
   type CallBackProps,
   type Step,
 } from "react-joyride";
+import { useTranslation } from "react-i18next";
 import { PageTitle } from "../../components/layout/PageTitle";
 import { FormField } from "../../components/ui/FormField";
 import { Avatar } from "../../components/ui/Avatar";
@@ -17,6 +18,7 @@ import {
 import { resizeImageToDataUrl } from "../../utils/image";
 
 export default function CoachProfile() {
+  const { t } = useTranslation();
   const coach = useCurrentCoach();
   const authUser = useStore((s) => s.authUser);
   const patchCoach = useStore((s) => s.patchCoach);
@@ -62,8 +64,8 @@ export default function CoachProfile() {
   if (!coach) {
     return (
       <div>
-        <PageTitle title="Profilis" eyebrow="Treneris" />
-        <p className="text-sm text-ink-500">Trenerio profilis nerastas.</p>
+        <PageTitle title={t("coach_profile.title")} eyebrow={t("coach_profile.eyebrow")} />
+        <p className="text-sm text-ink-500">{t("coach_profile.not_found")}</p>
       </div>
     );
   }
@@ -73,7 +75,7 @@ export default function CoachProfile() {
     e.target.value = "";
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      push({ kind: "error", message: "Pasirinkite paveikslėlį." });
+      push({ kind: "error", message: t("coach_profile.photo_type_error") });
       return;
     }
     setPhotoBusy(true);
@@ -81,12 +83,12 @@ export default function CoachProfile() {
       const dataUrl = await resizeImageToDataUrl(file, 512, 0.85);
       const updated = await updateCoachSelfApi({ photoUrl: dataUrl });
       patchCoach(coach.id, updated);
-      push({ kind: "success", message: "Nuotrauka atnaujinta." });
+      push({ kind: "success", message: t("coach_profile.photo_updated") });
     } catch (err) {
       push({
         kind: "error",
         message:
-          err instanceof ApiError ? err.message : "Nepavyko įkelti nuotraukos.",
+          err instanceof ApiError ? err.message : t("coach_profile.photo_error"),
       });
     } finally {
       setPhotoBusy(false);
@@ -98,14 +100,14 @@ export default function CoachProfile() {
     try {
       const updated = await updateCoachSelfApi({ photoUrl: "" });
       patchCoach(coach.id, updated);
-      push({ kind: "info", message: "Nuotrauka pašalinta." });
+      push({ kind: "info", message: t("coach_profile.photo_removed") });
     } catch (err) {
       push({
         kind: "error",
         message:
           err instanceof ApiError
             ? err.message
-            : "Nepavyko pašalinti nuotraukos.",
+            : t("coach_profile.photo_remove_error"),
       });
     } finally {
       setPhotoBusy(false);
@@ -120,7 +122,7 @@ export default function CoachProfile() {
     const phoneTrimmed = phone.trim();
 
     if (nameTrimmed.length < 2) {
-      setSelfError("Vardas per trumpas.");
+      setSelfError(t("coach_profile.error_name_short"));
       return;
     }
 
@@ -135,7 +137,7 @@ export default function CoachProfile() {
     if (phoneTrimmed !== (coach.phone ?? "")) coachPatch.phone = phoneTrimmed;
 
     if (Object.keys(coachPatch).length === 0) {
-      push({ kind: "info", message: "Duomenys nepakito." });
+      push({ kind: "info", message: t("coach_profile.data_unchanged") });
       return;
     }
 
@@ -144,10 +146,10 @@ export default function CoachProfile() {
       const updated = await updateCoachSelfApi(coachPatch);
       patchCoach(coach.id, updated);
       if (coachPatch.name) patchAuthUser({ name: coachPatch.name });
-      push({ kind: "success", message: "Profilis atnaujintas." });
+      push({ kind: "success", message: t("coach_profile.profile_updated") });
     } catch (err) {
       setSelfError(
-        err instanceof ApiError ? err.message : "Nepavyko atnaujinti.",
+        err instanceof ApiError ? err.message : t("coach_profile.error_update"),
       );
     } finally {
       setSelfBusy(false);
@@ -158,17 +160,17 @@ export default function CoachProfile() {
     e.preventDefault();
     setPwError(null);
     if (newPassword.length < 6) {
-      setPwError("Naujas slaptažodis turi būti bent 6 simbolių.");
+      setPwError(t("coach_profile.error_pw_short"));
       return;
     }
     if (newPassword !== confirmPassword) {
-      setPwError("Nauji slaptažodžiai nesutampa.");
+      setPwError(t("coach_profile.error_pw_mismatch"));
       return;
     }
     setPwBusy(true);
     try {
       await changePasswordApi({ currentPassword, newPassword });
-      push({ kind: "success", message: "Slaptažodis pakeistas." });
+      push({ kind: "success", message: t("coach_profile.password_changed") });
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
@@ -176,7 +178,7 @@ export default function CoachProfile() {
       setPwError(
         err instanceof ApiError
           ? err.message
-          : "Nepavyko pakeisti slaptažodžio.",
+          : t("coach_profile.error_pw_change"),
       );
     } finally {
       setPwBusy(false);
@@ -199,7 +201,7 @@ export default function CoachProfile() {
     {
       target: '[data-tour="personal-info"]',
       content:
-        "Jūsų duomenys. Vardas ir pavardė — kaip jus matys nariai. El. paštas naudojamas prisijungimui ir yra nekeičiamas. Telefono numeris — matomas nariams treniruotės puslapyje, kad galėtų su jumis susisiekti. Specializacija — trumpai apie jūsų sritį (pvz. „Sprintas ir technika“).",
+        "Jūsų duomenys. Vardas ir pavardė — kaip jus matys nariai. El. paštas naudojamas prisijungimui ir yra nekeičiamas. Telefono numeris — matomas nariams treniruotės puslapyje, kad galėtų su jumis susisiekti. Specializacija — trumpai apie jūsų sritį (pvz. „Sprintas ir technika").",
     },
     {
       target: '[data-tour="password"]',
@@ -232,11 +234,11 @@ export default function CoachProfile() {
         disableScrolling={false}
         callback={handleTourCallback}
         locale={{
-          back: "Atgal",
-          close: "Uždaryti",
-          last: "Baigti",
-          next: "Toliau",
-          skip: "Praleisti",
+          back: t("joyride.back"),
+          close: t("joyride.close"),
+          last: t("joyride.last"),
+          next: t("joyride.next"),
+          skip: t("joyride.skip"),
         }}
         styles={{
           options: {
@@ -247,9 +249,9 @@ export default function CoachProfile() {
       />
       <div data-tour="page-title">
         <PageTitle
-          eyebrow="Treneris"
-          title="Profilis"
-          description="Redaguokite savo duomenis, nuotrauką ir slaptažodį."
+          eyebrow={t("coach_profile.eyebrow")}
+          title={t("coach_profile.title")}
+          description={t("coach_profile.description")}
         />
       </div>
 
@@ -268,8 +270,8 @@ export default function CoachProfile() {
                 onClick={() => fileInputRef.current?.click()}
                 disabled={photoBusy}
                 className="absolute -bottom-1 -right-1 grid h-8 w-8 place-items-center rounded-full border border-ink-200 bg-white text-ink-800 shadow-sm transition-colors hover:bg-ink-50 disabled:opacity-60 dark:border-ink-700 dark:bg-ink-900 dark:text-ink-100 dark:hover:bg-ink-800"
-                aria-label="Įkelti nuotrauką"
-                title="Įkelti nuotrauką"
+                aria-label={t("coach_profile.upload_photo_aria")}
+                title={t("coach_profile.upload_photo_aria")}
               >
                 <Camera className="h-4 w-4" />
               </button>
@@ -293,7 +295,7 @@ export default function CoachProfile() {
                   disabled={photoBusy}
                   className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-ink-500 hover:text-ink-800 disabled:opacity-60 dark:hover:text-ink-100"
                 >
-                  <Trash2 className="h-3.5 w-3.5" /> Pašalinti nuotrauką
+                  <Trash2 className="h-3.5 w-3.5" /> {t("coach_profile.remove_photo")}
                 </button>
               )}
             </div>
@@ -307,43 +309,42 @@ export default function CoachProfile() {
             </div>
             <div>
               <h2 className="font-display text-base font-bold text-ink-900 dark:text-ink-50">
-                Jūsų duomenys
+                {t("coach_profile.personal_info_title")}
               </h2>
               <p className="mt-0.5 text-sm text-ink-500">
-                Telefono numerį matys nariai treniruotės puslapyje, kad galėtų
-                susisiekti dėl klausimų.
+                {t("coach_profile.personal_info_desc")}
               </p>
             </div>
           </div>
           <form onSubmit={submitSelf} className="grid gap-4 sm:grid-cols-2">
             <FormField
-              label="Vardas ir pavardė"
+              label={t("coach_profile.name_label")}
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Vardenis Pavardenis"
+              placeholder={t("coach_profile.name_placeholder")}
             />
             <FormField
-              label="El. paštas"
+              label={t("coach_profile.email_label")}
               type="email"
               value={authUser?.email ?? ""}
               disabled
               readOnly
-              hint="Naudojamas prisijungimui — pakeisti negalima."
+              hint={t("coach_profile.email_hint")}
               onChange={() => {}}
             />
             <FormField
-              label="Telefonas"
+              label={t("coach_profile.phone_label")}
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="+370 6xx xxxxx"
+              placeholder={t("coach_profile.phone_placeholder")}
             />
             <FormField
-              label="Specializacija"
+              label={t("coach_profile.specialty_label")}
               value={specialty}
               onChange={(e) => setSpecialty(e.target.value)}
-              placeholder="pvz. Jėgos treniruotės"
+              placeholder={t("coach_profile.specialty_placeholder")}
             />
             {selfError && (
               <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 sm:col-span-2">
@@ -352,7 +353,7 @@ export default function CoachProfile() {
             )}
             <div className="flex justify-end sm:col-span-2">
               <button type="submit" className="btn-primary" disabled={selfBusy}>
-                {selfBusy ? "Saugoma…" : "Išsaugoti"}
+                {selfBusy ? t("coach_profile.saving") : t("coach_profile.save")}
               </button>
             </div>
           </form>
@@ -365,16 +366,16 @@ export default function CoachProfile() {
             </div>
             <div>
               <h2 className="font-display text-base font-bold text-ink-900 dark:text-ink-50">
-                Slaptažodis
+                {t("coach_profile.password_title")}
               </h2>
               <p className="mt-0.5 text-sm text-ink-500">
-                Norėdami pakeisti slaptažodį, pirma įveskite dabartinį.
+                {t("coach_profile.password_desc")}
               </p>
             </div>
           </div>
           <form onSubmit={submitPassword} className="space-y-4">
             <FormField
-              label="Dabartinis slaptažodis"
+              label={t("coach_profile.current_password")}
               type="password"
               required
               autoComplete="current-password"
@@ -384,22 +385,22 @@ export default function CoachProfile() {
             />
             <div className="grid gap-4 sm:grid-cols-2">
               <FormField
-                label="Naujas slaptažodis"
+                label={t("coach_profile.new_password")}
                 type="password"
                 required
                 autoComplete="new-password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Bent 6 simboliai"
+                placeholder={t("coach_profile.new_password_placeholder")}
               />
               <FormField
-                label="Pakartokite naują slaptažodį"
+                label={t("coach_profile.confirm_password_label")}
                 type="password"
                 required
                 autoComplete="new-password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Bent 6 simboliai"
+                placeholder={t("coach_profile.new_password_placeholder")}
               />
             </div>
             {pwError && (
@@ -409,7 +410,7 @@ export default function CoachProfile() {
             )}
             <div className="flex justify-end">
               <button type="submit" className="btn-primary" disabled={pwBusy}>
-                {pwBusy ? "Keičiama…" : "Pakeisti slaptažodį"}
+                {pwBusy ? t("coach_profile.changing_pw") : t("coach_profile.change_pw_btn")}
               </button>
             </div>
           </form>

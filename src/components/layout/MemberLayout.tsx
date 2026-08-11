@@ -1,11 +1,14 @@
 import { Outlet } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { UserMenu } from "../ui/UserMenu";
+import { LanguageSwitcher } from "../ui/LanguageSwitcher";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { ToastContainer } from "../ui/ToastContainer";
 import { BackgroundLogo } from "./BackgroundLogo";
 import { useStore } from "../../store/useStore";
 
 export function MemberLayout() {
+  const { t } = useTranslation();
   const clubName = useStore((s) => s.authUser?.clubName ?? "");
   const clubLogo = useStore((s) => s.authUser?.clubLogo ?? null);
   const logoSrc = clubLogo || "/lumo-logo.png";
@@ -25,6 +28,7 @@ export function MemberLayout() {
             {clubName}
           </div>
           <div className="ml-auto flex items-center gap-2">
+            <LanguageSwitcher />
             <UserMenu />
           </div>
         </div>

@@ -1,16 +1,20 @@
 import { Outlet, NavLink } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import clsx from "clsx";
 import { Building2, Coins, Sparkles } from "lucide-react";
 import { UserMenu } from "../ui/UserMenu";
+import { LanguageSwitcher } from "../ui/LanguageSwitcher";
 import { ToastContainer } from "../ui/ToastContainer";
 import { BackgroundLogo } from "./BackgroundLogo";
 
-const items = [
-  { to: "/superadmin/clubs", label: "Klubai", icon: Building2, end: false },
-  { to: "/superadmin/finances", label: "Finansai", icon: Coins, end: false },
-];
-
 export function SuperAdminLayout() {
+  const { t } = useTranslation();
+
+  const items = [
+    { to: "/superadmin/clubs", label: t("nav.clubs"), icon: Building2, end: false },
+    { to: "/superadmin/finances", label: t("nav.finances"), icon: Coins, end: false },
+  ];
+
   return (
     <div className="relative min-h-screen">
       <BackgroundLogo />
@@ -22,7 +26,7 @@ export function SuperAdminLayout() {
             </span>
             Lumo
             <span className="ml-1 rounded-full bg-lime-400 px-2 py-0.5 text-[10px] font-semibold uppercase text-ink-950">
-              Super
+              {t("roles.super_badge")}
             </span>
           </div>
           <nav className="flex flex-col gap-1">
@@ -46,6 +50,9 @@ export function SuperAdminLayout() {
             ))}
           </nav>
           <div className="mt-auto space-y-2">
+            <div className="flex justify-end px-1 pb-1">
+              <LanguageSwitcher />
+            </div>
             <UserMenu variant="full" />
           </div>
         </aside>
@@ -56,10 +63,11 @@ export function SuperAdminLayout() {
               <div className="flex items-center gap-2 font-display text-base font-bold text-ink-900 dark:text-lime-400">
                 Lumo
                 <span className="rounded-full bg-lime-400 px-2 py-0.5 text-[10px] font-semibold uppercase text-ink-950">
-                  Super
+                  {t("roles.super_badge")}
                 </span>
               </div>
               <div className="ml-auto flex items-center gap-2">
+                <LanguageSwitcher />
                 <UserMenu />
               </div>
             </div>

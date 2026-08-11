@@ -12,6 +12,7 @@ import {
   Ticket,
   User,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import {
   Elements,
   PaymentElement,
@@ -64,6 +65,7 @@ function formatMoney(v: number, currency: string): string {
 }
 
 export default function MemberJoin() {
+  const { t } = useTranslation();
   const { slug = "" } = useParams();
   const [club, setClub] = useState<PublicClub | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -91,7 +93,7 @@ export default function MemberJoin() {
       .catch((err) => {
         if (cancelled) return;
         setLoadError(
-          err instanceof ApiError ? err.message : "Nepavyko įkelti klubo.",
+          err instanceof ApiError ? err.message : t("common.error_generic"),
         );
       })
       .finally(() => {
@@ -140,7 +142,7 @@ export default function MemberJoin() {
       setError(
         err instanceof ApiError
           ? err.message
-          : "Nepavyko baigti registracijos. Bandykite dar kartą.",
+          : t("common.error_generic"),
       );
     } finally {
       setSubmitting(false);
@@ -152,7 +154,7 @@ export default function MemberJoin() {
       <div className="grid min-h-screen place-items-center bg-ink-950 text-white">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-lime-400" />
-          <p className="text-sm text-white/70">Kraunama…</p>
+          <p className="text-sm text-white/70">{t("member_join.loading")}</p>
         </div>
       </div>
     );
@@ -163,12 +165,12 @@ export default function MemberJoin() {
       <div className="min-h-screen bg-ink-950 text-white">
         <div className="hero-gradient absolute inset-0 -z-10" />
         <div className="mx-auto max-w-lg px-6 py-20 text-center">
-          <h1 className="font-display text-3xl font-bold">Klubas nerastas</h1>
+          <h1 className="font-display text-3xl font-bold">{t("member_join.not_found")}</h1>
           <p className="mt-2 text-sm text-white/70">
-            {loadError ?? "Patikrinkite nuorodą ir bandykite dar kartą."}
+            {loadError ?? t("member_join.not_found_desc")}
           </p>
           <Link to="/" className="btn-accent mt-6 h-11 px-6">
-            Į pradžią
+            {t("common.back")}
           </Link>
         </div>
       </div>
@@ -235,33 +237,33 @@ export default function MemberJoin() {
       <main className="mx-auto max-w-3xl px-6 py-10">
         <div className="mb-8">
           <span className="inline-flex items-center gap-2 rounded-full border border-lime-400/30 bg-lime-400/10 px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-lime-300">
-            <Sparkles className="h-3.5 w-3.5" /> Nario registracija
+            <Sparkles className="h-3.5 w-3.5" /> {t("member_join.subtitle")}
           </span>
           <h1 className="mt-3 font-display text-3xl font-bold sm:text-4xl">
-            Prisijunkite prie klubo „{club.name}".
+            {t("member_join.title", { clubName: club.name })}
           </h1>
           <p className="mt-2 text-sm text-white/70">
-            Užpildykite formą, pasirinkite narystės planą ir kitame žingsnyje apmokėkite pirmą mėnesį.
+            {t("member_join.subtitle")}
           </p>
         </div>
 
         <form onSubmit={submit} className="space-y-5">
           <FormSection
             step={1}
-            title="Jūsų duomenys"
-            description="Šie duomenys bus matomi treneriams ir klubo administratoriui."
+            title={t("admin_profile.personal_info")}
+            description={t("member_join.subtitle")}
             icon={User}
           >
             <div className="grid gap-4 sm:grid-cols-2">
               <Field
-                label="Vardas ir pavardė"
+                label={t("common.name")}
                 required
                 value={form.name}
                 onChange={(v) => setField("name", v)}
                 placeholder="Vardenis Pavardenis"
               />
               <Field
-                label="El. paštas"
+                label={t("common.email")}
                 required
                 type="email"
                 value={form.email}
@@ -269,43 +271,43 @@ export default function MemberJoin() {
                 placeholder="jus@pavyzdys.lt"
               />
               <Field
-                label="Slaptažodis"
+                label={t("common.password")}
                 required
                 type="password"
                 value={form.password}
                 onChange={(v) => setField("password", v)}
-                placeholder="Bent 6 simboliai"
-                hint="Jį naudosite prisijungimui."
+                placeholder={t("plans.password_min")}
+                hint={t("plans.password_hint")}
               />
               <Field
-                label="Telefonas"
+                label={t("common.phone")}
                 type="tel"
                 value={form.phone}
                 onChange={(v) => setField("phone", v)}
                 placeholder="+370…"
               />
               <Field
-                label="Gimimo data"
+                label={t("member_join.date_of_birth")}
                 type="date"
                 value={form.dateOfBirth}
                 onChange={(v) => setField("dateOfBirth", v)}
               />
               <SelectField
-                label="Lytis"
+                label={t("member_join.gender")}
                 value={form.gender}
                 onChange={(v) => setField("gender", v as FormState["gender"])}
               >
-                <option value="unspecified">Nenurodyta</option>
-                <option value="male">Vyras</option>
-                <option value="female">Moteris</option>
+                <option value="unspecified">{t("member_join.gender_unspecified")}</option>
+                <option value="male">{t("member_join.gender_male")}</option>
+                <option value="female">{t("member_join.gender_female")}</option>
               </SelectField>
             </div>
           </FormSection>
 
           <FormSection
             step={2}
-            title="Pasirinkite planą"
-            description="Planas nusako mėnesinį mokestį ir savaitės treniruočių limitą."
+            title={t("member_join.choose_plan")}
+            description={t("member_join.choose_plan_desc")}
           >
             {club.plans.length === 0 ? (
               <p className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/70">
@@ -351,13 +353,13 @@ export default function MemberJoin() {
             disabled={submitting}
             className="btn-accent h-12 w-full text-base"
           >
-            {submitting ? "Ruošiamasi…" : "Tęsti į mokėjimą"}
+            {submitting ? t("plans.continuing") : t("plans.continue_to_payment")}
             {!submitting && <ArrowRight className="h-4 w-4" />}
           </button>
 
           <p className="pb-6 text-center text-xs text-white/50">
             <Lock className="mr-1 inline h-3 w-3" />
-            Užšifruotas ryšys.
+            {t("plans.secure_note")}
           </p>
         </form>
       </main>
@@ -471,6 +473,7 @@ function PaymentForm({
   onSuccess: () => void;
   plan: MembershipPlan | null;
 }) {
+  const { t } = useTranslation();
   const stripe = useStripe();
   const elements = useElements();
   const [error, setError] = useState<string | null>(null);
@@ -498,7 +501,7 @@ function PaymentForm({
     });
 
     if (err) {
-      setError(err.message ?? "Nepavyko apmokėti kortelės.");
+      setError(err.message ?? t("common.error_generic"));
       setSubmitting(false);
       return;
     }
@@ -520,10 +523,10 @@ function PaymentForm({
           </div>
           <div>
             <h2 className="font-display text-lg font-bold text-white">
-              Mokėjimo kortelė
+              {t("plans.card_title")}
             </h2>
             <p className="mt-1 text-sm text-white/60">
-              Kortelės duomenys apdorojami Stripe — mūsų serveryje nesaugomi.
+              {t("plans.card_desc")}
             </p>
           </div>
         </div>
@@ -544,15 +547,15 @@ function PaymentForm({
         className="btn-accent h-12 w-full text-base"
       >
         {submitting
-          ? "Tvirtinama…"
+          ? t("plans.confirming")
           : plan
-            ? `Apmokėti ${formatMoney(plan.monthlyFee, plan.currency)}`
-            : "Apmokėti"}
+            ? `${t("common.submit")} ${formatMoney(plan.monthlyFee, plan.currency)}`
+            : t("common.submit")}
         {!submitting && <ArrowRight className="h-4 w-4" />}
       </button>
 
       <p className="pb-6 text-center text-xs text-white/50">
-        Užšifruotas ryšys. Kortelės duomenys apsaugoti Stripe.
+        {t("plans.secure_note")}
       </p>
     </form>
   );
@@ -732,6 +735,7 @@ function SuccessScreen({
   password: string;
   paymentWasCollected: boolean;
 }) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState<"email" | "password" | null>(null);
   const copy = async (which: "email" | "password", value: string) => {
     try {
@@ -768,43 +772,47 @@ function SuccessScreen({
 
         <div className="text-center">
           <p className="text-[11px] font-bold uppercase tracking-widest text-lime-300">
-            Sveiki atvykę
+            {t("member_join.welcome_badge")}
           </p>
           <h1 className="mt-2 font-display text-3xl font-bold sm:text-4xl">
-            {memberName}, esate klubo „{clubName}" narys.
+            {t("member_join.welcome_title", { name: memberName })}
           </h1>
           <p className="mt-3 text-sm text-white/70">
             {paymentWasCollected
-              ? "Mokėjimas patvirtintas. Prisijunkite naudodami toliau nurodytus duomenis."
-              : "Klubo administratorius su Jumis susisieks dėl mokėjimo. Kol kas galite prisijungti su šiais duomenimis."}
+              ? t("member_join.payment_confirmed")
+              : t("member_join.payment_pending")}
           </p>
         </div>
 
         <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur">
           <h2 className="font-display text-base font-bold text-white">
-            Jūsų prisijungimo duomenys
+            {t("member_join.credentials_title")}
           </h2>
           <p className="mt-1 text-sm text-white/60">
-            Išsaugokite šiuos duomenis — jais prisijungsite prie klubo.
+            {t("member_join.credentials_desc")}
           </p>
 
           <div className="mt-4 space-y-3">
             <CredentialRow
-              label="El. paštas"
+              label={t("common.email")}
               value={email}
               copied={copied === "email"}
               onCopy={() => copy("email", email)}
+              copiedLabel={t("common.copied")}
+              copyLabel={t("common.copy")}
             />
             <CredentialRow
-              label="Slaptažodis"
+              label={t("common.password")}
               value={password}
               copied={copied === "password"}
               onCopy={() => copy("password", password)}
+              copiedLabel={t("common.copied")}
+              copyLabel={t("common.copy")}
             />
           </div>
 
           <Link to="/login" className="btn-accent mt-6 h-12 w-full text-base">
-            Prisijungti prie klubo
+            {t("member_join.go_to_club")}
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
@@ -818,11 +826,15 @@ function CredentialRow({
   value,
   copied,
   onCopy,
+  copiedLabel,
+  copyLabel,
 }: {
   label: string;
   value: string;
   copied: boolean;
   onCopy: () => void;
+  copiedLabel: string;
+  copyLabel: string;
 }) {
   return (
     <div className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3">
@@ -838,7 +850,7 @@ function CredentialRow({
         className="inline-flex items-center gap-1 rounded-lg border border-white/15 bg-white/[0.05] px-3 py-1.5 text-xs font-semibold text-white/80 transition-colors hover:bg-white/10 hover:text-white"
       >
         <Copy className="h-3.5 w-3.5" />
-        {copied ? "Nukopijuota" : "Kopijuoti"}
+        {copied ? copiedLabel : copyLabel}
       </button>
     </div>
   );

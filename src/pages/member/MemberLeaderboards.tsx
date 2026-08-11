@@ -1,12 +1,14 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Search, Trophy } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useStore, useCurrentMember } from "../../store/useStore";
 import { PageTitle } from "../../components/layout/PageTitle";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { formatResult } from "../../utils/format";
 
 export default function MemberLeaderboards() {
+  const { t } = useTranslation();
   const member = useCurrentMember();
   const categories = useStore((s) => s.leaderboardCategories);
   const results = useStore((s) => s.leaderboardResults);
@@ -34,9 +36,9 @@ export default function MemberLeaderboards() {
   return (
     <div>
       <PageTitle
-        title="Rezultatų lentelės"
-        description="Visos klube fiksuojamos rungtys. Palieskite lentelę, kad pamatytumėte prizininkus."
-        eyebrow="Reitingai"
+        title={t('member_leaderboards.title')}
+        description={t('member_leaderboards.empty')}
+        eyebrow={t('nav.results')}
       />
 
       <div className="relative mb-4">
@@ -44,10 +46,10 @@ export default function MemberLeaderboards() {
         <input
           type="search"
           className="input pl-9"
-          placeholder="Ieškoti rungties"
+          placeholder={t('common.search')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          aria-label="Ieškoti rungties"
+          aria-label={t('common.search')}
         />
       </div>
 
@@ -74,7 +76,7 @@ export default function MemberLeaderboards() {
                 </p>
                 <p className="font-display text-base font-bold">{c.name}</p>
                 <p className="mt-0.5 text-xs text-ink-500">
-                  Geriausias: {top ? formatResult(top.value, c) : "—"}
+                  {t('member_leaderboards.best')}: {top ? formatResult(top.value, c) : "—"}
                 </p>
               </div>
               <div className="flex flex-col items-end gap-1">
@@ -83,7 +85,7 @@ export default function MemberLeaderboards() {
                     #{my.rank} {formatResult(my.value, c)}
                   </StatusBadge>
                 ) : (
-                  <StatusBadge tone="neutral">Nereitinguota</StatusBadge>
+                  <StatusBadge tone="neutral">{t('member_leaderboards.empty')}</StatusBadge>
                 )}
                 <ArrowRight className="h-4 w-4 text-ink-400" />
               </div>

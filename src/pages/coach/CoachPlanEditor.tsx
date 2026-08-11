@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Save, Send, Trash2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useStore } from "../../store/useStore";
 import { PageTitle } from "../../components/layout/PageTitle";
 import { Avatar } from "../../components/ui/Avatar";
@@ -11,11 +12,12 @@ import { formatDateSlash, todayIso } from "../../utils/dates";
 import { useTrainingsBase } from "../../utils/roleContext";
 
 export default function CoachPlanEditor() {
+  const { t } = useTranslation();
   const { trainingId = "", memberId = "" } = useParams();
   const navigate = useNavigate();
   const { base } = useTrainingsBase();
   const training = useStore((s) =>
-    s.trainingSessions.find((t) => t.id === trainingId),
+    s.trainingSessions.find((tr) => tr.id === trainingId),
   );
   const member = useStore((s) => s.members.find((m) => m.id === memberId));
   const plans = useStore((s) => s.trainingPlans);
@@ -40,7 +42,7 @@ export default function CoachPlanEditor() {
         memberId,
         title: training
           ? `${training.title} — ${member?.name.split(" ")[0]}`
-          : "Naujas planas",
+          : t("coach_plan_editor.new_plan_title"),
         duration: 0,
         coachNote: "",
         plan: "",
@@ -52,7 +54,7 @@ export default function CoachPlanEditor() {
   if (!training || !member) {
     return (
       <div>
-        <PageTitle title="Planas nerastas" backTo="/coach/trainings" />
+        <PageTitle title={t("coach_plan_editor.not_found")} backTo="/coach/trainings" />
       </div>
     );
   }
@@ -61,7 +63,7 @@ export default function CoachPlanEditor() {
     const next = { ...plan, status: "draft" as const, updatedAt: todayIso() };
     upsert(next);
     setPlan(next);
-    push({ kind: "success", message: "Juodraštis išsaugotas." });
+    push({ kind: "success", message: t("coach_plan_editor.draft_saved") });
   };
 
   const publishAndSave = () => {
@@ -75,14 +77,14 @@ export default function CoachPlanEditor() {
     setPlan(next);
     push({
       kind: "success",
-      message: "Treniruočių planas publikuotas nariui.",
+      message: t("coach_plan_editor.plan_published"),
     });
   };
 
   const deleteThis = () => {
     if (existingPlan) {
       remove(existingPlan.id);
-      push({ kind: "info", message: "Planas pašalintas." });
+      push({ kind: "info", message: t("coach_plan_editor.plan_deleted") });
     }
     navigate(`${base}/${training.id}`);
   };
@@ -90,8 +92,8 @@ export default function CoachPlanEditor() {
   return (
     <div>
       <PageTitle
-        eyebrow="Asmeninis planas"
-        title={plan.title || "Naujas planas"}
+        eyebrow={t("coach_plan_editor.eyebrow")}
+        title={plan.title || t("coach_plan_editor.new_plan_title")}
         description={`${training.title} · ${formatDateSlash(training.date)} · ${training.startTime}`}
         backTo={`${base}/${training.id}`}
       />
@@ -112,28 +114,28 @@ export default function CoachPlanEditor() {
             tone={plan.status === "published" ? "accent" : "warning"}
             dot
           >
-            {plan.status === "published" ? "Publikuota" : "Juodraštis"}
+            {plan.status === "published" ? t("coach_plan_editor.status_published") : t("coach_plan_editor.status_draft")}
           </StatusBadge>
         </div>
 
         <div className="grid gap-3">
           <FormField
-            label="Plano pavadinimas"
+            label={t("coach_plan_editor.plan_name_label")}
             value={plan.title}
             onChange={(e) => setPlan({ ...plan, title: e.target.value })}
           />
           <TextareaField
-            label="Trenerio užrašas nariui"
+            label={t("coach_plan_editor.coach_note_label")}
             value={plan.coachNote}
             onChange={(e) => setPlan({ ...plan, coachNote: e.target.value })}
-            placeholder="Atsipalaidavę pečiai ir kontroliuojami pirmieji 30 metrų…"
+            placeholder={t("coach_plan_editor.coach_note_placeholder")}
           />
           <TextareaField
-            label="Planas"
+            label={t("coach_plan_editor.plan_body_label")}
             value={plan.plan}
             onChange={(e) => setPlan({ ...plan, plan: e.target.value })}
             rows={12}
-            placeholder="Aprašykite visą planą — apšilimą, pagrindinę dalį, atsipalaidavimą, pastabas…"
+            placeholder={t("coach_plan_editor.plan_body_placeholder")}
           />
         </div>
       </section>
@@ -142,13 +144,13 @@ export default function CoachPlanEditor() {
         <div>
           {existingPlan && (
             <button type="button" className="btn-danger" onClick={deleteThis}>
-              <Trash2 className="h-4 w-4" /> Ištrinti planą
+              <Trash2 className="h-4 w-4" /> {t("coach_plan_editor.delete_plan")}
             </button>
           )}
         </div>
         <div className="flex flex-wrap gap-2">
           <button type="button" className="btn-accent" onClick={publishAndSave}>
-            <Send className="h-4 w-4" /> Publikuoti nariui
+            <Send className="h-4 w-4" /> {t("coach_plan_editor.publish_label")}
           </button>
         </div>
       </div>

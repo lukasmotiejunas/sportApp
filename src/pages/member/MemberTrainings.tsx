@@ -5,6 +5,7 @@ import Joyride, {
   type CallBackProps,
   type Step,
 } from 'react-joyride';
+import { useTranslation } from 'react-i18next';
 import { useStore, useCurrentMember } from '../../store/useStore';
 import { TrainingCard } from '../../components/trainings/TrainingCard';
 import { PageTitle } from '../../components/layout/PageTitle';
@@ -12,6 +13,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { addDays, DAY_NAMES, formatDateLong, todayIso } from '../../utils/dates';
 
 export default function MemberTrainings() {
+  const { t } = useTranslation();
   const member = useCurrentMember();
   const trainings = useStore((s) => s.trainingSessions);
   const coaches = useStore((s) => s.coaches);
@@ -84,11 +86,11 @@ export default function MemberTrainings() {
         disableScrolling={false}
         callback={handleTourCallback}
         locale={{
-          back: 'Atgal',
-          close: 'Uždaryti',
-          last: 'Baigti',
-          next: 'Toliau',
-          skip: 'Praleisti',
+          back: t('joyride.back'),
+          close: t('joyride.close'),
+          last: t('joyride.last'),
+          next: t('joyride.next'),
+          skip: t('joyride.skip'),
         }}
         styles={{
           options: {
@@ -99,9 +101,9 @@ export default function MemberTrainings() {
       />
       <div data-tour="page-title">
         <PageTitle
-          title="Treniruotės"
+          title={t('member_trainings.title')}
           description={formatDateLong(selectedDate)}
-          eyebrow="Tvarkaraštis"
+          eyebrow={t('coach_schedule.title')}
         />
       </div>
 
@@ -142,8 +144,8 @@ export default function MemberTrainings() {
         <div data-tour="training-list">
           <EmptyState
             icon={CalendarX}
-            title="Šią dieną treniruočių nėra"
-            description="Pasirinkite kitą datą."
+            title={t('member_trainings.empty')}
+            description={t('member_trainings.search_placeholder')}
           />
         </div>
       ) : (

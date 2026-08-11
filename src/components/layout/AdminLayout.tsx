@@ -1,4 +1,5 @@
 import { Outlet, NavLink } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import clsx from "clsx";
 import {
   Users,
@@ -16,28 +17,31 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { UserMenu } from "../ui/UserMenu";
+import { LanguageSwitcher } from "../ui/LanguageSwitcher";
 import { ToastContainer } from "../ui/ToastContainer";
 import { BackgroundLogo } from "./BackgroundLogo";
 import { useStore } from "../../store/useStore";
 
-const items = [
-  { to: "/admin", label: "Skydelis", icon: LayoutDashboard, end: true },
-  { to: "/admin/users", label: "Paskyros", icon: Users, end: false },
-  { to: "/admin/trainings", label: "Treniruotės", icon: BarChart3, end: false },
-  { to: "/admin/training-templates", label: "Treniruočių planai", icon: ClipboardList, end: false },
-  { to: "/admin/leaderboards", label: "Rezultatai", icon: Trophy, end: false },
-  { to: "/admin/payments", label: "Mokėjimai", icon: Wallet, end: false },
-  { to: "/admin/plans", label: "Narystės planai", icon: CreditCard, end: false },
-  { to: "/admin/subscription", label: "Prenumerata", icon: Receipt, end: false },
-  { to: "/admin/profile", label: "Profilis", icon: UserCog, end: false },
-  { to: "/admin/coaches/new", label: "Pridėti trenerį", icon: UserPlus },
-];
-
 export function AdminLayout() {
+  const { t } = useTranslation();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const clubName = useStore((s) => s.authUser?.clubName ?? "");
   const clubLogo = useStore((s) => s.authUser?.clubLogo ?? null);
   const logoSrc = clubLogo || "/lumo-logo.png";
+
+  const items = [
+    { to: "/admin", label: t("nav.dashboard"), icon: LayoutDashboard, end: true },
+    { to: "/admin/users", label: t("nav.accounts"), icon: Users, end: false },
+    { to: "/admin/trainings", label: t("nav.trainings"), icon: BarChart3, end: false },
+    { to: "/admin/training-templates", label: t("nav.training_plans"), icon: ClipboardList, end: false },
+    { to: "/admin/leaderboards", label: t("nav.results"), icon: Trophy, end: false },
+    { to: "/admin/payments", label: t("nav.payments"), icon: Wallet, end: false },
+    { to: "/admin/plans", label: t("nav.membership_plans"), icon: CreditCard, end: false },
+    { to: "/admin/subscription", label: t("nav.subscription"), icon: Receipt, end: false },
+    { to: "/admin/profile", label: t("nav.profile"), icon: UserCog, end: false },
+    { to: "/admin/coaches/new", label: t("nav.add_coach"), icon: UserPlus },
+  ];
+
   return (
     <div className="relative min-h-screen">
       <BackgroundLogo />
@@ -53,11 +57,14 @@ export function AdminLayout() {
             </span>
             {clubName}
             <span className="ml-1 rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-ink-600 dark:bg-ink-800 dark:text-ink-300">
-              Admin
+              {t("roles.admin_badge")}
             </span>
           </div>
-          <SidebarNav />
+          <SidebarNav items={items} />
           <div className="mt-auto space-y-2">
+            <div className="flex justify-end px-1 pb-1">
+              <LanguageSwitcher />
+            </div>
             <UserMenu variant="full" />
           </div>
         </aside>
@@ -69,7 +76,7 @@ export function AdminLayout() {
                 type="button"
                 onClick={() => setMobileNavOpen((v) => !v)}
                 className="grid h-9 w-9 place-items-center rounded-full border border-ink-200 dark:border-ink-700"
-                aria-label="Perjungti naršymą"
+                aria-label={t("common.toggle_nav")}
               >
                 {mobileNavOpen ? (
                   <X className="h-4 w-4" />
@@ -80,16 +87,17 @@ export function AdminLayout() {
               <div className="flex items-center gap-2 font-display text-base font-bold text-ink-900 dark:text-lime-400">
                 {clubName}
                 <span className="rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-ink-600 dark:bg-ink-800 dark:text-ink-300">
-                  Admin
+                  {t("roles.admin_badge")}
                 </span>
               </div>
               <div className="ml-auto flex items-center gap-2">
+                <LanguageSwitcher />
                 <UserMenu />
               </div>
             </div>
             {mobileNavOpen && (
               <div className="border-t border-ink-100 p-3 dark:border-ink-800">
-                <SidebarNav onNavigate={() => setMobileNavOpen(false)} />
+                <SidebarNav items={items} onNavigate={() => setMobileNavOpen(false)} />
               </div>
             )}
           </header>
@@ -104,7 +112,13 @@ export function AdminLayout() {
   );
 }
 
-function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
+function SidebarNav({
+  items,
+  onNavigate,
+}: {
+  items: { to: string; label: string; icon: React.ComponentType<{ className?: string }>; end?: boolean }[];
+  onNavigate?: () => void;
+}) {
   return (
     <nav className="flex flex-col gap-1">
       {items.map((it) => (

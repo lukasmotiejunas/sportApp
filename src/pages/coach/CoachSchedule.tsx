@@ -14,6 +14,7 @@ import Joyride, {
   type CallBackProps,
   type Step,
 } from "react-joyride";
+import { useTranslation } from "react-i18next";
 import { useStore, useCurrentCoach } from "../../store/useStore";
 import { PageTitle } from "../../components/layout/PageTitle";
 import { EmptyState } from "../../components/ui/EmptyState";
@@ -23,6 +24,7 @@ import type { TrainingSession } from "../../types";
 const WEEKDAY_LABELS = ["Pr", "An", "Tr", "Kt", "Pn", "Št", "Sk"];
 
 export default function CoachSchedule() {
+  const { t } = useTranslation();
   const coach = useCurrentCoach();
   const trainings = useStore((s) => s.trainingSessions);
   const authUserId = useStore((s) => s.authUser?.id ?? "");
@@ -180,11 +182,11 @@ export default function CoachSchedule() {
         disableScrolling={false}
         callback={handleTourCallback}
         locale={{
-          back: "Atgal",
-          close: "Uždaryti",
-          last: "Baigti",
-          next: "Toliau",
-          skip: "Praleisti",
+          back: t("joyride.back"),
+          close: t("joyride.close"),
+          last: t("joyride.last"),
+          next: t("joyride.next"),
+          skip: t("joyride.skip"),
         }}
         styles={{
           options: {
@@ -195,9 +197,9 @@ export default function CoachSchedule() {
       />
       <div data-tour="page-title">
         <PageTitle
-          eyebrow="Treneris"
-          title="Mano kalendorius"
-          description="Peržiūrėkite, kada šį mėnesį vedate treniruotes."
+          eyebrow={t("coach_schedule.eyebrow")}
+          title={t("coach_schedule.title")}
+          description={t("coach_schedule.description")}
         />
       </div>
 
@@ -210,7 +212,7 @@ export default function CoachSchedule() {
             type="button"
             onClick={goPrev}
             className="grid h-9 w-9 place-items-center rounded-full border border-ink-200 text-ink-600 transition-colors hover:bg-ink-100 dark:border-ink-700 dark:text-ink-300 dark:hover:bg-ink-800"
-            aria-label="Ankstesnis mėnuo"
+            aria-label={t("coach_schedule.prev_month_aria")}
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
@@ -220,8 +222,8 @@ export default function CoachSchedule() {
             </p>
             <p className="text-xs text-ink-500">
               {workingDaysCount === 0
-                ? "Šį mėnesį treniruočių dar nėra."
-                : `Darbo dienų: ${workingDaysCount} · Treniruočių: ${monthTrainings.length}`}
+                ? t("coach_schedule.no_trainings_month")
+                : t("coach_schedule.working_days", { days: workingDaysCount, count: monthTrainings.length })}
             </p>
           </div>
           <button
@@ -229,13 +231,13 @@ export default function CoachSchedule() {
             onClick={goToday}
             className="btn-ghost h-9 px-3 text-xs"
           >
-            Šiandien
+            {t("coach_schedule.today_btn")}
           </button>
           <button
             type="button"
             onClick={goNext}
             className="grid h-9 w-9 place-items-center rounded-full border border-ink-200 text-ink-600 transition-colors hover:bg-ink-100 dark:border-ink-700 dark:text-ink-300 dark:hover:bg-ink-800"
-            aria-label="Kitas mėnuo"
+            aria-label={t("coach_schedule.next_month_aria")}
           >
             <ChevronRight className="h-4 w-4" />
           </button>
@@ -295,11 +297,11 @@ export default function CoachSchedule() {
         >
           <span className="flex items-center gap-1.5">
             <span className="h-3 w-3 rounded-md border border-lime-400 bg-lime-400/20" />
-            Vedate treniruotę
+            {t("coach_schedule.legend_training")}
           </span>
           <span className="flex items-center gap-1.5">
             <span className="h-3 w-3 rounded-md border-2 border-lime-400" />
-            Šiandien
+            {t("coach_schedule.legend_today")}
           </span>
         </div>
       </section>
@@ -310,30 +312,30 @@ export default function CoachSchedule() {
           <h2 className="font-display text-base font-bold">
             {selectedDate
               ? formatSelectedDate(selectedDate)
-              : "Pasirinkite dieną"}
+              : t("coach_schedule.select_day")}
           </h2>
         </div>
 
         {!selectedDate ? (
           <p className="text-sm text-ink-500">
-            Spustelėkite dieną kalendoriuje, kad pamatytumėte treniruotes.
+            {t("coach_schedule.click_day")}
           </p>
         ) : selectedSessions.length === 0 ? (
           <EmptyState
             icon={CalendarDays}
-            title="Šią dieną treniruočių nėra"
-            description="Pasirinkite kitą dieną arba pereikite į kitą mėnesį."
+            title={t("coach_schedule.no_trainings_day")}
+            description={t("coach_schedule.no_trainings_day_desc")}
           />
         ) : (
           <ul className="space-y-2">
-            {selectedSessions.map((t) => {
-              const registered = t.registrations.filter(
+            {selectedSessions.map((sess) => {
+              const registered = sess.registrations.filter(
                 (r) => r.status === "registered",
               ).length;
               return (
-                <li key={t.id}>
+                <li key={sess.id}>
                   <Link
-                    to={`/coach/trainings/${t.id}`}
+                    to={`/coach/trainings/${sess.id}`}
                     className="surface flex items-start gap-3 p-3 transition-colors hover:border-ink-300 dark:hover:border-ink-600"
                   >
                     <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-lime-400/15 text-lime-700 dark:text-lime-200">
@@ -341,16 +343,16 @@ export default function CoachSchedule() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">
-                        {t.startTime}–{t.endTime}
+                        {sess.startTime}–{sess.endTime}
                       </p>
                       <p className="truncate text-sm font-semibold text-ink-900 dark:text-ink-50">
-                        {t.title}
+                        {sess.title}
                       </p>
                       <p className="mt-0.5 flex items-center gap-1 truncate text-xs text-ink-500">
                         <MapPin className="h-3 w-3 shrink-0" />
-                        <span className="truncate">{t.location}</span>
+                        <span className="truncate">{sess.location}</span>
                         <span className="ml-1 text-ink-400">
-                          · {registered}/{t.capacity} dalyvių
+                          {t("coach_schedule.participants_count", { count: registered, total: sess.capacity })}
                         </span>
                       </p>
                     </div>

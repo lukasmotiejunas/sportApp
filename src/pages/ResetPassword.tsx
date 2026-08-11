@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowRight, CheckCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 
 export default function ResetPassword() {
+  const { t } = useTranslation();
   const [params] = useSearchParams();
   const token = params.get("token") ?? "";
   const navigate = useNavigate();
@@ -18,12 +20,12 @@ export default function ResetPassword() {
     return (
       <div className="min-h-screen bg-ink-950 text-white flex items-center justify-center p-6">
         <div className="rounded-2xl bg-white p-8 text-ink-900 max-w-sm w-full text-center shadow-pop">
-          <p className="font-semibold">Neteisinga arba pasibaigusi nuoroda.</p>
+          <p className="font-semibold">{t("reset_password.error_invalid")}</p>
           <Link
             to="/forgot-password"
             className="mt-4 inline-block text-sm text-ink-600 underline hover:text-ink-900"
           >
-            Gauti naują nuorodą
+            {t("forgot_password.send_btn")}
           </Link>
         </div>
       </div>
@@ -34,7 +36,7 @@ export default function ResetPassword() {
     e.preventDefault();
     setError(null);
     if (password !== confirm) {
-      setError("Slaptažodžiai nesutampa.");
+      setError(t("reset_password.error_mismatch"));
       return;
     }
     setSubmitting(true);
@@ -43,7 +45,7 @@ export default function ResetPassword() {
       setDone(true);
     } catch (err: unknown) {
       const msg =
-        err instanceof Error ? err.message : "Nepavyko atnaujinti slaptažodžio.";
+        err instanceof Error ? err.message : t("common.error_generic");
       setError(msg);
     } finally {
       setSubmitting(false);
@@ -69,32 +71,32 @@ export default function ResetPassword() {
                 <CheckCircle className="h-7 w-7 text-lime-600" />
               </div>
               <div>
-                <h2 className="font-display text-xl font-bold">Slaptažodis atnaujintas</h2>
+                <h2 className="font-display text-xl font-bold">{t("reset_password.success_title")}</h2>
                 <p className="mt-2 text-sm text-ink-500">
-                  Galite prisijungti naudodami naują slaptažodį.
+                  {t("reset_password.success_desc")}
                 </p>
               </div>
               <button
                 onClick={() => navigate("/login")}
                 className="group mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-ink-950 font-semibold text-white transition-all hover:bg-ink-800"
               >
-                Prisijungti
+                {t("reset_password.go_to_login")}
                 <ArrowRight className="h-4 w-4" />
               </button>
             </div>
           ) : (
             <>
               <div>
-                <h2 className="font-display text-xl font-bold">Naujas slaptažodis</h2>
+                <h2 className="font-display text-xl font-bold">{t("reset_password.title")}</h2>
                 <p className="mt-1 text-sm text-ink-500">
-                  Įveskite naują slaptažodį. Minimalus ilgis – 6 simboliai.
+                  {t("reset_password.subtitle")}
                 </p>
               </div>
 
               <form onSubmit={submit} className="mt-2 space-y-4">
                 <div>
                   <label className="mb-1 block text-sm font-semibold text-ink-700">
-                    Naujas slaptažodis
+                    {t("reset_password.new_password")}
                   </label>
                   <input
                     type="password"
@@ -109,7 +111,7 @@ export default function ResetPassword() {
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-semibold text-ink-700">
-                    Pakartokite slaptažodį
+                    {t("reset_password.confirm_password")}
                   </label>
                   <input
                     type="password"
@@ -134,7 +136,7 @@ export default function ResetPassword() {
                   disabled={submitting}
                   className="group flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-ink-950 font-semibold text-white transition-all hover:bg-ink-800 disabled:opacity-60"
                 >
-                  {submitting ? "Išsaugoma…" : "Atnaujinti slaptažodį"}
+                  {submitting ? t("reset_password.submitting") : t("reset_password.submit_btn")}
                   {!submitting && <ArrowRight className="h-4 w-4" />}
                 </button>
               </form>
