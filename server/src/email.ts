@@ -39,6 +39,7 @@ export async function sendNewTrainingToMemberEmail(
   memberName: string,
   trainingTitle: string,
   trainingDate: string,
+  trainingTime: string,
   trainingUrl: string,
   clubName: string,
 ) {
@@ -53,7 +54,7 @@ export async function sendNewTrainingToMemberEmail(
       </p>
       <div style="background:#fff;border-radius:8px;padding:16px;font-size:14px;color:#0b0e18;margin-bottom:24px">
         <div style="font-weight:700;font-size:16px">${trainingTitle}</div>
-        <div style="color:#6b7280;margin-top:4px;font-size:13px">${trainingDate}</div>
+        <div style="color:#6b7280;margin-top:4px;font-size:13px">${trainingDate}, ${trainingTime}</div>
       </div>
       <a href="${trainingUrl}" style="display:inline-block;padding:12px 24px;background:#0b0e18;color:#fff;text-decoration:none;border-radius:10px;font-size:14px;font-weight:600">
         Peržiūrėti ir registruotis
