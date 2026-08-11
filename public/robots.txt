@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /plans
+Allow: /terms
+Allow: /privacy
+Disallow: /member/
+Disallow: /admin/
+Disallow: /coach/
+Disallow: /superadmin/
+Disallow: /impersonate
+Disallow: /join/
+Disallow: /login
+Disallow: /forgot-password
+Disallow: /reset-password
+
+Sitemap: https://lumosport.lt/sitemap.xml
