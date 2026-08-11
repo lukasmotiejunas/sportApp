@@ -8,6 +8,7 @@ import {
   Trophy,
   Users2,
   UserCog,
+  HelpCircle,
   Menu,
   X,
 } from "lucide-react";
@@ -32,6 +33,7 @@ export function CoachLayout() {
     { to: "/coach/members", label: t("nav.members"), icon: Users2 },
     { to: "/coach/leaderboards", label: t("nav.results"), icon: Trophy },
     { to: "/coach/profile", label: t("nav.profile"), icon: UserCog },
+    { to: "/coach/help", label: t("nav.help"), icon: HelpCircle },
   ];
 
   return (

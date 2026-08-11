@@ -97,7 +97,8 @@
     "profile": "Profile",
     "clubs": "Clubs",
     "finances": "Finances",
-    "main": "Main"
+    "main": "Main",
+    "help": "Help"
   },
   "joyride": {
     "back": "Back",
@@ -902,6 +903,23 @@
     "feat_coaches_b1": "Coaches sign in with their own account and see only their training sessions.",
     "feat_coaches_b2": "Each coach has their own work calendar with all their training sessions.",
     "feat_coaches_b3": "Coaches create and assign plans, manage registrations and attendance."
+  },
+  "help": {
+    "eyebrow": "Contact",
+    "title": "Help",
+    "description": "Have a question, found a bug, or want to suggest an improvement?",
+    "hero_title": "Get in touch",
+    "hero_subtitle": "We'll reply to any question, bug report or suggestion within 24 hours.",
+    "email_btn": "Send an email",
+    "response_time": "We respond within 24 hours",
+    "copy": "Copy",
+    "copied": "Copied",
+    "reason_q_title": "Questions",
+    "reason_q_desc": "Not sure how a feature works? We'll walk you through it step by step.",
+    "reason_bug_title": "Bugs",
+    "reason_bug_desc": "Something not working as expected? Let us know and we'll fix it as fast as possible.",
+    "reason_suggest_title": "Suggestions",
+    "reason_suggest_desc": "Have ideas on how to make the platform better? We'd love to hear from you."
   },
   "payment_banner": {
     "paid_soon": "Payment coming up",

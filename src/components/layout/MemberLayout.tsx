@@ -1,5 +1,6 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { HelpCircle } from "lucide-react";
 import { UserMenu } from "../ui/UserMenu";
 import { LanguageSwitcher } from "../ui/LanguageSwitcher";
 import { MobileBottomNav } from "./MobileBottomNav";
@@ -29,6 +30,20 @@ export function MemberLayout() {
           </div>
           <div className="ml-auto flex items-center gap-2">
             <LanguageSwitcher />
+            <NavLink
+              to="/member/help"
+              title={t("nav.help")}
+              className={({ isActive }) =>
+                `grid h-8 w-8 place-items-center rounded-full border transition-colors ${
+                  isActive
+                    ? "border-lime-400 bg-lime-400/10 text-lime-600 dark:text-lime-300"
+                    : "border-ink-200 text-ink-500 hover:bg-ink-100 dark:border-ink-700 dark:text-ink-400 dark:hover:bg-ink-800"
+                }`
+              }
+              aria-label={t("nav.help")}
+            >
+              <HelpCircle className="h-4 w-4" />
+            </NavLink>
             <UserMenu />
           </div>
         </div>

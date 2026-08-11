@@ -97,7 +97,8 @@
     "profile": "Profilis",
     "clubs": "Klubai",
     "finances": "Finansai",
-    "main": "Pagrindinis"
+    "main": "Pagrindinis",
+    "help": "Pagalba"
   },
   "joyride": {
     "back": "Atgal",
@@ -902,6 +903,23 @@
     "feat_coaches_b1": "Treneris prisijungia su savo paskyra ir mato tik savo treniruotes.",
     "feat_coaches_b2": "Kiekvienas treneris turi savo darbo kalendorių su visomis treniruotėmis.",
     "feat_coaches_b3": "Treneris sukuria ir priskiria planus, tvarko registracijas ir lankomumą."
+  },
+  "help": {
+    "eyebrow": "Kontaktai",
+    "title": "Pagalba",
+    "description": "Turite klausimų, radote klaidą ar norite pasiūlyti patobulinimą?",
+    "hero_title": "Parašykite mums",
+    "hero_subtitle": "Atsakysime į bet kokį klausimą, klaidos pranešimą ar pasiūlymą per 24 valandas.",
+    "email_btn": "Rašyti el. laišką",
+    "response_time": "Atsakome per 24 valandas",
+    "copy": "Kopijuoti",
+    "copied": "Nukopijuota",
+    "reason_q_title": "Klausimai",
+    "reason_q_desc": "Nesuprantate, kaip veikia tam tikra funkcija? Paaiškinsime žingsnis po žingsnio.",
+    "reason_bug_title": "Klaidos",
+    "reason_bug_desc": "Pastebėjote, kad kažkas neveikia kaip turėtų? Pranešite — ištaisysime kuo greičiau.",
+    "reason_suggest_title": "Pasiūlymai",
+    "reason_suggest_desc": "Turite idėjų, kaip padaryti sistemą geresnę? Labai laukiame jūsų nuomonės."
   },
   "payment_banner": {
     "paid_soon": "Mokėjimas artėja",
