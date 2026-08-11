@@ -113,7 +113,9 @@ membersRouter.post(
     // Notify admin before responding — fire-and-forget dies in serverless.
     const adminInfo = await getClubAdminInfo(clubId);
     if (adminInfo?.club.notifyNewMember) {
-      await sendNewMemberEmail(adminInfo.adminEmail, data.name, adminInfo.club.name).catch(() => {});
+      await sendNewMemberEmail(adminInfo.adminEmail, data.name, adminInfo.club.name).catch((err) => {
+        console.error('[notify] sendNewMemberEmail failed:', err);
+      });
     }
 
     res.status(201).json(serializeMember(member));
