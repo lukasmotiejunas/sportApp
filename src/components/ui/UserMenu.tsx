@@ -1,5 +1,6 @@
 import { LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useStore } from "../../store/useStore";
 import { Avatar } from "./Avatar";
 
@@ -7,14 +8,8 @@ type Props = {
   variant?: "compact" | "full";
 };
 
-const roleLabel: Record<string, string> = {
-  super_admin: "platformos savininkas",
-  admin: "administratorius",
-  coach: "treneris",
-  member: "narys",
-};
-
 export function UserMenu({ variant = "compact" }: Props) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const authUser = useStore((s) => s.authUser);
   const logout = useStore((s) => s.logout);
@@ -25,7 +20,7 @@ export function UserMenu({ variant = "compact" }: Props) {
   });
 
   const name = authUser?.name ?? authUser?.email ?? "—";
-  const label = authUser ? roleLabel[authUser.role] ?? authUser.role : "";
+  const label = authUser ? t(`roles.${authUser.role}`) : "";
 
   const handleLogout = () => {
     logout();
@@ -51,7 +46,7 @@ export function UserMenu({ variant = "compact" }: Props) {
           onClick={handleLogout}
           className="btn-outline mt-3 h-9 w-full text-sm"
         >
-          <LogOut className="h-4 w-4" /> Atsijungti
+          <LogOut className="h-4 w-4" /> {t("common.logout")}
         </button>
       </div>
     );
@@ -70,8 +65,8 @@ export function UserMenu({ variant = "compact" }: Props) {
         type="button"
         onClick={handleLogout}
         className="grid h-9 w-9 place-items-center rounded-full border border-ink-200 hover:bg-ink-100 dark:border-ink-700 dark:hover:bg-ink-800"
-        aria-label="Atsijungti"
-        title="Atsijungti"
+        aria-label={t("common.logout")}
+        title={t("common.logout")}
       >
         <LogOut className="h-4 w-4" />
       </button>

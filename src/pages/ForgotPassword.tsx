@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, CheckCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 
 export default function ForgotPassword() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
@@ -17,7 +19,7 @@ export default function ForgotPassword() {
       await api.post("/auth/forgot-password", { email: email.trim() });
       setDone(true);
     } catch {
-      setError("Nepavyko išsiųsti. Bandykite vėliau.");
+      setError(t("common.error_generic"));
     } finally {
       setSubmitting(false);
     }
@@ -41,7 +43,7 @@ export default function ForgotPassword() {
             className="flex items-center gap-1.5 text-sm text-ink-500 hover:text-ink-800"
           >
             <ArrowLeft className="h-4 w-4" />
-            Grįžti į prisijungimą
+            {t("forgot_password.back_to_login")}
           </Link>
 
           {done ? (
@@ -50,32 +52,31 @@ export default function ForgotPassword() {
                 <CheckCircle className="h-7 w-7 text-lime-600" />
               </div>
               <div>
-                <h2 className="font-display text-xl font-bold">Laiškas išsiųstas</h2>
+                <h2 className="font-display text-xl font-bold">{t("forgot_password.success_title")}</h2>
                 <p className="mt-2 text-sm text-ink-500">
-                  Jei šis el. pašto adresas yra registruotas, gausite nuorodą slaptažodžiui
-                  atnaujinti. Patikrinkite ir šlamšto aplanką.
+                  {t("forgot_password.success_desc")}
                 </p>
               </div>
               <Link
                 to="/login"
                 className="mt-2 text-sm font-semibold text-ink-900 underline underline-offset-2 hover:text-ink-600"
               >
-                Grįžti į prisijungimą
+                {t("forgot_password.back_to_login")}
               </Link>
             </div>
           ) : (
             <>
               <div>
-                <h2 className="font-display text-xl font-bold">Pamiršote slaptažodį?</h2>
+                <h2 className="font-display text-xl font-bold">{t("forgot_password.title")}</h2>
                 <p className="mt-1 text-sm text-ink-500">
-                  Įveskite savo el. pašto adresą ir mes atsiųsime nuorodą slaptažodžiui atnaujinti.
+                  {t("forgot_password.subtitle")}
                 </p>
               </div>
 
               <form onSubmit={submit} className="mt-2 space-y-4">
                 <div>
                   <label className="mb-1 block text-sm font-semibold text-ink-700">
-                    El. paštas
+                    {t("common.email")}
                   </label>
                   <input
                     type="email"
@@ -99,7 +100,7 @@ export default function ForgotPassword() {
                   disabled={submitting}
                   className="h-11 w-full rounded-2xl bg-ink-950 font-semibold text-white transition-all hover:bg-ink-800 disabled:opacity-60"
                 >
-                  {submitting ? "Siunčiama…" : "Siųsti nuorodą"}
+                  {submitting ? t("forgot_password.sending") : t("forgot_password.send_btn")}
                 </button>
               </form>
             </>

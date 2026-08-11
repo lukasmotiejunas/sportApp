@@ -5,6 +5,7 @@ import Joyride, {
   type CallBackProps,
   type Step,
 } from 'react-joyride';
+import { useTranslation } from 'react-i18next';
 import { useStore } from '../../store/useStore';
 import { PageTitle } from '../../components/layout/PageTitle';
 import { MemberCard } from '../../components/members/MemberCard';
@@ -12,13 +13,8 @@ import { FilterChip } from '../../components/ui/FilterChip';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { SelectField } from '../../components/ui/FormField';
 
-const paymentFilters = [
-  { id: 'all', label: 'Visi' },
-  { id: 'paid', label: 'Apmokėta' },
-  { id: 'overdue', label: 'Vėluoja' },
-] as const;
-
 export default function CoachMembers() {
+  const { t } = useTranslation();
   const members = useStore((s) => s.members);
   const trainings = useStore((s) => s.trainingSessions);
   const results = useStore((s) => s.leaderboardResults);
@@ -26,8 +22,14 @@ export default function CoachMembers() {
   const plans = useStore((s) => s.membershipPlans);
   const authUserId = useStore((s) => s.authUser?.id ?? '');
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState<(typeof paymentFilters)[number]['id']>('all');
+  const [filter, setFilter] = useState<'all' | 'paid' | 'overdue'>('all');
   const [sort, setSort] = useState<'name' | 'upcoming' | 'recent'>('name');
+
+  const paymentFilters = [
+    { id: 'all' as const, label: t('coach_members.filter_all_label') },
+    { id: 'paid' as const, label: t('coach_members.filter_paid_label') },
+    { id: 'overdue' as const, label: t('coach_members.filter_overdue_label') },
+  ];
   const [runTour, setRunTour] = useState(false);
 
   const enriched = useMemo(() => {
@@ -134,11 +136,11 @@ export default function CoachMembers() {
         disableScrolling={false}
         callback={handleTourCallback}
         locale={{
-          back: 'Atgal',
-          close: 'Uždaryti',
-          last: 'Baigti',
-          next: 'Toliau',
-          skip: 'Praleisti',
+          back: t('joyride.back'),
+          close: t('joyride.close'),
+          last: t('joyride.last'),
+          next: t('joyride.next'),
+          skip: t('joyride.skip'),
         }}
         styles={{
           options: {
@@ -149,9 +151,9 @@ export default function CoachMembers() {
       />
       <div data-tour="page-title">
         <PageTitle
-          eyebrow="Treneris"
-          title="Nariai"
-          description={`Iš viso klubo narių: ${members.length}`}
+          eyebrow={t('coach_members.eyebrow')}
+          title={t('coach_members.title')}
+          description={t('coach_members.total_count', { count: members.length })}
         />
       </div>
 
@@ -161,21 +163,21 @@ export default function CoachMembers() {
           <input
             type="search"
             className="input pl-9"
-            placeholder="Ieškoti narių"
+            placeholder={t('coach_members.search_placeholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            aria-label="Ieškoti narių"
+            aria-label={t('coach_members.search_aria')}
           />
         </div>
         <div data-tour="sort" className="w-40 shrink-0">
           <SelectField
             value={sort}
-            onChange={(e) => setSort(e.target.value as any)}
-            aria-label="Rikiuoti"
+            onChange={(e) => setSort(e.target.value as 'name' | 'upcoming' | 'recent')}
+            aria-label={t('coach_members.sort_aria')}
           >
-            <option value="name">Rikiuoti pagal vardą</option>
-            <option value="upcoming">Artėjančios registracijos</option>
-            <option value="recent">Ankstesnės treniruotės</option>
+            <option value="name">{t('coach_members.sort_by_name')}</option>
+            <option value="upcoming">{t('coach_members.sort_upcoming')}</option>
+            <option value="recent">{t('coach_members.sort_recent')}</option>
           </SelectField>
         </div>
       </div>
@@ -192,7 +194,7 @@ export default function CoachMembers() {
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState icon={Users2} title="Nė vienas narys neatitinka paieškos" description="Pabandykite išvalyti filtrus arba įvesti kitą vardą." />
+        <EmptyState icon={Users2} title={t('coach_members.no_members_match')} description={t('coach_members.no_members_match_desc')} />
       ) : (
         <div className="grid gap-2 sm:grid-cols-2" data-tour="members-list">
           {filtered.map(({ m }) => (

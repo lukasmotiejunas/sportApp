@@ -16,6 +16,7 @@ import Joyride, {
   type CallBackProps,
   type Step,
 } from "react-joyride";
+import { useTranslation } from "react-i18next";
 import { useStore, useCurrentMember } from "../../store/useStore";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { CapacityProgress } from "../../components/trainings/CapacityProgress";
@@ -26,6 +27,7 @@ import { Avatar } from "../../components/ui/Avatar";
 import type { TrainingPlan } from "../../types";
 
 export default function MemberTrainingDetail() {
+  const { t } = useTranslation();
   const { id = "" } = useParams();
   const navigate = useNavigate();
   const member = useCurrentMember();
@@ -72,7 +74,7 @@ export default function MemberTrainingDetail() {
   if (!training) {
     return (
       <div>
-        <PageTitle title="Treniruotė nerasta" backTo="/member/trainings" />
+        <PageTitle title={t('member_training_detail.back')} backTo="/member/trainings" />
       </div>
     );
   }
@@ -141,20 +143,20 @@ export default function MemberTrainingDetail() {
     if (isCancelled)
       return (
         <button className="btn-outline flex-1" disabled>
-          Treniruotė atšaukta
+          {t('member_training_detail.cancelled')}
         </button>
       );
     if (isClosed)
       return (
         <button className="btn-outline flex-1" disabled>
-          Registracija uždaryta
+          {t('member_training_detail.closed')}
         </button>
       );
     if (isRegistered) {
       if (withinCutoff) {
         return (
           <button className="btn-outline flex-1" disabled>
-            Iki treniruotės liko mažiau nei valanda — atšaukti nebegalima
+            {t('member_training_detail.registered')}
           </button>
         );
       }
@@ -163,7 +165,7 @@ export default function MemberTrainingDetail() {
           className="btn-danger flex-1"
           onClick={() => setConfirmCancel(true)}
         >
-          <XCircle className="h-4 w-4" /> Atšaukti registraciją
+          <XCircle className="h-4 w-4" /> {t('member_training_detail.unregister')}
         </button>
       );
     }
@@ -173,8 +175,7 @@ export default function MemberTrainingDetail() {
           className="btn-outline flex-1"
           onClick={() => setConfirmCancel(true)}
         >
-          <XCircle className="h-4 w-4" /> Palikti laukiančiųjų sąrašą (pozicija{" "}
-          {waitlistPosition})
+          <XCircle className="h-4 w-4" /> {t('member_training_detail.waitlisted')} ({waitlistPosition})
         </button>
       );
     }
@@ -184,20 +185,20 @@ export default function MemberTrainingDetail() {
           className="btn-danger flex-1"
           onClick={() => navigate("/member/payments")}
         >
-          Apmokėti norint atrakinti registraciją
+          {t('member_payments.subscribe')}
         </button>
       );
     if (isFull) {
       if (withinCutoff) {
         return (
           <button className="btn-outline flex-1" disabled>
-            Užpildyta — iki treniruotės liko mažiau nei valanda
+            {t('member_training_detail.full')}
           </button>
         );
       }
       return (
         <button className="btn-accent flex-1" onClick={doRegister}>
-          Užpildyta · stoti į laukiančiųjų sąrašą
+          {t('member_training_detail.full')} · {t('member_training_detail.waitlisted')}
         </button>
       );
     }
@@ -206,7 +207,7 @@ export default function MemberTrainingDetail() {
         className="btn-accent flex-1"
         onClick={withinCutoff ? () => setConfirmLateRegister(true) : doRegister}
       >
-        Užsiregistruoti į šią treniruotę
+        {t('member_training_detail.register')}
       </button>
     );
   };
@@ -266,11 +267,11 @@ export default function MemberTrainingDetail() {
         disableScrolling={false}
         callback={handleTourCallback}
         locale={{
-          back: "Atgal",
-          close: "Uždaryti",
-          last: "Baigti",
-          next: "Toliau",
-          skip: "Praleisti",
+          back: t('joyride.back'),
+          close: t('joyride.close'),
+          last: t('joyride.last'),
+          next: t('joyride.next'),
+          skip: t('joyride.skip'),
         }}
         styles={{
           options: {
@@ -292,22 +293,22 @@ export default function MemberTrainingDetail() {
           <div className="mb-3 flex flex-wrap items-center gap-2">
             {isRegistered && (
               <StatusBadge tone="accent" dot>
-                Esate užsiregistravę
+                {t('member_training_detail.registered')}
               </StatusBadge>
             )}
             {isWaitlisted && (
               <StatusBadge tone="warning" dot>
-                Laukiančiųjų sąraše (pozicija {waitlistPosition})
+                {t('member_training_detail.waitlisted')} ({waitlistPosition})
               </StatusBadge>
             )}
             {isCancelled && (
               <StatusBadge tone="danger" dot>
-                Atšaukta
+                {t('member_training_detail.cancelled')}
               </StatusBadge>
             )}
             {isFull && !isRegistered && !isWaitlisted && !isCancelled && (
               <StatusBadge tone="danger" dot>
-                Treniruotė užpildyta
+                {t('member_training_detail.full')}
               </StatusBadge>
             )}
           </div>
@@ -318,24 +319,24 @@ export default function MemberTrainingDetail() {
           <div className="mt-4 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
             <InfoRow
               icon={Clock}
-              label="Laikas"
+              label={t('common.time')}
               value={`${training.startTime}–${training.endTime}`}
             />
-            <InfoRow icon={MapPin} label="Vieta" value={training.location} />
+            <InfoRow icon={MapPin} label={t('member_training_detail.location')} value={training.location} />
             <InfoRow
               icon={UserRound}
-              label="Treneris"
-              value={coach?.name ?? "Nenurodyta"}
+              label={t('member_training_detail.coach')}
+              value={coach?.name ?? t('member_join.gender_unspecified')}
             />
             <InfoRow
               icon={Info}
-              label="Data"
+              label={t('common.date')}
               value={formatDateLong(training.date)}
             />
             {coach?.phone && (
               <InfoRow
                 icon={Phone}
-                label="Trenerio telefonas"
+                label={t('common.phone')}
                 value={coach.phone}
                 href={`tel:${coach.phone.replace(/\s+/g, "")}`}
               />
@@ -364,14 +365,14 @@ export default function MemberTrainingDetail() {
         >
           <h3 className="mb-3 flex items-center gap-2 font-display text-base font-bold">
             <Sparkles className="h-4 w-4 text-lime-600" />
-            Užsiregistravę dalyviai
+            {t('member_training_detail.participants')}
             <span className="text-xs font-medium text-ink-500">
               · {registered.length} iš {training.capacity}
             </span>
           </h3>
           {registered.length === 0 ? (
             <p className="text-sm text-ink-500">
-              Būkite pirmasis užsiregistravęs į šią treniruotę.
+              {t('coach_training_detail.empty_participants')}
             </p>
           ) : (
             <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -394,7 +395,7 @@ export default function MemberTrainingDetail() {
           <section className="surface p-4 md:col-span-2">
             <h3 className="mb-3 flex items-center gap-2 font-display text-base font-bold">
               <Sparkles className="h-4 w-4 text-lime-600" />
-              Laukiantys dalyviai
+              {t('member_training_detail.waitlist')}
               <span className="text-xs font-medium text-ink-500">
                 · {waitlisted.length}
               </span>
@@ -435,10 +436,10 @@ export default function MemberTrainingDetail() {
         open={confirmCancel}
         onClose={() => setConfirmCancel(false)}
         onConfirm={doCancel}
-        title="Atšaukti šią registraciją?"
-        message="Jūsų vieta bus atlaisvinta kitam klubo nariui. Galėsite užsiregistruoti vėliau, kol dar bus laisvų vietų."
-        confirmLabel="Atšaukti registraciją"
-        cancelLabel="Palikti registraciją"
+        title={t('member_training_detail.unregister')}
+        message={t('member_training_detail.cancelled')}
+        confirmLabel={t('member_training_detail.unregister')}
+        cancelLabel={t('common.cancel')}
         destructive
       />
 
@@ -446,10 +447,10 @@ export default function MemberTrainingDetail() {
         open={confirmLateRegister}
         onClose={() => setConfirmLateRegister(false)}
         onConfirm={doRegister}
-        title="Registruotis likus mažiau nei valandai?"
-        message="Iki treniruotės pradžios liko mažiau nei viena valanda — užsiregistravę nebegalėsite atšaukti registracijos. Ar tikrai norite registruotis?"
-        confirmLabel="Taip, registruotis"
-        cancelLabel="Atšaukti"
+        title={t('member_training_detail.register')}
+        message={t('member_training_detail.closed')}
+        confirmLabel={t('common.yes')}
+        cancelLabel={t('common.cancel')}
       />
     </div>
   );

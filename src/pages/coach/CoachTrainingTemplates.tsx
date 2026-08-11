@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ClipboardList, Plus, Save, Sparkles, Trash2, X } from 'lucide-react';
 import Joyride, { STATUS, type CallBackProps, type Step } from 'react-joyride';
+import { useTranslation } from 'react-i18next';
 import { PageTitle } from '../../components/layout/PageTitle';
 import { FormField, TextareaField } from '../../components/ui/FormField';
 import { EmptyState } from '../../components/ui/EmptyState';
@@ -32,16 +33,16 @@ const emptyForm: FormState = {
   defaultPlan: '',
 };
 
-function toForm(t: TrainingTemplate): FormState {
+function toForm(tmpl: TrainingTemplate): FormState {
   return {
-    name: t.name,
-    title: t.title,
-    description: t.description,
-    location: t.location,
-    startTime: t.startTime || '18:30',
-    endTime: t.endTime || '19:45',
-    capacity: t.capacity != null ? String(t.capacity) : '',
-    defaultPlan: t.defaultPlan,
+    name: tmpl.name,
+    title: tmpl.title,
+    description: tmpl.description,
+    location: tmpl.location,
+    startTime: tmpl.startTime || '18:30',
+    endTime: tmpl.endTime || '19:45',
+    capacity: tmpl.capacity != null ? String(tmpl.capacity) : '',
+    defaultPlan: tmpl.defaultPlan,
   };
 }
 
@@ -60,6 +61,7 @@ function toPayload(form: FormState) {
 }
 
 export default function CoachTrainingTemplates() {
+  const { t } = useTranslation();
   const templates = useStore((s) => s.trainingTemplates);
   const createTemplate = useStore((s) => s.createTrainingTemplate);
   const updateTemplate = useStore((s) => s.updateTrainingTemplate);
@@ -80,7 +82,7 @@ export default function CoachTrainingTemplates() {
   const generate = async () => {
     setAiError(null);
     if (aiPrompt.trim().length < 3) {
-      setAiError('Aprašykite treniruotę bent keliais žodžiais.');
+      setAiError(t('coach_templates.ai_error_short'));
       return;
     }
     setGenerating(true);
@@ -97,12 +99,12 @@ export default function CoachTrainingTemplates() {
           result.capacity != null ? String(result.capacity) : emptyForm.capacity,
         defaultPlan: result.defaultPlan,
       });
-      push({ kind: 'success', message: 'Planas sugeneruotas — patikrinkite ir išsaugokite.' });
+      push({ kind: 'success', message: t('coach_templates.ai_generated') });
     } catch (err) {
       const message =
         err instanceof ApiError
           ? err.message
-          : 'Nepavyko sugeneruoti plano.';
+          : t('coach_templates.ai_error_generic');
       setAiError(message);
     } finally {
       setGenerating(false);
@@ -123,10 +125,10 @@ export default function CoachTrainingTemplates() {
     setAiError(null);
   };
 
-  const startEdit = (t: TrainingTemplate) => {
+  const startEdit = (tmpl: TrainingTemplate) => {
     setCreating(false);
-    setEditingId(t.id);
-    setForm(toForm(t));
+    setEditingId(tmpl.id);
+    setForm(toForm(tmpl));
     setError(null);
     setAiPrompt('');
     setAiError(null);
@@ -145,11 +147,11 @@ export default function CoachTrainingTemplates() {
     e.preventDefault();
     setError(null);
     if (!form.name.trim()) {
-      setError('Įveskite plano pavadinimą.');
+      setError(t('coach_templates.error_name'));
       return;
     }
     if (form.startTime >= form.endTime) {
-      setError('Pabaigos laikas turi būti vėlesnis už pradžios.');
+      setError(t('coach_templates.error_time'));
       return;
     }
     const payload = toPayload(form);
@@ -158,18 +160,18 @@ export default function CoachTrainingTemplates() {
       const res = await updateTemplate(editingId, payload);
       setSubmitting(false);
       if (!res.ok) {
-        setError(res.error ?? 'Nepavyko atnaujinti.');
+        setError(res.error ?? t('coach_templates.error_save'));
         return;
       }
-      push({ kind: 'success', message: 'Planas atnaujintas.' });
+      push({ kind: 'success', message: t('coach_templates.saved') });
     } else {
       const res = await createTemplate(payload);
       setSubmitting(false);
       if (!res.ok) {
-        setError(res.error ?? 'Nepavyko sukurti.');
+        setError(res.error ?? t('coach_templates.error_create'));
         return;
       }
-      push({ kind: 'success', message: 'Planas sukurtas.' });
+      push({ kind: 'success', message: t('coach_templates.created') });
     }
     cancelForm();
   };
@@ -255,8 +257,8 @@ export default function CoachTrainingTemplates() {
       setCreating(true);
       setForm(emptyForm);
     }
-    const t = setTimeout(() => setRunTour(true), 100);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setRunTour(true), 100);
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tourEnabled]);
 
@@ -284,11 +286,11 @@ export default function CoachTrainingTemplates() {
           disableScrolling={false}
           callback={handleTourCallback}
           locale={{
-            back: 'Atgal',
-            close: 'Uždaryti',
-            last: 'Baigti',
-            next: 'Toliau',
-            skip: 'Praleisti',
+            back: t('joyride.back'),
+            close: t('joyride.close'),
+            last: t('joyride.last'),
+            next: t('joyride.next'),
+            skip: t('joyride.skip'),
           }}
           styles={{
             options: {
@@ -300,12 +302,12 @@ export default function CoachTrainingTemplates() {
       )}
       <div data-tour="page-title">
         <PageTitle
-          title="Treniruočių planai"
-          description="Iš anksto paruošti šablonai — pasirinkę juos, greitai užpildysite naujos treniruotės laukus."
+          title={t('coach_templates.title')}
+          description={t('coach_templates.description')}
           action={
             !formOpen ? (
               <button type="button" className="btn-primary" onClick={startCreate}>
-                <Plus className="h-4 w-4" /> Naujas planas
+                <Plus className="h-4 w-4" /> {t('coach_templates.new')}
               </button>
             ) : undefined
           }
@@ -316,13 +318,13 @@ export default function CoachTrainingTemplates() {
         <section className="surface mb-4 p-4">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-display text-base font-bold">
-              {editingId ? 'Redaguoti planą' : 'Naujas planas'}
+              {editingId ? t('coach_templates.form_edit') : t('coach_templates.form_new')}
             </h2>
             <button
               type="button"
               className="btn-ghost"
               onClick={cancelForm}
-              aria-label="Uždaryti formą"
+              aria-label={t('coach_templates.close_form')}
             >
               <X className="h-4 w-4" />
             </button>
@@ -333,16 +335,16 @@ export default function CoachTrainingTemplates() {
           >
             <div className="mb-2 flex items-center gap-2 font-display text-sm font-bold text-lime-900 dark:text-lime-200">
               <Sparkles className="h-4 w-4" />
-              Generuoti su AI
+              {t('coach_templates.ai_title')}
             </div>
             <p className="mb-2 text-xs text-ink-600 dark:text-ink-300">
-              Aprašykite treniruotę laisva forma — AI užpildys visus laukus. Rezultatą galėsite pataisyti prieš išsaugant.
+              {t('coach_templates.ai_desc')}
             </p>
             <TextareaField
               value={aiPrompt}
               onChange={(e) => setAiPrompt(e.target.value)}
               rows={3}
-              placeholder="pvz. 60 min sprinto technikos treniruotė 12–14 m. vaikams stadione, akcentas — pirmieji 30 m."
+              placeholder={t('coach_templates.ai_placeholder')}
             />
             {aiError && (
               <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">{aiError}</p>
@@ -355,7 +357,7 @@ export default function CoachTrainingTemplates() {
                 disabled={generating}
               >
                 <Sparkles className="h-4 w-4" />
-                {generating ? 'Generuojama…' : 'Sugeneruoti'}
+                {generating ? t('coach_templates.ai_generating') : t('coach_templates.ai_generate')}
               </button>
             </div>
           </div>
@@ -364,26 +366,26 @@ export default function CoachTrainingTemplates() {
             <div className="grid gap-3 sm:grid-cols-2">
               <div data-tour="template-name" className="sm:col-span-2">
                 <FormField
-                  label="Plano pavadinimas"
+                  label={t('coach_templates.name_label')}
                   required
-                  placeholder="pvz. Sprinto technika — pagrindinė"
+                  placeholder={t('coach_templates.name_placeholder')}
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  hint="Rodomas tik jums pasirenkant planą — nariai jo nemato."
+                  hint={t('coach_templates.name_hint')}
                 />
               </div>
               <div data-tour="training-title" className="sm:col-span-2">
                 <FormField
-                  label="Treniruotės pavadinimas"
-                  placeholder="pvz. Sprinto technika"
+                  label={t('coach_templates.training_title_label')}
+                  placeholder={t('coach_templates.training_title_placeholder')}
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                 />
               </div>
               <div data-tour="description" className="sm:col-span-2">
                 <TextareaField
-                  label="Aprašymas"
-                  placeholder="Ką nariai darys šioje treniruotėje?"
+                  label={t('coach_templates.description_label')}
+                  placeholder={t('coach_templates.description_placeholder')}
                   value={form.description}
                   onChange={(e) =>
                     setForm({ ...form, description: e.target.value })
@@ -392,29 +394,29 @@ export default function CoachTrainingTemplates() {
               </div>
               <div data-tour="location" className="sm:col-span-2">
                 <FormField
-                  label="Vieta"
-                  placeholder="pvz. Centrinis takas — A aikštė"
+                  label={t('coach_templates.location_label')}
+                  placeholder={t('coach_templates.location_placeholder')}
                   value={form.location}
                   onChange={(e) => setForm({ ...form, location: e.target.value })}
                 />
               </div>
               <div data-tour="times">
                 <FormField
-                  label="Pradžios laikas"
+                  label={t('coach_templates.start_time_label')}
                   type="time"
                   value={form.startTime}
                   onChange={(e) => setForm({ ...form, startTime: e.target.value })}
                 />
               </div>
               <FormField
-                label="Pabaigos laikas"
+                label={t('coach_templates.end_time_label')}
                 type="time"
                 value={form.endTime}
                 onChange={(e) => setForm({ ...form, endTime: e.target.value })}
               />
               <div data-tour="capacity">
                 <FormField
-                  label="Talpa"
+                  label={t('coach_templates.capacity_label')}
                   type="number"
                   min={1}
                   value={form.capacity}
@@ -424,11 +426,11 @@ export default function CoachTrainingTemplates() {
             </div>
             <div data-tour="default-plan">
               <TextareaField
-                label="Bendras planas"
+                label={t('coach_templates.plan_label')}
                 value={form.defaultPlan}
                 onChange={(e) => setForm({ ...form, defaultPlan: e.target.value })}
                 rows={10}
-                placeholder="Apšilimas · Pagrindinė dalis · Atsipalaidavimas · Pastabos…"
+                placeholder={t('coach_templates.plan_placeholder')}
               />
             </div>
             {error && (
@@ -436,7 +438,7 @@ export default function CoachTrainingTemplates() {
             )}
             <div className="flex flex-wrap justify-end gap-2">
               <button type="button" className="btn-ghost" onClick={cancelForm}>
-                Atšaukti
+                {t('common.cancel')}
               </button>
               <button
                 type="submit"
@@ -445,7 +447,7 @@ export default function CoachTrainingTemplates() {
                 data-tour="save"
               >
                 <Save className="h-4 w-4" />
-                {editingId ? 'Išsaugoti' : 'Sukurti'}
+                {editingId ? t('coach_templates.save_btn') : t('coach_templates.create_btn')}
               </button>
             </div>
           </form>
@@ -456,33 +458,33 @@ export default function CoachTrainingTemplates() {
       {sortedTemplates.length === 0 ? (
         <EmptyState
           icon={ClipboardList}
-          title="Kol kas planų nėra"
-          description="Sukurkite planą — vėliau galėsite jį pasirinkti kurdami naują treniruotę, ir laukai bus užpildyti automatiškai."
+          title={t('coach_templates.empty')}
+          description={t('coach_templates.empty_desc')}
         />
       ) : (
         <div className="grid gap-3">
-          {sortedTemplates.map((t) => (
-            <div key={t.id} className="surface p-4">
+          {sortedTemplates.map((tmpl) => (
+            <div key={tmpl.id} className="surface p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                  <h3 className="font-display text-base font-bold">{t.name}</h3>
-                  {t.title && (
+                  <h3 className="font-display text-base font-bold">{tmpl.name}</h3>
+                  {tmpl.title && (
                     <p className="mt-0.5 text-sm text-ink-600 dark:text-ink-300">
-                      {t.title}
+                      {tmpl.title}
                     </p>
                   )}
                   <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-500">
-                    {t.location && <span>📍 {t.location}</span>}
-                    {(t.startTime || t.endTime) && (
+                    {tmpl.location && <span>📍 {tmpl.location}</span>}
+                    {(tmpl.startTime || tmpl.endTime) && (
                       <span>
-                        🕐 {t.startTime || '—'} – {t.endTime || '—'}
+                        🕐 {tmpl.startTime || '—'} – {tmpl.endTime || '—'}
                       </span>
                     )}
-                    {t.capacity != null && <span>👥 {t.capacity} vt.</span>}
+                    {tmpl.capacity != null && <span>👥 {tmpl.capacity} {t('coach_templates.slots_abbrev')}</span>}
                   </div>
-                  {t.description && (
+                  {tmpl.description && (
                     <p className="mt-2 text-sm text-ink-600 dark:text-ink-300">
-                      {t.description}
+                      {tmpl.description}
                     </p>
                   )}
                 </div>
@@ -490,15 +492,15 @@ export default function CoachTrainingTemplates() {
                   <button
                     type="button"
                     className="btn-outline"
-                    onClick={() => startEdit(t)}
+                    onClick={() => startEdit(tmpl)}
                   >
-                    Redaguoti
+                    {t('coach_templates.edit')}
                   </button>
                   <button
                     type="button"
                     className="btn-danger"
-                    onClick={() => setToDelete(t)}
-                    aria-label="Ištrinti planą"
+                    onClick={() => setToDelete(tmpl)}
+                    aria-label={t('coach_templates.delete')}
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -516,17 +518,17 @@ export default function CoachTrainingTemplates() {
         onConfirm={() => {
           if (toDelete) {
             removeTemplate(toDelete.id);
-            push({ kind: 'info', message: 'Planas ištrintas.' });
+            push({ kind: 'info', message: t('coach_templates.deleted') });
           }
         }}
-        title="Ištrinti planą?"
+        title={t('coach_templates.delete_confirm')}
         message={
           toDelete
-            ? `„${toDelete.name}“ bus pašalintas. Anksčiau sukurtos treniruotės liks nepakitusios.`
+            ? t('coach_templates.delete_confirm_msg', { name: toDelete.name })
             : ''
         }
         destructive
-        confirmLabel="Ištrinti"
+        confirmLabel={t('coach_templates.delete')}
       />
     </div>
   );

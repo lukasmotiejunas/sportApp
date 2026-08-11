@@ -1,20 +1,23 @@
 import { NavLink } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
 import { CalendarCheck2, CreditCard, Home, Trophy, User } from 'lucide-react';
 
-const items = [
-  { to: '/member', label: 'Pradžia', icon: Home, end: true, tourId: 'nav-home' },
-  { to: '/member/trainings', label: 'Treniruotės', icon: CalendarCheck2, tourId: 'nav-trainings' },
-  { to: '/member/leaderboards', label: 'Rezultatai', icon: Trophy, tourId: 'nav-leaderboards' },
-  { to: '/member/payments', label: 'Mokėjimai', icon: CreditCard, tourId: 'nav-payments' },
-  { to: '/member/profile', label: 'Profilis', icon: User, tourId: 'nav-profile' },
-];
-
 export function MobileBottomNav() {
+  const { t } = useTranslation();
+
+  const items = [
+    { to: '/member', label: t('nav.home'), icon: Home, end: true, tourId: 'nav-home' },
+    { to: '/member/trainings', label: t('nav.trainings'), icon: CalendarCheck2, tourId: 'nav-trainings' },
+    { to: '/member/leaderboards', label: t('nav.results'), icon: Trophy, tourId: 'nav-leaderboards' },
+    { to: '/member/payments', label: t('nav.payments'), icon: CreditCard, tourId: 'nav-payments' },
+    { to: '/member/profile', label: t('nav.profile'), icon: User, tourId: 'nav-profile' },
+  ];
+
   return (
     <nav
       className="fixed inset-x-0 bottom-0 z-30 border-t border-ink-100 bg-white/95 backdrop-blur dark:border-ink-800 dark:bg-ink-950/95"
-      aria-label="Pagrindinis"
+      aria-label={t('nav.main')}
     >
       <div className="mx-auto grid max-w-4xl grid-cols-5 safe-bottom">
         {items.map((it) => (

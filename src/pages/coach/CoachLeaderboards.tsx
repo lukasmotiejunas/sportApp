@@ -8,6 +8,7 @@ import Joyride, {
   type CallBackProps,
   type Step,
 } from "react-joyride";
+import { useTranslation } from "react-i18next";
 import { useStore } from "../../store/useStore";
 import { PageTitle } from "../../components/layout/PageTitle";
 import { StatusBadge } from "../../components/ui/StatusBadge";
@@ -18,6 +19,7 @@ import { formatResult } from "../../utils/format";
 import { useLeaderboardsBase } from "../../utils/roleContext";
 
 export default function CoachLeaderboards() {
+  const { t } = useTranslation();
   const { base, eyebrow } = useLeaderboardsBase();
   const categories = useStore((s) => s.leaderboardCategories);
   const results = useStore((s) => s.leaderboardResults);
@@ -45,7 +47,7 @@ export default function CoachLeaderboards() {
     addCategory(draft);
     push({
       kind: "success",
-      message: "Rezultatų lentelės kategorija sukurta.",
+      message: t("coach_leaderboards.category_created"),
     });
     setOpen(false);
     setDraft({
@@ -121,8 +123,8 @@ export default function CoachLeaderboards() {
     } catch {
       return;
     }
-    const t = setTimeout(() => setRunTour(true), 100);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setRunTour(true), 100);
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tourEnabled]);
 
@@ -168,11 +170,11 @@ export default function CoachLeaderboards() {
           disableScrolling={false}
           callback={handleTourCallback}
           locale={{
-            back: "Atgal",
-            close: "Uždaryti",
-            last: "Baigti",
-            next: "Toliau",
-            skip: "Praleisti",
+            back: t("joyride.back"),
+            close: t("joyride.close"),
+            last: t("joyride.last"),
+            next: t("joyride.next"),
+            skip: t("joyride.skip"),
           }}
           styles={{
             options: {
@@ -185,15 +187,15 @@ export default function CoachLeaderboards() {
       <div data-tour="page-title">
         <PageTitle
           eyebrow={eyebrow}
-          title="Rezultatų lentelės"
-          description="Kurkite kategorijas ir tvarkykite rezultatus."
+          title={t("coach_leaderboards.title")}
+          description={t("coach_leaderboards.description")}
           action={
             <button
               className="btn-primary"
               onClick={() => setOpen(true)}
               data-tour="new-btn"
             >
-              <Plus className="h-4 w-4" /> Nauja rezultatų lentelė
+              <Plus className="h-4 w-4" /> {t("coach_leaderboards.new_category")}
             </button>
           }
         />
@@ -226,21 +228,21 @@ export default function CoachLeaderboards() {
                 <ChevronRight className="mt-1 h-4 w-4 text-ink-400" />
               </div>
               <div className="mt-auto flex items-center justify-between text-xs text-ink-500">
-                <span>Rezultatų: {total}</span>
+                <span>{t("coach_leaderboards.total_results", { count: total })}</span>
                 <span className="font-semibold">
-                  Geriausias {top ? formatResult(top.value, c) : "—"}
+                  {top ? t("coach_leaderboards.best", { result: formatResult(top.value, c) }) : "—"}
                 </span>
               </div>
               <div className="mt-3 flex flex-wrap gap-1.5">
                 <StatusBadge tone="neutral">
                   {c.genderCategory === "all"
-                    ? "Visi nariai"
+                    ? t("coach_leaderboards.gender_all")
                     : c.genderCategory === "male"
-                      ? "Vyrai"
-                      : "Moterys"}
+                      ? t("coach_leaderboards.gender_male")
+                      : t("coach_leaderboards.gender_female")}
                 </StatusBadge>
                 <StatusBadge tone="info">
-                  {c.lowerIsBetter ? "Mažiau — geriau" : "Daugiau — geriau"}
+                  {c.lowerIsBetter ? t("coach_leaderboards.lower_is_better") : t("coach_leaderboards.more_is_better")}
                 </StatusBadge>
               </div>
               <button
@@ -250,12 +252,12 @@ export default function CoachLeaderboards() {
                   archive(c.id);
                   push({
                     kind: "info",
-                    message: "Rezultatų lentelė archyvuota.",
+                    message: t("coach_leaderboards.archived_toast"),
                   });
                 }}
                 className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-ink-500 hover:text-ink-800"
               >
-                <Archive className="h-3 w-3" /> Archyvuoti
+                <Archive className="h-3 w-3" /> {t("coach_leaderboards.archive")}
               </button>
             </Link>
           );
@@ -265,7 +267,7 @@ export default function CoachLeaderboards() {
       {archived.length > 0 && (
         <section className="mt-6">
           <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500">
-            Archyvuota
+            {t("coach_leaderboards.archived_section")}
           </h2>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {archived.map((c) => (
@@ -279,7 +281,7 @@ export default function CoachLeaderboards() {
                   </p>
                   <p className="text-sm font-semibold">{c.name}</p>
                 </div>
-                <StatusBadge tone="neutral">Archyvuota</StatusBadge>
+                <StatusBadge tone="neutral">{t("coach_leaderboards.archived")}</StatusBadge>
               </div>
             ))}
           </div>
@@ -289,19 +291,19 @@ export default function CoachLeaderboards() {
       <Modal
         open={open}
         onClose={() => setOpen(false)}
-        title="Sukurti rezultatų lentelės kategoriją"
-        description="Kategorijos gali būti susietos su rungtimi ir lytimi."
+        title={t("coach_leaderboards.modal_create_title")}
+        description={t("coach_leaderboards.modal_create_desc")}
         footer={
           <>
             <button className="btn-ghost" onClick={() => setOpen(false)}>
-              Atšaukti
+              {t("common.cancel")}
             </button>
             <button
               className="btn-primary"
               onClick={create}
               data-tour="modal-submit"
             >
-              Sukurti kategoriją
+              {t("coach_leaderboards.modal_create_btn")}
             </button>
           </>
         }
@@ -309,7 +311,7 @@ export default function CoachLeaderboards() {
         <div className="grid gap-3 sm:grid-cols-2">
           <div data-tour="modal-name">
             <FormField
-              label="Pavadinimas"
+              label={t("coach_leaderboards.field_name")}
               required
               value={draft.name}
               onChange={(e) => setDraft({ ...draft, name: e.target.value })}
@@ -317,16 +319,16 @@ export default function CoachLeaderboards() {
           </div>
           <div data-tour="modal-event">
             <FormField
-              label="Rungtis"
+              label={t("coach_leaderboards.field_event")}
               required
-              placeholder="pvz. 100 m"
+              placeholder={t("coach_leaderboards.field_event_placeholder")}
               value={draft.event}
               onChange={(e) => setDraft({ ...draft, event: e.target.value })}
             />
           </div>
           <div data-tour="modal-measurement">
             <SelectField
-              label="Matavimo tipas"
+              label={t("coach_leaderboards.field_measurement")}
               value={draft.measurementType}
               onChange={(e) => {
                 const v = e.target
@@ -349,36 +351,36 @@ export default function CoachLeaderboards() {
                 });
               }}
             >
-              <option value="seconds">Sekundės</option>
-              <option value="distance_km">Atstumas (km)</option>
-              <option value="distance_m">Atstumas (m)</option>
-              <option value="minutes">Minutės</option>
-              <option value="kg">kg</option>
+              <option value="seconds">{t("coach_leaderboards.measurement_seconds")}</option>
+              <option value="distance_km">{t("coach_leaderboards.measurement_km")}</option>
+              <option value="distance_m">{t("coach_leaderboards.measurement_m")}</option>
+              <option value="minutes">{t("coach_leaderboards.measurement_minutes")}</option>
+              <option value="kg">{t("coach_leaderboards.measurement_kg")}</option>
             </SelectField>
           </div>
           <div data-tour="modal-direction">
             <SelectField
-              label="Kryptis"
+              label={t("coach_leaderboards.field_direction")}
               value={draft.lowerIsBetter ? "lower" : "higher"}
               onChange={(e) =>
                 setDraft({ ...draft, lowerIsBetter: e.target.value === "lower" })
               }
             >
-              <option value="lower">Mažiau — geriau</option>
-              <option value="higher">Daugiau — geriau</option>
+              <option value="lower">{t("coach_leaderboards.direction_lower")}</option>
+              <option value="higher">{t("coach_leaderboards.direction_higher")}</option>
             </SelectField>
           </div>
           <div data-tour="modal-gender">
             <SelectField
-              label="Lyties kategorija"
+              label={t("coach_leaderboards.field_gender")}
               value={draft.genderCategory}
               onChange={(e) =>
-                setDraft({ ...draft, genderCategory: e.target.value as any })
+                setDraft({ ...draft, genderCategory: e.target.value as LeaderboardCategory["genderCategory"] })
               }
             >
-              <option value="all">Visi</option>
-              <option value="male">Vyrai</option>
-              <option value="female">Moterys</option>
+              <option value="all">{t("coach_leaderboards.gender_option_all")}</option>
+              <option value="male">{t("coach_leaderboards.gender_option_male")}</option>
+              <option value="female">{t("coach_leaderboards.gender_option_female")}</option>
             </SelectField>
           </div>
         </div>

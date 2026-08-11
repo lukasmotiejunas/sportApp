@@ -1,4 +1,5 @@
 import { Outlet, NavLink } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import clsx from "clsx";
 import {
   BarChart3,
@@ -12,24 +13,26 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { UserMenu } from "../ui/UserMenu";
+import { LanguageSwitcher } from "../ui/LanguageSwitcher";
 import { ToastContainer } from "../ui/ToastContainer";
 import { BackgroundLogo } from "./BackgroundLogo";
 import { useStore } from "../../store/useStore";
 
-const items = [
-  { to: "/coach/trainings", label: "Treniruotės", icon: BarChart3, end: false },
-  { to: "/coach/training-templates", label: "Treniruočių planai", icon: ClipboardList },
-  { to: "/coach/schedule", label: "Mano kalendorius", icon: CalendarDays },
-  { to: "/coach/members", label: "Nariai", icon: Users2 },
-  { to: "/coach/leaderboards", label: "Rezultatai", icon: Trophy },
-  { to: "/coach/profile", label: "Profilis", icon: UserCog },
-];
-
 export function CoachLayout() {
+  const { t } = useTranslation();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const clubName = useStore((s) => s.authUser?.clubName ?? "");
   const clubLogo = useStore((s) => s.authUser?.clubLogo ?? null);
   const logoSrc = clubLogo || "/lumo-logo.png";
+
+  const items = [
+    { to: "/coach/trainings", label: t("nav.trainings"), icon: BarChart3, end: false },
+    { to: "/coach/training-templates", label: t("nav.training_plans"), icon: ClipboardList },
+    { to: "/coach/schedule", label: t("nav.my_calendar"), icon: CalendarDays },
+    { to: "/coach/members", label: t("nav.members"), icon: Users2 },
+    { to: "/coach/leaderboards", label: t("nav.results"), icon: Trophy },
+    { to: "/coach/profile", label: t("nav.profile"), icon: UserCog },
+  ];
 
   return (
     <div className="relative min-h-screen">
@@ -47,11 +50,14 @@ export function CoachLayout() {
             </span>
             {clubName}
             <span className="ml-1 rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-ink-600 dark:bg-ink-800 dark:text-ink-300">
-              Treneris
+              {t("roles.coach_badge")}
             </span>
           </div>
-          <SidebarNav />
+          <SidebarNav items={items} />
           <div className="mt-auto space-y-2">
+            <div className="flex justify-end px-1 pb-1">
+              <LanguageSwitcher />
+            </div>
             <UserMenu variant="full" />
           </div>
         </aside>
@@ -63,7 +69,7 @@ export function CoachLayout() {
                 type="button"
                 onClick={() => setMobileNavOpen((v) => !v)}
                 className="grid h-9 w-9 place-items-center rounded-full border border-ink-200 dark:border-ink-700"
-                aria-label="Perjungti naršymą"
+                aria-label={t("common.toggle_nav")}
               >
                 {mobileNavOpen ? (
                   <X className="h-4 w-4" />
@@ -74,16 +80,17 @@ export function CoachLayout() {
               <div className="flex items-center gap-2 font-display text-base font-bold text-ink-900 dark:text-lime-400">
                 {clubName}
                 <span className="rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-ink-600 dark:bg-ink-800 dark:text-ink-300">
-                  Treneris
+                  {t("roles.coach_badge")}
                 </span>
               </div>
               <div className="ml-auto flex items-center gap-2">
+                <LanguageSwitcher />
                 <UserMenu />
               </div>
             </div>
             {mobileNavOpen && (
               <div className="border-t border-ink-100 p-3 dark:border-ink-800">
-                <SidebarNav onNavigate={() => setMobileNavOpen(false)} />
+                <SidebarNav items={items} onNavigate={() => setMobileNavOpen(false)} />
               </div>
             )}
           </header>
@@ -98,7 +105,13 @@ export function CoachLayout() {
   );
 }
 
-function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
+function SidebarNav({
+  items,
+  onNavigate,
+}: {
+  items: { to: string; label: string; icon: React.ComponentType<{ className?: string }>; end?: boolean }[];
+  onNavigate?: () => void;
+}) {
   return (
     <nav className="flex flex-col gap-1">
       {items.map((it) => (

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { CalendarPlus, ClipboardList, Save } from 'lucide-react';
 import Joyride, { STATUS, type CallBackProps, type Step } from 'react-joyride';
+import { useTranslation } from 'react-i18next';
 import { PageTitle } from '../../components/layout/PageTitle';
 import { FormField, SelectField, TextareaField } from '../../components/ui/FormField';
 import { useStore } from '../../store/useStore';
@@ -12,6 +13,7 @@ import { ensureAdminCoachApi } from '../../api/profile';
 type Props = { mode: 'create' | 'edit' };
 
 export default function CoachTrainingForm({ mode }: Props) {
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const { base, eyebrow, isAdmin } = useTrainingsBase();
@@ -223,11 +225,11 @@ export default function CoachTrainingForm({ mode }: Props) {
           disableScrolling={false}
           callback={handleTourCallback}
           locale={{
-            back: 'Atgal',
-            close: 'Uždaryti',
-            last: 'Baigti',
-            next: 'Toliau',
-            skip: 'Praleisti',
+            back: t('joyride.back'),
+            close: t('joyride.close'),
+            last: t('joyride.last'),
+            next: t('joyride.next'),
+            skip: t('joyride.skip'),
           }}
           styles={{
             options: {
@@ -239,7 +241,7 @@ export default function CoachTrainingForm({ mode }: Props) {
       )}
       <div data-tour="page-title">
         <PageTitle
-          title={mode === 'create' ? 'Nauja treniruotė' : 'Redaguoti treniruotę'}
+          title={mode === 'create' ? t('coach_training_form.title_create') : t('coach_training_form.title_edit')}
           eyebrow={eyebrow}
           backTo={mode === 'create' ? base : `${base}/${existing?.id}`}
         />
@@ -286,7 +288,7 @@ export default function CoachTrainingForm({ mode }: Props) {
         )}
 
         <section className="surface p-4">
-          <h2 className="mb-3 font-display text-base font-bold">Pagrindinė informacija</h2>
+          <h2 className="mb-3 font-display text-base font-bold">{t('admin_profile.personal_info')}</h2>
           <div className="grid gap-3 sm:grid-cols-2">
             <div data-tour="title" className="sm:col-span-2">
               <FormField
@@ -339,7 +341,7 @@ export default function CoachTrainingForm({ mode }: Props) {
         </section>
 
         <section className="surface p-4" data-tour="schedule">
-          <h2 className="mb-3 font-display text-base font-bold">Tvarkaraštis ir talpa</h2>
+          <h2 className="mb-3 font-display text-base font-bold">{t('coach_schedule.title')}</h2>
           <div className="grid gap-3 sm:grid-cols-4">
             <FormField label="Data" required type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value, registrationDeadline: e.target.value })} />
             <FormField label="Pradžios laikas" required type="time" value={form.startTime} onChange={(e) => setForm({ ...form, startTime: e.target.value })} />
@@ -358,7 +360,7 @@ export default function CoachTrainingForm({ mode }: Props) {
         </section>
 
         <section className="surface p-4" data-tour="default-plan">
-          <h2 className="mb-1 font-display text-base font-bold">Bendras planas</h2>
+          <h2 className="mb-1 font-display text-base font-bold">{t('coach_training_form.field_default_plan')}</h2>
           <p className="mb-3 text-xs text-ink-500">
             Šis planas bus automatiškai priskirtas kiekvienam užsiregistravusiam
             nariui. Vėliau galėsite pritaikyti kiekvienam individualiai.
@@ -373,9 +375,9 @@ export default function CoachTrainingForm({ mode }: Props) {
         </section>
 
         <div className="flex flex-wrap justify-end gap-2">
-          <button type="button" className="btn-ghost" onClick={() => navigate(-1)}>Atšaukti</button>
+          <button type="button" className="btn-ghost" onClick={() => navigate(-1)}>{t('common.cancel')}</button>
           <button type="submit" className="btn-primary" data-tour="submit">
-            {mode === 'create' ? <><CalendarPlus className="h-4 w-4" /> Sukurti treniruotę</> : <><Save className="h-4 w-4" /> Išsaugoti pakeitimus</>}
+            {mode === 'create' ? <><CalendarPlus className="h-4 w-4" /> {t('coach_training_form.submit_create')}</> : <><Save className="h-4 w-4" /> {t('coach_training_form.submit_edit')}</>}
           </button>
         </div>
       </form>
