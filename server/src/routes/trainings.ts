@@ -4,6 +4,8 @@ import { prisma } from '../prisma.js';
 import { asyncHandler, HttpError } from '../middleware/errorHandler.js';
 import { requireClubId } from '../middleware/auth.js';
 import { serializeTraining } from '../serialize.js';
+import { getClubAdminInfo } from '../util.js';
+import { sendNewTrainingEmail } from '../email.js';
 
 export const trainingsRouter = Router();
 
@@ -111,6 +113,14 @@ trainingsRouter.post(
       include: withRegistrations,
     });
     res.status(201).json(serializeTraining(training));
+
+    // Fire-and-forget: notify admin if enabled.
+    void getClubAdminInfo(clubId).then((info) => {
+      if (info?.club.notifyNewTraining) {
+        const dateStr = new Date(data.date).toLocaleDateString('lt-LT');
+        void sendNewTrainingEmail(info.adminEmail, data.title, dateStr, info.club.name).catch(() => {});
+      }
+    });
   }),
 );
 

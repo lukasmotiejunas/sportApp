@@ -125,6 +125,42 @@ profileRouter.put(
   }),
 );
 
+const notificationSettingsSchema = z.object({
+  notifyNewMember: z.boolean().optional(),
+  notifyNewTraining: z.boolean().optional(),
+  notifyPayment: z.boolean().optional(),
+});
+
+// GET /notifications — return current club notification toggles.
+profileRouter.get(
+  '/notifications',
+  requireRole('admin'),
+  asyncHandler(async (req, res) => {
+    const clubId = req.user!.clubId;
+    if (!clubId) throw new HttpError(403, 'Šiai paskyrai nepriskirtas klubas.');
+    const club = await prisma.club.findUnique({ where: { id: clubId }, select: { notifyNewMember: true, notifyNewTraining: true, notifyPayment: true } });
+    if (!club) throw new HttpError(404, 'Klubas nerastas.');
+    res.json(club);
+  }),
+);
+
+// PATCH /notifications — update club notification toggles.
+profileRouter.patch(
+  '/notifications',
+  requireRole('admin'),
+  asyncHandler(async (req, res) => {
+    const clubId = req.user!.clubId;
+    if (!clubId) throw new HttpError(403, 'Šiai paskyrai nepriskirtas klubas.');
+    const data = notificationSettingsSchema.parse(req.body);
+    const updated = await prisma.club.update({
+      where: { id: clubId },
+      data,
+      select: { notifyNewMember: true, notifyNewTraining: true, notifyPayment: true },
+    });
+    res.json(updated);
+  }),
+);
+
 const updateClubSchema = z.object({
   name: z.string().min(2, 'Klubo pavadinimas per trumpas.').max(120).optional(),
   // Data URL (image/*;base64,...) or empty string / null to clear.

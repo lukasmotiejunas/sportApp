@@ -5,7 +5,8 @@ import { asyncHandler, HttpError } from '../middleware/errorHandler.js';
 import { requireClubId, requireRole } from '../middleware/auth.js';
 import { serializeMember } from '../serialize.js';
 import { hashPassword } from '../auth/password.js';
-import { initialsFromName, randomAvatarColor } from '../util.js';
+import { getClubAdminInfo, initialsFromName, randomAvatarColor } from '../util.js';
+import { sendNewMemberEmail } from '../email.js';
 import { getStripe } from '../stripe.js';
 
 export const membersRouter = Router();
@@ -110,6 +111,13 @@ membersRouter.post(
     });
 
     res.status(201).json(serializeMember(member));
+
+    // Fire-and-forget: notify admin if enabled.
+    void getClubAdminInfo(clubId).then((info) => {
+      if (info?.club.notifyNewMember) {
+        void sendNewMemberEmail(info.adminEmail, data.name, info.club.name).catch(() => {});
+      }
+    });
   }),
 );
 
