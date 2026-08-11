@@ -112,15 +112,14 @@ trainingsRouter.post(
       },
       include: withRegistrations,
     });
-    res.status(201).json(serializeTraining(training));
+    // Notify admin before responding — fire-and-forget dies in serverless.
+    const adminInfo = await getClubAdminInfo(clubId);
+    if (adminInfo?.club.notifyNewTraining) {
+      const dateStr = new Date(data.date).toLocaleDateString('lt-LT');
+      await sendNewTrainingEmail(adminInfo.adminEmail, data.title, dateStr, adminInfo.club.name).catch(() => {});
+    }
 
-    // Fire-and-forget: notify admin if enabled.
-    void getClubAdminInfo(clubId).then((info) => {
-      if (info?.club.notifyNewTraining) {
-        const dateStr = new Date(data.date).toLocaleDateString('lt-LT');
-        void sendNewTrainingEmail(info.adminEmail, data.title, dateStr, info.club.name).catch(() => {});
-      }
-    });
+    res.status(201).json(serializeTraining(training));
   }),
 );
 
