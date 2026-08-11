@@ -70,7 +70,7 @@ export default function MemberLeaderboardDetail() {
   if (!category) {
     return (
       <div>
-        <PageTitle title="Rezultatų lentelė nerasta" backTo="/member/leaderboards" />
+        <PageTitle title={t('member_leaderboard_detail.not_found')} backTo="/member/leaderboards" />
       </div>
     );
   }
@@ -83,15 +83,15 @@ export default function MemberLeaderboardDetail() {
       <PageTitle
         title={category.name}
         eyebrow={category.event}
-        description={category.lowerIsBetter ? 'Laimi greičiausias rezultatas.' : 'Laimi didžiausia reikšmė.'}
+        description={category.lowerIsBetter ? t('member_leaderboard_detail.desc_lower') : t('member_leaderboard_detail.desc_higher')}
         backTo="/member/leaderboards"
       />
 
       <div className="mb-4">
         <Tabs
           items={[
-            { id: 'all', label: 'Visų rezultatai' },
-            { id: 'mine', label: 'Mano rezultatai', badge: myHistory.length || undefined },
+            { id: 'all', label: t('member_leaderboard_detail.tab_all') },
+            { id: 'mine', label: t('member_leaderboard_detail.tab_mine'), badge: myHistory.length || undefined },
           ]}
           active={tab}
           onChange={(id) => setTab(id as 'all' | 'mine')}
@@ -112,19 +112,19 @@ export default function MemberLeaderboardDetail() {
 
           <div className="mb-4 -mx-4 flex gap-2 overflow-x-auto px-4 no-scrollbar">
             <FilterChip icon={<Filter className="h-3.5 w-3.5" />} active={gender === 'all'} onClick={() => setGender('all')}>
-              Visi nariai
+              {t('member_leaderboard_detail.filter_all')}
             </FilterChip>
             <FilterChip active={gender === 'male'} onClick={() => setGender('male')}>
-              Vyrai
+              {t('member_leaderboard_detail.filter_male')}
             </FilterChip>
             <FilterChip active={gender === 'female'} onClick={() => setGender('female')}>
-              Moterys
+              {t('member_leaderboard_detail.filter_female')}
             </FilterChip>
           </div>
 
           {myRow && (
             <section className="mb-4 rounded-2xl border border-lime-300 bg-lime-50 p-3 dark:border-lime-500/50 dark:bg-lime-500/10">
-              <p className="mb-2 text-xs font-bold uppercase tracking-wide text-lime-900 dark:text-lime-200">Jūsų vieta</p>
+              <p className="mb-2 text-xs font-bold uppercase tracking-wide text-lime-900 dark:text-lime-200">{t('member_leaderboard_detail.my_rank')}</p>
               <LeaderboardRow
                 rank={myRow.rank}
                 result={myRow.result}
@@ -138,7 +138,7 @@ export default function MemberLeaderboardDetail() {
           )}
 
           {ranked.length === 0 ? (
-            <EmptyState icon={Filter} title="Reitinguotų rezultatų dar nėra" description="Paprašykite trenerio įtraukti rezultatus." />
+            <EmptyState icon={Filter} title={t('member_leaderboard_detail.empty_results')} description={t('member_leaderboard_detail.empty_results_desc')} />
           ) : (
             <div className="space-y-2">
               {ranked.map((row) => (
@@ -158,17 +158,17 @@ export default function MemberLeaderboardDetail() {
       ) : myHistory.length === 0 ? (
         <EmptyState
           icon={Trophy}
-          title="Jūs dar neturite rezultatų"
-          description="Paprašykite trenerio įtraukti jūsų rezultatą į šią lentelę."
+          title={t('member_leaderboard_detail.no_my_results')}
+          description={t('member_leaderboard_detail.no_my_results_desc')}
         />
       ) : (
         <section className="surface p-3">
           <div className="mb-2 flex items-center justify-between">
             <p className="text-xs font-bold uppercase tracking-wide text-ink-500">
-              Mano rezultatų istorija
+              {t('member_leaderboard_detail.my_history')}
             </p>
             <p className="text-xs text-ink-500">
-              Iš viso: <span className="font-semibold text-ink-800 dark:text-ink-200">{myHistory.length}</span>
+              {t('member_leaderboard_detail.total')} <span className="font-semibold text-ink-800 dark:text-ink-200">{myHistory.length}</span>
             </p>
           </div>
           <ul className="divide-y divide-ink-100 dark:divide-ink-800">
@@ -194,7 +194,7 @@ export default function MemberLeaderboardDetail() {
                 <div className="flex items-center gap-2">
                   {isBest && (
                     <span className="inline-flex items-center gap-1 rounded-full bg-lime-400/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-lime-700 dark:text-lime-300">
-                      <Trophy className="h-3 w-3" /> Rekordas
+                      <Trophy className="h-3 w-3" /> {t('member_leaderboard_detail.record_badge')}
                     </span>
                   )}
                   <span className="text-xs text-ink-500">{formatDateSlash(r.date)}</span>
