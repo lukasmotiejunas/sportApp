@@ -5,7 +5,7 @@ import { asyncHandler, HttpError } from '../middleware/errorHandler.js';
 import { requireClubId } from '../middleware/auth.js';
 import { serializeTraining } from '../serialize.js';
 import { getClubAdminInfo } from '../util.js';
-import { sendNewTrainingEmail } from '../email.js';
+import { sendNewTrainingEmail, sendNewTrainingToMemberEmail } from '../email.js';
 
 export const trainingsRouter = Router();
 
@@ -112,14 +112,28 @@ trainingsRouter.post(
       },
       include: withRegistrations,
     });
-    // Notify admin before responding — fire-and-forget dies in serverless.
+    const dateStr = new Date(data.date).toLocaleDateString('lt-LT');
+    const appUrl = process.env.APP_URL ?? 'http://localhost:5173';
+    const trainingUrl = `${appUrl}/member/trainings/${training.id}`;
+
+    // Notify admin.
     const adminInfo = await getClubAdminInfo(clubId);
     if (adminInfo?.club.notifyNewTraining) {
-      const dateStr = new Date(data.date).toLocaleDateString('lt-LT');
       await sendNewTrainingEmail(adminInfo.adminEmail, data.title, dateStr, adminInfo.club.name).catch((err) => {
         console.error('[notify] sendNewTrainingEmail failed:', err);
       });
     }
+
+    // Notify opted-in members in parallel.
+    const optedInMembers = await prisma.member.findMany({
+      where: { clubId, notifyEmail: true },
+      select: { email: true, name: true },
+    });
+    await Promise.allSettled(
+      optedInMembers.map((m) =>
+        sendNewTrainingToMemberEmail(m.email, m.name, data.title, dateStr, trainingUrl, adminInfo?.club.name ?? ''),
+      ),
+    );
 
     res.status(201).json(serializeTraining(training));
   }),

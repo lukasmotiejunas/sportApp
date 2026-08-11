@@ -138,10 +138,16 @@ export default function MemberProfile() {
         "Slaptažodžio keitimas. Norėdami pakeisti — pirma įveskite dabartinį, po to du kartus naują (bent 6 simboliai). Rekomenduojama keisti retkarčiais saugumui.",
     },
     {
-      target: '[data-tour="account"]',
+      target: '[data-tour=”notifications”]',
       content:
-        "Paskyra. Rodo, nuo kada esate klubo narys. Čia taip pat rasite mygtuką „Atsijungti“ — po jo būsite grąžinti į prisijungimo langą.",
-      placement: "top",
+        'El. pašto pranešimai. Įjunkite, jei norite gauti laišką kiekvieną kartą, kai klube bus sukurta nauja treniruotė — laiške bus tiesioginė nuoroda į treniruotę, kur galėsite iš karto registruotis.',
+      placement: 'top',
+    },
+    {
+      target: '[data-tour=”account”]',
+      content:
+        'Paskyra. Rodo, nuo kada esate klubo narys. Čia taip pat rasite mygtuką atsijungti — po jo būsite grąžinti į prisijungimo langą.',
+      placement: 'top',
     },
   ];
 
@@ -333,6 +339,34 @@ export default function MemberProfile() {
             </button>
           </div>
         </form>
+      </section>
+
+      <section className="surface mb-4 p-4" data-tour="notifications">
+        <div className="mb-3 flex items-start gap-3">
+          <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-lime-400/15 text-lime-600 dark:text-lime-300">
+            <Bell className="h-4 w-4" />
+          </div>
+          <div>
+            <h2 className="font-display text-base font-bold">El. pašto pranešimai</h2>
+            <p className="mt-0.5 text-sm text-ink-500">
+              Pranešimai siunčiami į jūsų prisijungimo el. paštą.
+            </p>
+          </div>
+        </div>
+        <PrefRow
+          icon={Mail}
+          title="Naujos treniruotės"
+          description="Gauti el. laišką, kai klube bus sukurta nauja treniruotė."
+          value={member.notificationPreferences.email}
+          onChange={() =>
+            updateMember(member.id, {
+              notificationPreferences: {
+                ...member.notificationPreferences,
+                email: !member.notificationPreferences.email,
+              },
+            })
+          }
+        />
       </section>
 
       <section className="surface p-4" data-tour="account">
