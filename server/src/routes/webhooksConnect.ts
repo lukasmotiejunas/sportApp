@@ -133,11 +133,19 @@ webhooksConnectRouter.post(
           await applySubscriptionStatus(sub);
 
           // Notify club admin if enabled.
-          const member = await prisma.member.findFirst({ where: { stripeSubscriptionId: subId } });
-          if (member) {
-            const adminInfo = await getClubAdminInfo(member.clubId);
-            if (adminInfo?.club.notifyPayment) {
-              await sendPaymentEmail(adminInfo.adminEmail, member.name, inv.amount_paid, inv.currency, adminInfo.club.name).catch(() => {});
+          if (inv.amount_paid > 0) {
+            const member = await prisma.member.findFirst({ where: { stripeSubscriptionId: subId } });
+            if (member) {
+              const adminInfo = await getClubAdminInfo(member.clubId);
+              if (adminInfo?.club.notifyPayment) {
+                await sendPaymentEmail(adminInfo.adminEmail, member.name, inv.amount_paid, inv.currency, adminInfo.club.name).catch((err) => {
+                  console.error('[notify] sendPaymentEmail (invoice.paid) failed:', err);
+                });
+              } else {
+                console.log('[notify] payment notify skipped: notifyPayment=', adminInfo?.club.notifyPayment);
+              }
+            } else {
+              console.log('[notify] payment notify skipped: member not found for subId', subId);
             }
           }
         }
@@ -206,7 +214,11 @@ webhooksConnectRouter.post(
         // Notify club admin if enabled.
         const adminInfo = await getClubAdminInfo(member.clubId);
         if (adminInfo?.club.notifyPayment) {
-          await sendPaymentEmail(adminInfo.adminEmail, member.name, pi.amount, pi.currency, adminInfo.club.name).catch(() => {});
+          await sendPaymentEmail(adminInfo.adminEmail, member.name, pi.amount, pi.currency, adminInfo.club.name).catch((err) => {
+            console.error('[notify] sendPaymentEmail (payment_intent) failed:', err);
+          });
+        } else {
+          console.log('[notify] payment notify skipped: notifyPayment=', adminInfo?.club.notifyPayment);
         }
         break;
       }
