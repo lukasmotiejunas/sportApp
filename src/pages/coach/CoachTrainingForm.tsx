@@ -37,6 +37,8 @@ export default function CoachTrainingForm({ mode }: Props) {
     ensureAdminCoachApi().then((coach) => {
       addCoach(coach);
       setCurrentCoachId(coach.id);
+      // Also patch the form directly — it was already initialized with an empty coachId.
+      setForm((prev) => prev.coachId ? prev : { ...prev, coachId: coach.id });
     }).catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin]);
