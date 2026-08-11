@@ -34,6 +34,34 @@ export async function sendPasswordResetEmail(to: string, resetUrl: string) {
   });
 }
 
+export async function sendNewTrainingToMemberEmail(
+  to: string,
+  memberName: string,
+  trainingTitle: string,
+  trainingDate: string,
+  trainingUrl: string,
+  clubName: string,
+) {
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: `Nauja treniruotė — ${trainingTitle}`,
+    html: wrapper(`
+      <h2 style="margin:0 0 8px;font-size:20px;color:#0b0e18">Nauja treniruotė!</h2>
+      <p style="margin:0 0 16px;color:#4b5563;font-size:14px">
+        Sveiki, <strong>${memberName}</strong>! Klube <strong>${clubName}</strong> sukurta nauja treniruotė:
+      </p>
+      <div style="background:#fff;border-radius:8px;padding:16px;font-size:14px;color:#0b0e18;margin-bottom:24px">
+        <div style="font-weight:700;font-size:16px">${trainingTitle}</div>
+        <div style="color:#6b7280;margin-top:4px;font-size:13px">${trainingDate}</div>
+      </div>
+      <a href="${trainingUrl}" style="display:inline-block;padding:12px 24px;background:#0b0e18;color:#fff;text-decoration:none;border-radius:10px;font-size:14px;font-weight:600">
+        Peržiūrėti ir registruotis
+      </a>
+    `),
+  });
+}
+
 export async function sendNewMemberEmail(to: string, memberName: string, clubName: string) {
   await resend.emails.send({
     from: FROM,
