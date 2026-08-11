@@ -4,6 +4,8 @@ import { prisma } from '../prisma.js';
 import { asyncHandler, HttpError } from '../middleware/errorHandler.js';
 import { getStripe, LUMO_APPLICATION_FEE_PERCENT } from '../stripe.js';
 import { serializeMember } from '../serialize.js';
+import { getClubAdminInfo } from '../util.js';
+import { sendPaymentEmail } from '../email.js';
 
 export const meRouter = Router();
 
@@ -122,6 +124,25 @@ meRouter.get(
                 { stripeAccount },
               )
               .catch(() => {});
+          }
+
+          // Notify club admin of the payment (fires once per reconciliation
+          // batch — PIs are already stamped credited above so this won't repeat).
+          const totalAmountCents = claimed.reduce((sum, id) => {
+            const pi = list!.data.find((p) => p.id === id);
+            return sum + (pi?.amount ?? 0);
+          }, 0);
+          const adminInfo = await getClubAdminInfo(member.clubId);
+          if (adminInfo?.club.notifyPayment && totalAmountCents > 0) {
+            await sendPaymentEmail(
+              adminInfo.adminEmail,
+              member.name,
+              totalAmountCents,
+              'eur',
+              adminInfo.club.name,
+            ).catch((err) => {
+              console.error('[notify] sendPaymentEmail (billing reconcile) failed:', err);
+            });
           }
         }
       }
