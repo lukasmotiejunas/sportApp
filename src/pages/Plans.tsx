@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
+import { LanguageSwitcher } from "../components/ui/LanguageSwitcher";
 import {
   ArrowRight,
   Check,
@@ -391,12 +392,15 @@ function LandingPage({ onStart }: { onStart: () => void }) {
         <Link to="/" className="flex items-center gap-2">
           <img src="/lumo-logo.png" alt="Lumo" className="h-8 w-auto" />
         </Link>
-        <Link
-          to="/login"
-          className="text-sm font-semibold text-white/60 hover:text-white"
-        >
-          Prisijungti
-        </Link>
+        <div className="flex items-center gap-3">
+          <LanguageSwitcher />
+          <Link
+            to="/login"
+            className="text-sm font-semibold text-white/60 hover:text-white"
+          >
+            Prisijungti
+          </Link>
+        </div>
       </header>
 
       <main className="mx-auto max-w-6xl px-6 pb-24 sm:px-10">

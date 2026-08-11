@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { LanguageSwitcher } from "../components/ui/LanguageSwitcher";
 import { useStore } from "../store/useStore";
 import type { Role } from "../types";
 
@@ -40,6 +41,9 @@ export default function Login() {
     <div className="min-h-screen bg-ink-950 text-white">
       <div className="relative isolate mx-auto grid min-h-screen max-w-5xl grid-cols-1 lg:grid-cols-2">
         <div className="hero-gradient absolute inset-0 -z-10" />
+        <div className="absolute right-4 top-4 z-10">
+          <LanguageSwitcher />
+        </div>
         <div className="flex flex-col items-center justify-center gap-8 p-6 sm:p-10">
           <img
             src="/lumo-logo.png"
