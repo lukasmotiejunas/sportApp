@@ -84,6 +84,9 @@ model Club {
   // account.updated with charges_enabled=true.
   stripeConnectAccountId String?           @unique
   stripeAccountReady     Boolean           @default(false)
+  notifyNewMember      Boolean               @default(false)
+  notifyNewTraining    Boolean               @default(false)
+  notifyPayment        Boolean               @default(false)
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
   users                User[]

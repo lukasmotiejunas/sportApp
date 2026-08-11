@@ -36,3 +36,15 @@ export type UpdateCoachSelfInput = {
 
 export const updateCoachSelfApi = (input: UpdateCoachSelfInput) =>
   api.put<CoachStaff>('/profile/coach', input);
+
+export type NotificationSettings = {
+  notifyNewMember: boolean;
+  notifyNewTraining: boolean;
+  notifyPayment: boolean;
+};
+
+export const getNotificationSettingsApi = () =>
+  api.get<NotificationSettings>('/profile/notifications');
+
+export const updateNotificationSettingsApi = (input: Partial<NotificationSettings>) =>
+  api.patch<NotificationSettings>('/profile/notifications', input);

@@ -7,6 +7,8 @@ import {
   STRIPE_CONNECT_WEBHOOK_SECRET,
 } from '../stripe.js';
 import { syncClubPlans } from './membershipPlans.js';
+import { getClubAdminInfo } from '../util.js';
+import { sendPaymentEmail } from '../email.js';
 
 export const webhooksConnectRouter = Router();
 
@@ -129,6 +131,16 @@ webhooksConnectRouter.post(
             stripeAccount: accountId,
           });
           await applySubscriptionStatus(sub);
+
+          // Notify club admin if enabled.
+          const member = await prisma.member.findFirst({ where: { stripeSubscriptionId: subId } });
+          if (member) {
+            void getClubAdminInfo(member.clubId).then((info) => {
+              if (info?.club.notifyPayment) {
+                void sendPaymentEmail(info.adminEmail, member.name, inv.amount_paid, inv.currency, info.club.name).catch(() => {});
+              }
+            });
+          }
         }
         break;
       }
@@ -191,6 +203,13 @@ webhooksConnectRouter.post(
             { stripeAccount: accountId },
           )
           .catch(() => {});
+
+        // Notify club admin if enabled.
+        void getClubAdminInfo(member.clubId).then((info) => {
+          if (info?.club.notifyPayment) {
+            void sendPaymentEmail(info.adminEmail, member.name, pi.amount, pi.currency, info.club.name).catch(() => {});
+          }
+        });
         break;
       }
 

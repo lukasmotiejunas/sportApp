@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Building2, ImageIcon, KeyRound, Trash2, Upload, User } from "lucide-react";
+import { Bell, Building2, ImageIcon, KeyRound, Trash2, Upload, User } from "lucide-react";
 import Joyride, {
   STATUS,
   type CallBackProps,
@@ -11,8 +11,11 @@ import { useStore } from "../../store/useStore";
 import { ApiError } from "../../api/client";
 import {
   changePasswordApi,
+  getNotificationSettingsApi,
   updateClubApi,
+  updateNotificationSettingsApi,
   updateSelfApi,
+  type NotificationSettings,
 } from "../../api/profile";
 import { resizeImageToDataUrl } from "../../utils/image";
 
@@ -38,6 +41,14 @@ export default function AdminProfile() {
   const [pwBusy, setPwBusy] = useState(false);
   const [pwError, setPwError] = useState<string | null>(null);
 
+  // Notification settings
+  const [notifications, setNotifications] = useState<NotificationSettings>({
+    notifyNewMember: false,
+    notifyNewTraining: false,
+    notifyPayment: false,
+  });
+  const [notifBusy, setNotifBusy] = useState(false);
+
   // Logo section
   const logoFileInputRef = useRef<HTMLInputElement>(null);
   const [logoBusy, setLogoBusy] = useState(false);
@@ -51,6 +62,10 @@ export default function AdminProfile() {
     setClubName(authUser?.clubName ?? "");
     setName(authUser?.name ?? "");
   }, [authUser]);
+
+  useEffect(() => {
+    getNotificationSettingsApi().then(setNotifications).catch(() => {});
+  }, []);
 
   const submitClub = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -170,6 +185,22 @@ export default function AdminProfile() {
       );
     } finally {
       setPwBusy(false);
+    }
+  };
+
+  const toggleNotification = async (key: keyof NotificationSettings) => {
+    const next = { ...notifications, [key]: !notifications[key] };
+    setNotifications(next);
+    setNotifBusy(true);
+    try {
+      const updated = await updateNotificationSettingsApi({ [key]: next[key] });
+      setNotifications(updated);
+      push({ kind: "success", message: "Pranešimų nustatymai išsaugoti." });
+    } catch {
+      setNotifications(notifications);
+      push({ kind: "error", message: "Nepavyko išsaugoti nustatymų." });
+    } finally {
+      setNotifBusy(false);
     }
   };
 
@@ -394,6 +425,56 @@ export default function AdminProfile() {
               </button>
             </div>
           </form>
+        </section>
+
+        <section className="surface p-5">
+          <div className="mb-4 flex items-start gap-3">
+            <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-lime-400/15 text-lime-600 dark:text-lime-300">
+              <Bell className="h-4 w-4" />
+            </div>
+            <div>
+              <h2 className="font-display text-base font-bold text-ink-900 dark:text-ink-50">
+                El. pašto pranešimai
+              </h2>
+              <p className="mt-0.5 text-sm text-ink-500">
+                Pranešimai siunčiami į jūsų prisijungimo el. paštą.
+              </p>
+            </div>
+          </div>
+          <div className="space-y-3">
+            {(
+              [
+                { key: "notifyNewMember", label: "Naujas narys užregistruotas" },
+                { key: "notifyNewTraining", label: "Nauja treniruotė sukurta" },
+                { key: "notifyPayment", label: "Gautas mokėjimas iš nario" },
+              ] as { key: keyof NotificationSettings; label: string }[]
+            ).map(({ key, label }) => (
+              <label
+                key={key}
+                className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-ink-100 px-4 py-3 hover:bg-ink-50 dark:border-ink-800 dark:hover:bg-ink-800/50"
+              >
+                <span className="text-sm font-medium text-ink-800 dark:text-ink-200">
+                  {label}
+                </span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={notifications[key]}
+                  disabled={notifBusy}
+                  onClick={() => toggleNotification(key)}
+                  className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none disabled:opacity-50 ${
+                    notifications[key] ? "bg-lime-500" : "bg-ink-200 dark:bg-ink-700"
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                      notifications[key] ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </label>
+            ))}
+          </div>
         </section>
 
         <section className="surface p-5" data-tour="password">
