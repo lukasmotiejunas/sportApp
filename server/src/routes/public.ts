@@ -4,7 +4,8 @@ import { z } from 'zod';
 import { prisma } from '../prisma.js';
 import { asyncHandler, HttpError } from '../middleware/errorHandler.js';
 import { hashPassword } from '../auth/password.js';
-import { initialsFromName, randomAvatarColor } from '../util.js';
+import { getClubAdminInfo, initialsFromName, randomAvatarColor } from '../util.js';
+import { sendNewMemberEmail } from '../email.js';
 import { serializeMember, serializeMembershipPlan } from '../serialize.js';
 import { getStripe, LUMO_APPLICATION_FEE_PERCENT } from '../stripe.js';
 
@@ -224,6 +225,14 @@ publicRouter.post(
         clientSecret = null;
         paymentRequired = false;
       }
+    }
+
+    // Notify club admin of new member registration.
+    const adminInfo = await getClubAdminInfo(club.id);
+    if (adminInfo?.club.notifyNewMember) {
+      await sendNewMemberEmail(adminInfo.adminEmail, data.name, club.name).catch((err) => {
+        console.error('[notify] sendNewMemberEmail (public join) failed:', err);
+      });
     }
 
     res.status(201).json({
