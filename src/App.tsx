@@ -8,6 +8,8 @@ import { AdminLayout } from './components/layout/AdminLayout';
 import { SuperAdminLayout } from './components/layout/SuperAdminLayout';
 import { RequireRole } from './components/auth/RequireRole';
 import Login from './pages/Login';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Plans from './pages/Plans';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
@@ -139,6 +141,8 @@ export default function App() {
           element={authUser ? <Navigate to={home} replace /> : <Login />}
         />
         <Route path="/impersonate" element={<ImpersonateLanding />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/plans" element={<Plans />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />

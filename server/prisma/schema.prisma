@@ -120,21 +120,34 @@ model ClubSubscription {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
-  role         Role
-  name         String?
-  clubId       String?
-  club         Club?    @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  memberId     String?  @unique
-  member       Member?  @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  coachId      String?  @unique
-  coach        Coach?   @relation(fields: [coachId], references: [id], onDelete: Cascade)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                  String               @id @default(cuid())
+  email               String               @unique
+  passwordHash        String
+  role                Role
+  name                String?
+  clubId              String?
+  club                Club?                @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  memberId            String?              @unique
+  member              Member?              @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  coachId             String?              @unique
+  coach               Coach?               @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  passwordResetTokens PasswordResetToken[]
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
 
   @@index([clubId])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
 }
 
 model MembershipPlan {

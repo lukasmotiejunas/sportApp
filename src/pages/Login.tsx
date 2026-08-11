@@ -73,9 +73,17 @@ export default function Login() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-semibold text-ink-700">
-                Slaptažodis
-              </label>
+              <div className="mb-1 flex items-center justify-between">
+                <label className="text-sm font-semibold text-ink-700">
+                  Slaptažodis
+                </label>
+                <Link
+                  to="/forgot-password"
+                  className="text-xs text-ink-400 hover:text-ink-700"
+                >
+                  Pamiršote slaptažodį?
+                </Link>
+              </div>
               <input
                 type="password"
                 required
