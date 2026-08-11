@@ -7,6 +7,7 @@ import { FormField, SelectField, TextareaField } from '../../components/ui/FormF
 import { useStore } from '../../store/useStore';
 import { todayIso } from '../../utils/dates';
 import { useTrainingsBase } from '../../utils/roleContext';
+import { ensureAdminCoachApi } from '../../api/profile';
 
 type Props = { mode: 'create' | 'edit' };
 
@@ -23,10 +24,22 @@ export default function CoachTrainingForm({ mode }: Props) {
 
   const authUserId = useStore((s) => s.authUser?.id ?? '');
   const currentCoachId = useStore((s) => s.currentCoachId);
+  const setCurrentCoachId = useStore((s) => s.setCurrentCoachId);
+  const addCoach = useStore((s) => s.addCoach);
   // Coaches use their own id by default; admins (no currentCoachId) fall back
   // to the first coach in the club so the form submits with a valid value even
   // when the dropdown isn't touched.
   const defaultCoachId = currentCoachId || coaches[0]?.id || '';
+
+  // Ensure the admin has a Coach record so they appear in the trainer dropdown.
+  useEffect(() => {
+    if (!isAdmin || currentCoachId) return;
+    ensureAdminCoachApi().then((coach) => {
+      addCoach(coach);
+      setCurrentCoachId(coach.id);
+    }).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin]);
 
   const initial = useMemo(
     () => ({

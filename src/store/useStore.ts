@@ -112,6 +112,8 @@ type State = {
 
   setPaymentStatus: (memberId: string, status: PaymentStatus) => void;
   addCoachNote: (memberId: string, note: string) => void;
+  addCoach: (coach: CoachStaff) => void;
+  setCurrentCoachId: (id: string) => void;
 
   // Membership plan actions (admin)
   addMembershipPlan: (input: {
@@ -733,6 +735,13 @@ export const useStore = create<State>()(
             .patchMember(memberId, { coachNotes: note })
             .catch(onSyncError('Nepavyko išsaugoti užrašo.'));
         },
+
+        addCoach: (coach) => {
+          const already = get().coaches.some((c) => c.id === coach.id);
+          if (!already) set({ coaches: [...get().coaches, coach] });
+        },
+
+        setCurrentCoachId: (id) => set({ currentCoachId: id }),
 
         addMembershipPlan: async (input) => {
           try {

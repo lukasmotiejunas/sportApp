@@ -1,6 +1,8 @@
 import { api } from './client';
 import type { AuthUser, CoachStaff } from '../types';
 
+export const ensureAdminCoachApi = () => api.post<CoachStaff>('/profile/ensure-coach');
+
 export type UpdateSelfInput = {
   name?: string;
   email?: string;
