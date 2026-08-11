@@ -8,6 +8,7 @@ import {
   Check,
   CreditCard,
   Sparkles,
+  X,
   Copy,
   ChevronLeft,
   Lock,
@@ -173,6 +174,23 @@ const JSON_LD = JSON.stringify({
 function LandingPage({ onStart }: { onStart: () => void }) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<RoleTab>("admin");
+  const [popupOpen, setPopupOpen] = useState(false);
+
+  useEffect(() => {
+    if (sessionStorage.getItem("lumo_popup_seen")) return;
+    const timer = setTimeout(() => setPopupOpen(true), 800);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const closePopup = () => {
+    setPopupOpen(false);
+    sessionStorage.setItem("lumo_popup_seen", "1");
+  };
+
+  const handlePopupCta = () => {
+    closePopup();
+    onStart();
+  };
 
   const ROLES: {
     id: RoleTab;
@@ -293,6 +311,8 @@ function LandingPage({ onStart }: { onStart: () => void }) {
         <script type="application/ld+json">{JSON_LD}</script>
       </Helmet>
       <div className="hero-gradient absolute inset-0 -z-10" />
+
+      <MarketingPopup open={popupOpen} onClose={closePopup} onCta={handlePopupCta} />
 
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5 sm:px-10">
         <Link to="/" className="flex items-center gap-2">
@@ -1194,6 +1214,101 @@ function CredentialRow({
         <Copy className="h-3.5 w-3.5" />
         {copied ? t("plans.copied") : t("plans.copy")}
       </button>
+    </div>
+  );
+}
+
+function MarketingPopup({
+  open,
+  onClose,
+  onCta,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onCta: () => void;
+}) {
+  const { t } = useTranslation();
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      aria-modal="true"
+      role="dialog"
+    >
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      {/* Panel */}
+      <div className="relative w-full max-w-2xl animate-[fadeUp_0.35s_ease-out] overflow-hidden rounded-3xl border border-white/10 bg-ink-950 shadow-2xl">
+        {/* Close button */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-4 top-4 z-10 grid h-8 w-8 place-items-center rounded-full bg-white/10 text-white/70 transition-colors hover:bg-white/20 hover:text-white"
+          aria-label="Uždaryti"
+        >
+          <X className="h-4 w-4" />
+        </button>
+
+        {/* Image */}
+        <div className="relative">
+          <img
+            src="/marketing-preview.png"
+            alt="Lumo — sporto klubų valdymo platforma"
+            className="w-full object-cover"
+            draggable={false}
+          />
+          {/* Bottom gradient overlay so text reads cleanly */}
+          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-ink-950 to-transparent" />
+        </div>
+
+        {/* Content */}
+        <div className="px-7 pb-7 pt-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-lime-400/30 bg-lime-400/10 px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-lime-300">
+            <Sparkles className="h-3 w-3" /> {t("plans.badge")}
+          </span>
+          <h2 className="mt-3 font-display text-2xl font-bold text-white sm:text-3xl">
+            {t("plans.hero_title_1")}<br />{t("plans.hero_title_2")}
+          </h2>
+          <p className="mt-2 text-sm text-white/60">
+            {t("plans.hero_subtitle")}
+          </p>
+
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            <button
+              onClick={onCta}
+              className="btn-accent h-11 px-6 text-sm"
+            >
+              {t("plans.try_free")} <ArrowRight className="h-4 w-4" />
+            </button>
+            <button
+              onClick={onClose}
+              className="text-sm font-semibold text-white/40 hover:text-white/70 transition-colors"
+            >
+              {t("plans.see_price")}
+            </button>
+          </div>
+
+          <p className="mt-3 text-xs text-white/30">
+            {t("plans.disclaimer")}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
