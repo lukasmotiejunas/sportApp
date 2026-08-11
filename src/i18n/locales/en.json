@@ -248,6 +248,24 @@
     "submit_result": "Save",
     "personal_best": "Personal best"
   },
+  "member_leaderboard_detail": {
+    "not_found": "Leaderboard not found",
+    "desc_lower": "Fastest time wins.",
+    "desc_higher": "Highest value wins.",
+    "tab_all": "All results",
+    "tab_mine": "My results",
+    "filter_all": "All members",
+    "filter_male": "Men",
+    "filter_female": "Women",
+    "my_rank": "Your position",
+    "empty_results": "No ranked results yet",
+    "empty_results_desc": "Ask your coach to add results.",
+    "no_my_results": "You have no results yet",
+    "no_my_results_desc": "Ask your coach to add your result to this leaderboard.",
+    "my_history": "My result history",
+    "total": "Total:",
+    "record_badge": "Record"
+  },
   "member_payments": {
     "title": "Payments",
     "status": "Payment status",

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Filter, Trophy, TrendingDown, TrendingUp, Minus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useStore, useCurrentMember } from '../../store/useStore';
 import { PageTitle } from '../../components/layout/PageTitle';
 import { LeaderboardRow } from '../../components/leaderboard/LeaderboardRow';
@@ -12,6 +13,7 @@ import { formatResult } from '../../utils/format';
 import { formatDateSlash } from '../../utils/dates';
 
 export default function MemberLeaderboardDetail() {
+  const { t } = useTranslation();
   const { id = '' } = useParams();
   const member = useCurrentMember();
   const category = useStore((s) => s.leaderboardCategories.find((c) => c.id === id));

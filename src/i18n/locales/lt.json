@@ -248,6 +248,24 @@
     "submit_result": "Išsaugoti",
     "personal_best": "Asmeninis rekordas"
   },
+  "member_leaderboard_detail": {
+    "not_found": "Rezultatų lentelė nerasta",
+    "desc_lower": "Laimi greičiausias rezultatas.",
+    "desc_higher": "Laimi didžiausia reikšmė.",
+    "tab_all": "Visų rezultatai",
+    "tab_mine": "Mano rezultatai",
+    "filter_all": "Visi nariai",
+    "filter_male": "Vyrai",
+    "filter_female": "Moterys",
+    "my_rank": "Jūsų vieta",
+    "empty_results": "Reitinguotų rezultatų dar nėra",
+    "empty_results_desc": "Paprašykite trenerio įtraukti rezultatus.",
+    "no_my_results": "Jūs dar neturite rezultatų",
+    "no_my_results_desc": "Paprašykite trenerio įtraukti jūsų rezultatą į šią lentelę.",
+    "my_history": "Mano rezultatų istorija",
+    "total": "Iš viso:",
+    "record_badge": "Rekordas"
+  },
   "member_payments": {
     "title": "Mokėjimai",
     "status": "Mokėjimo statusas",
