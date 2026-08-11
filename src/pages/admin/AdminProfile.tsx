@@ -229,6 +229,12 @@ export default function AdminProfile() {
         "Jūsų duomenys. Čia matote ir keičiate savo vardą. El. paštas naudojamas prisijungimui ir yra nekeičiamas.",
     },
     {
+      target: '[data-tour="notifications"]',
+      content:
+        "El. pašto pranešimai. Įjunkite norimus pranešimus — gausite laišką, kai bus pridėtas naujas narys, sukurta treniruotė arba gautas mokėjimas. Kiekvienas pranešimas įjungiamas atskirai.",
+      placement: "top",
+    },
+    {
       target: '[data-tour="password"]',
       content:
         "Slaptažodžio keitimas. Norėdami pakeisti — pirma įveskite dabartinį, po to du kartus naują (bent 6 simboliai). Rekomenduojama keisti retkarčiais saugumui.",
@@ -427,7 +433,7 @@ export default function AdminProfile() {
           </form>
         </section>
 
-        <section className="surface p-5">
+        <section className="surface p-5" data-tour="notifications">
           <div className="mb-4 flex items-start gap-3">
             <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-lime-400/15 text-lime-600 dark:text-lime-300">
               <Bell className="h-4 w-4" />
