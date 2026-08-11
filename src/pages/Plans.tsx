@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -322,12 +323,68 @@ export default function Plans() {
   return <LandingPage onStart={startSignup} />;
 }
 
+const JSON_LD = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Lumo",
+  "alternateName": "Lumo Sport",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Web",
+  "url": "https://lumosport.lt",
+  "description": "Sports club management platform with online scheduling, Stripe payment processing, AI-generated training plans, and a member mobile app. First month free.",
+  "inLanguage": "lt",
+  "offers": {
+    "@type": "Offer",
+    "price": "100",
+    "priceCurrency": "EUR",
+    "availability": "https://schema.org/InStock",
+    "priceSpecification": {
+      "@type": "UnitPriceSpecification",
+      "price": "100",
+      "priceCurrency": "EUR",
+      "unitText": "month"
+    }
+  },
+  "featureList": [
+    "Training schedule management",
+    "Stripe payment processing",
+    "AI training plan generation",
+    "Member management and registration",
+    "Leaderboards and results tracking",
+    "Coach management"
+  ],
+  "provider": {
+    "@type": "Organization",
+    "name": "Lumo",
+    "url": "https://lumosport.lt"
+  }
+});
+
 function LandingPage({ onStart }: { onStart: () => void }) {
   const [activeTab, setActiveTab] = useState<RoleTab>("admin");
   const role = ROLES.find((r) => r.id === activeTab)!;
 
   return (
     <div className="min-h-screen bg-ink-950 text-white">
+      <Helmet>
+        <title>Lumo — Sporto klubų valdymo platforma | Sports Club Management</title>
+        <meta name="description" content="Lumo — sporto klubų valdymo platforma. Tvarkaraštis, mokėjimai per Stripe, AI treniruočių planai ir narių programa vienoje sistemoje. Pirmas mėnuo nemokamai. Sports club management software." />
+        <link rel="canonical" href="https://lumosport.lt/plans" />
+        <link rel="alternate" hrefLang="lt" href="https://lumosport.lt/plans" />
+        <link rel="alternate" hrefLang="x-default" href="https://lumosport.lt/plans" />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="Lumo — Sporto klubų valdymo platforma" />
+        <meta property="og:description" content="Tvarkaraštis, mokėjimai, AI treniruočių planai ir narių programa — visa tai vienoje sistemoje. Pirmas mėnuo nemokamai." />
+        <meta property="og:url" content="https://lumosport.lt/plans" />
+        <meta property="og:image" content="https://lumosport.lt/screenshots/admin-dashboard.png" />
+        <meta property="og:locale" content="lt_LT" />
+        <meta property="og:locale:alternate" content="en_US" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Lumo — Sporto klubų valdymo platforma" />
+        <meta name="twitter:description" content="Tvarkaraštis, mokėjimai, AI treniruočių planai ir narių programa — visa tai vienoje sistemoje." />
+        <meta name="twitter:image" content="https://lumosport.lt/screenshots/admin-dashboard.png" />
+        <script type="application/ld+json">{JSON_LD}</script>
+      </Helmet>
       <div className="hero-gradient absolute inset-0 -z-10" />
 
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5 sm:px-10">
