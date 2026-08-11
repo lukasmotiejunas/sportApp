@@ -12,6 +12,7 @@ import {
   BarChart3,
   Trophy,
   ClipboardList,
+  HelpCircle,
   Menu,
   X,
 } from "lucide-react";
@@ -40,6 +41,7 @@ export function AdminLayout() {
     { to: "/admin/subscription", label: t("nav.subscription"), icon: Receipt, end: false },
     { to: "/admin/profile", label: t("nav.profile"), icon: UserCog, end: false },
     { to: "/admin/coaches/new", label: t("nav.add_coach"), icon: UserPlus },
+    { to: "/admin/help", label: t("nav.help"), icon: HelpCircle },
   ];
 
   return (

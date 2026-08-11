@@ -50,6 +50,7 @@ import AdminAddCoach from './pages/admin/AdminAddCoach';
 import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard';
 import SuperAdminClubDetail from './pages/superadmin/SuperAdminClubDetail';
 import SuperAdminFinances from './pages/superadmin/SuperAdminFinances';
+import Help from './pages/Help';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -163,6 +164,7 @@ export default function App() {
           <Route path="leaderboards/:id" element={<MemberLeaderboardDetail />} />
           <Route path="payments" element={<MemberPayments />} />
           <Route path="profile" element={<MemberProfile />} />
+          <Route path="help" element={<Help />} />
         </Route>
 
         <Route
@@ -186,6 +188,7 @@ export default function App() {
           <Route path="leaderboards/:id" element={<CoachLeaderboardDetail />} />
           <Route path="schedule" element={<CoachSchedule />} />
           <Route path="profile" element={<CoachProfile />} />
+          <Route path="help" element={<Help />} />
         </Route>
 
         <Route
@@ -214,6 +217,7 @@ export default function App() {
           <Route path="subscription" element={<AdminSubscription />} />
           <Route path="profile" element={<AdminProfile />} />
           <Route path="coaches/new" element={<AdminAddCoach />} />
+          <Route path="help" element={<Help />} />
         </Route>
 
         <Route
