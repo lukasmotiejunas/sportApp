@@ -110,14 +110,13 @@ membersRouter.post(
       },
     });
 
-    res.status(201).json(serializeMember(member));
+    // Notify admin before responding — fire-and-forget dies in serverless.
+    const adminInfo = await getClubAdminInfo(clubId);
+    if (adminInfo?.club.notifyNewMember) {
+      await sendNewMemberEmail(adminInfo.adminEmail, data.name, adminInfo.club.name).catch(() => {});
+    }
 
-    // Fire-and-forget: notify admin if enabled.
-    void getClubAdminInfo(clubId).then((info) => {
-      if (info?.club.notifyNewMember) {
-        void sendNewMemberEmail(info.adminEmail, data.name, info.club.name).catch(() => {});
-      }
-    });
+    res.status(201).json(serializeMember(member));
   }),
 );
 

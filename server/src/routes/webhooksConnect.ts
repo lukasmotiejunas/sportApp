@@ -135,11 +135,10 @@ webhooksConnectRouter.post(
           // Notify club admin if enabled.
           const member = await prisma.member.findFirst({ where: { stripeSubscriptionId: subId } });
           if (member) {
-            void getClubAdminInfo(member.clubId).then((info) => {
-              if (info?.club.notifyPayment) {
-                void sendPaymentEmail(info.adminEmail, member.name, inv.amount_paid, inv.currency, info.club.name).catch(() => {});
-              }
-            });
+            const adminInfo = await getClubAdminInfo(member.clubId);
+            if (adminInfo?.club.notifyPayment) {
+              await sendPaymentEmail(adminInfo.adminEmail, member.name, inv.amount_paid, inv.currency, adminInfo.club.name).catch(() => {});
+            }
           }
         }
         break;
@@ -205,11 +204,10 @@ webhooksConnectRouter.post(
           .catch(() => {});
 
         // Notify club admin if enabled.
-        void getClubAdminInfo(member.clubId).then((info) => {
-          if (info?.club.notifyPayment) {
-            void sendPaymentEmail(info.adminEmail, member.name, pi.amount, pi.currency, info.club.name).catch(() => {});
-          }
-        });
+        const adminInfo = await getClubAdminInfo(member.clubId);
+        if (adminInfo?.club.notifyPayment) {
+          await sendPaymentEmail(adminInfo.adminEmail, member.name, pi.amount, pi.currency, adminInfo.club.name).catch(() => {});
+        }
         break;
       }
 
