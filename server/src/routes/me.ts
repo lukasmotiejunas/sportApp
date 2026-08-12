@@ -251,6 +251,23 @@ meRouter.get(
       });
     }
 
+    // Notify admin when reconciliation detects a payment the webhook missed.
+    // Only fires when lastPaymentDate changed (i.e. genuinely new payment found).
+    if (updates.lastPaymentDate && mostRecentPaid && (mostRecentPaid.amount_paid ?? 0) > 0) {
+      const adminInfo = await getClubAdminInfo(member.clubId);
+      if (adminInfo?.club.notifyPayment) {
+        await sendPaymentEmail(
+          adminInfo.adminEmail,
+          member.name,
+          mostRecentPaid.amount_paid ?? 0,
+          mostRecentPaid.currency,
+          adminInfo.club.name,
+        ).catch((err) => {
+          console.error('[notify] sendPaymentEmail (subscription reconcile) failed:', err);
+        });
+      }
+    }
+
     // Upcoming invoice (may 404 for cancelled/expired subs — swallow).
     let upcomingInvoice: {
       amount: number;
