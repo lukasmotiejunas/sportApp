@@ -157,6 +157,10 @@ export default function Login() {
             <Link to="/privacy" className="hover:text-ink-700">
               {t("common.privacy")}
             </Link>
+            <span>·</span>
+            <Link to="/help" className="hover:text-ink-700">
+              {t("nav.help")}
+            </Link>
           </div>
         </div>
       </div>

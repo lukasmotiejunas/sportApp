@@ -47,3 +47,16 @@ export const impersonateUserApi = (userId: string) =>
 
 export const fetchSuperAdminFinances = () =>
   api.get<PlatformFinances>('/superadmin/finances');
+
+export type MeetingRecord = {
+  id: string;
+  date: string;
+  startTime: string;
+  bookedByName: string;
+  bookedByEmail: string;
+  inviteEmails: string[];
+  createdAt: string;
+};
+
+export const fetchSuperAdminMeetings = () =>
+  api.get<MeetingRecord[]>('/superadmin/meetings');

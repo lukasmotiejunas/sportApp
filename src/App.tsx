@@ -50,7 +50,9 @@ import AdminAddCoach from './pages/admin/AdminAddCoach';
 import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard';
 import SuperAdminClubDetail from './pages/superadmin/SuperAdminClubDetail';
 import SuperAdminFinances from './pages/superadmin/SuperAdminFinances';
+import SuperAdminMeetings from './pages/superadmin/SuperAdminMeetings';
 import Help from './pages/Help';
+import PublicHelp from './pages/PublicHelp';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -124,6 +126,7 @@ export default function App() {
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/join/:slug" element={<MemberJoin />} />
+          <Route path="/help" element={<PublicHelp />} />
           {isAdmin && (
             <Route
               path="/admin"
@@ -160,6 +163,7 @@ export default function App() {
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/join/:slug" element={<MemberJoin />} />
+        <Route path="/help" element={<PublicHelp />} />
 
         <Route
           path="/member"
@@ -244,6 +248,7 @@ export default function App() {
           <Route path="clubs" element={<SuperAdminDashboard />} />
           <Route path="clubs/:id" element={<SuperAdminClubDetail />} />
           <Route path="finances" element={<SuperAdminFinances />} />
+          <Route path="meetings" element={<SuperAdminMeetings />} />
         </Route>
 
         <Route path="*" element={<Navigate to={home} replace />} />

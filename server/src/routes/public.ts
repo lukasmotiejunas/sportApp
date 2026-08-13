@@ -5,11 +5,103 @@ import { prisma } from '../prisma.js';
 import { asyncHandler, HttpError } from '../middleware/errorHandler.js';
 import { hashPassword } from '../auth/password.js';
 import { getClubAdminInfo, initialsFromName, randomAvatarColor } from '../util.js';
-import { sendNewMemberEmail } from '../email.js';
+import { sendNewMemberEmail, sendMeetingConfirmationEmail, sendMeetingNotificationEmail } from '../email.js';
 import { serializeMember, serializeMembershipPlan } from '../serialize.js';
 import { getStripe, LUMO_APPLICATION_FEE_PERCENT } from '../stripe.js';
 
+const SUPER_ADMIN_EMAIL = 'motiejunas.luk@gmail.com';
+
+// Valid meeting start times: Mon-Fri 08:00-21:00 (1-hour slots, last ends at 22:00)
+const VALID_SLOTS = Array.from({ length: 14 }, (_, i) => {
+  const h = 8 + i;
+  return `${String(h).padStart(2, '0')}:00`;
+});
+
+function isWeekday(dateStr: string): boolean {
+  const d = new Date(dateStr + 'T12:00:00Z');
+  const day = d.getUTCDay();
+  return day >= 1 && day <= 5;
+}
+
 export const publicRouter = Router();
+
+// GET /meetings/slots?date=YYYY-MM-DD — booked time slots for a given day.
+publicRouter.get(
+  '/meetings/slots',
+  asyncHandler(async (req, res) => {
+    const dateStr = String(req.query.date ?? '');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      throw new HttpError(400, 'Netinkamas datos formatas. Naudokite YYYY-MM-DD.');
+    }
+    const date = new Date(dateStr + 'T12:00:00Z');
+    const meetings = await prisma.meeting.findMany({
+      where: { date },
+      select: { startTime: true },
+    });
+    res.json({
+      validSlots: VALID_SLOTS,
+      bookedSlots: meetings.map((m) => m.startTime),
+    });
+  }),
+);
+
+const bookMeetingSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Netinkamas datos formatas.'),
+  startTime: z.string(),
+  name: z.string().min(2, 'Nurodykite vardą ir pavardę.').max(120),
+  email: z.string().email('Neteisingas el. paštas.'),
+  inviteEmails: z.array(z.string().email('Neteisingas el. paštas.')).default([]),
+});
+
+// POST /meetings — book a meeting slot.
+publicRouter.post(
+  '/meetings',
+  asyncHandler(async (req, res) => {
+    const data = bookMeetingSchema.parse(req.body);
+
+    if (!isWeekday(data.date)) {
+      throw new HttpError(400, 'Susitikimai galimi tik darbo dienomis (Pirmadienį–Penktadienį).');
+    }
+    if (!VALID_SLOTS.includes(data.startTime)) {
+      throw new HttpError(400, 'Netinkamas laikas. Pasirinkite laiką nuo 08:00 iki 21:00.');
+    }
+
+    const date = new Date(data.date + 'T12:00:00Z');
+
+    // Check if slot is already taken
+    const existing = await prisma.meeting.findUnique({
+      where: { date_startTime: { date, startTime: data.startTime } },
+    });
+    if (existing) {
+      throw new HttpError(409, 'Šis laikas jau užimtas. Pasirinkite kitą.');
+    }
+
+    await prisma.meeting.create({
+      data: {
+        date,
+        startTime: data.startTime,
+        bookedByName: data.name,
+        bookedByEmail: data.email,
+        inviteEmails: data.inviteEmails,
+      },
+    });
+
+    // Send emails (non-blocking)
+    sendMeetingConfirmationEmail(data.email, data.name, data.date, data.startTime, data.inviteEmails).catch(
+      (err) => console.error('[meeting] confirmation email failed:', err),
+    );
+    sendMeetingNotificationEmail(
+      SUPER_ADMIN_EMAIL,
+      data.name,
+      data.email,
+      data.date,
+      data.startTime,
+      data.inviteEmails,
+    ).catch((err) => console.error('[meeting] notification email failed:', err));
+
+    res.status(201).json({ ok: true });
+  }),
+);
 
 // GET /clubs — public directory of clubs with active subscriptions.
 // Returns only trialing/active clubs so cancelled/past_due ones stay hidden.
