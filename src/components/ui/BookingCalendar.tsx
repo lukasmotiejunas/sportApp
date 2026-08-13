@@ -62,7 +62,7 @@ export function BookingCalendar() {
   }, [selectedDate]);
 
   const handleDateClick = (dateStr: string) => {
-    if (dateStr < today) return;
+    if (dateStr <= today) return;
     setSelectedDate(dateStr);
     setSelectedSlot(null);
     setStep('calendar');
@@ -185,7 +185,7 @@ export function BookingCalendar() {
         <div className="mb-4 grid grid-cols-5 gap-1.5">
           {weekDays.map((d, i) => {
             const dateStr = toDateStr(d);
-            const isPast = dateStr < today;
+            const isPast = dateStr <= today;
             const isSelected = dateStr === selectedDate;
             return (
               <button

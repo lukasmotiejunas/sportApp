@@ -59,6 +59,10 @@ publicRouter.post(
   asyncHandler(async (req, res) => {
     const data = bookMeetingSchema.parse(req.body);
 
+    const todayStr = new Date().toISOString().slice(0, 10);
+    if (data.date <= todayStr) {
+      throw new HttpError(400, 'Susitikimą galima rezervuoti tik nuo rytojaus.');
+    }
     if (!isWeekday(data.date)) {
       throw new HttpError(400, 'Susitikimai galimi tik darbo dienomis (Pirmadienį–Penktadienį).');
     }
