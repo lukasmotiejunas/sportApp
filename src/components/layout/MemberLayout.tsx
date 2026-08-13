@@ -16,7 +16,7 @@ export function MemberLayout() {
   return (
     <div className="relative min-h-screen">
       <BackgroundLogo />
-      <header className="sticky top-0 z-20 border-b border-ink-100 bg-white/85 backdrop-blur dark:border-ink-800 dark:bg-ink-950/85">
+      <header className="safe-top sticky top-0 z-20 border-b border-ink-100 bg-white/85 backdrop-blur dark:border-ink-800 dark:bg-ink-950/85">
         <div className="mx-auto flex max-w-4xl items-center gap-3 px-4 py-3">
           <div className="flex items-center gap-2 font-display text-lg font-bold text-ink-900 dark:text-lime-400">
             <span className="grid h-8 w-8 place-items-center overflow-hidden rounded-xl bg-ink-900">
