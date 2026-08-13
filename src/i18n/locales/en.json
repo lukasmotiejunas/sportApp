@@ -923,6 +923,7 @@
     "reason_suggest_desc": "Have ideas on how to make the platform better? We'd love to hear from you.",
     "book_title": "Book a meeting",
     "book_desc": "Choose a convenient time on weekdays 8:00–22:00.",
+    "book_hint": "The meeting can be an introduction to the platform or a hands-on session to set everything up for your club from scratch.",
     "book_prev_week": "Previous week",
     "book_next_week": "Next week",
     "book_no_slots": "No available slots on this day",

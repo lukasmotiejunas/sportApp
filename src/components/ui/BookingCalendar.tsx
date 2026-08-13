@@ -140,6 +140,9 @@ export function BookingCalendar() {
             <p className="mt-1 text-sm text-ink-500 dark:text-ink-400">
               {t('help.book_desc')}
             </p>
+            <p className="mt-1 text-sm text-ink-500 dark:text-ink-400">
+              {t('help.book_hint')}
+            </p>
           </div>
         </div>
 
