@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Dumbbell, Sparkles } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "../components/ui/LanguageSwitcher";
 import { useStore } from "../store/useStore";
 import type { Role } from "../types";
+import { fetchPublicClubs, type PublicClubListItem } from "../api/public";
 
 const roleHome: Record<Role, string> = {
   super_admin: "/superadmin",
@@ -123,7 +124,9 @@ export default function Login() {
             <span className="h-px flex-1 bg-ink-200" />
           </div>
 
-          <div className="mt-6 rounded-2xl border border-lime-300 bg-lime-50 p-4">
+          <ClubDirectory />
+
+          <div className="mt-2 rounded-2xl border border-lime-300 bg-lime-50 p-4">
             <div className="flex items-start gap-3">
               <div className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-lime-400 text-ink-950">
                 <Sparkles className="h-4 w-4" />
@@ -157,6 +160,85 @@ export default function Login() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function ClubDirectory() {
+  const [clubs, setClubs] = useState<PublicClubListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchPublicClubs()
+      .then(setClubs)
+      .catch(() => setClubs([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="mt-6 space-y-2">
+        <div className="h-4 w-40 animate-pulse rounded-full bg-ink-100" />
+        {[1, 2].map((i) => (
+          <div key={i} className="flex items-center gap-3 rounded-2xl border border-ink-100 p-3">
+            <div className="h-10 w-10 animate-pulse rounded-xl bg-ink-100" />
+            <div className="h-4 w-32 animate-pulse rounded-full bg-ink-100" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (clubs.length === 0) return null;
+
+  return (
+    <div className="mt-6">
+      <div className="mb-3 flex items-center gap-2">
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-ink-900 text-white">
+          <Dumbbell className="h-3.5 w-3.5" />
+        </div>
+        <div>
+          <p className="text-sm font-bold text-ink-900">Ieškote sporto klubo?</p>
+          <p className="text-xs text-ink-500">Pasirinkite klubą ir registruokitės narystei</p>
+        </div>
+      </div>
+
+      <ul className="space-y-2">
+        {clubs.map((club) => (
+          <li key={club.id}>
+            <div className="flex items-center gap-3 rounded-2xl border border-ink-100 bg-ink-50/60 p-3 transition-colors hover:border-ink-200 hover:bg-ink-100/60">
+              <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-ink-900">
+                {club.logoUrl ? (
+                  <img
+                    src={club.logoUrl}
+                    alt={club.name}
+                    className="h-full w-full object-contain"
+                  />
+                ) : (
+                  <span className="text-sm font-bold text-white">
+                    {club.name.slice(0, 2).toUpperCase()}
+                  </span>
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-ink-900">
+                  {club.name}
+                </p>
+                {club.city && (
+                  <p className="truncate text-xs text-ink-500">{club.city}</p>
+                )}
+              </div>
+              <Link
+                to={`/join/${club.slug}`}
+                className="flex h-8 shrink-0 items-center gap-1.5 rounded-xl bg-ink-900 px-3 text-xs font-semibold text-white transition-colors hover:bg-ink-700"
+              >
+                Registruotis
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

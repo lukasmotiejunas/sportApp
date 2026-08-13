@@ -11,6 +11,28 @@ import { getStripe, LUMO_APPLICATION_FEE_PERCENT } from '../stripe.js';
 
 export const publicRouter = Router();
 
+// GET /clubs — public directory of clubs with active subscriptions.
+// Returns only trialing/active clubs so cancelled/past_due ones stay hidden.
+publicRouter.get(
+  '/clubs',
+  asyncHandler(async (_req, res) => {
+    const clubs = await prisma.club.findMany({
+      where: {
+        subscription: { status: { in: ['trialing', 'active'] } },
+      },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        logoUrl: true,
+        city: true,
+      },
+      orderBy: { name: 'asc' },
+    });
+    res.json(clubs);
+  }),
+);
+
 // GET /clubs/:slug — public club info + membership plans, used to render the
 // join page (no auth). 404 if club doesn't exist or subscription is suspended.
 publicRouter.get(
