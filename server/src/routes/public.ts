@@ -91,8 +91,11 @@ publicRouter.post(
     });
 
     // Send emails (non-blocking)
-    sendMeetingConfirmationEmail([data.email, SUPER_ADMIN_EMAIL], data.name, data.date, data.startTime, data.inviteEmails).catch(
-      (err) => console.error('[meeting] confirmation email failed:', err),
+    sendMeetingConfirmationEmail(data.email, data.name, data.date, data.startTime, data.inviteEmails).catch(
+      (err) => console.error('[meeting] confirmation email (booker) failed:', err),
+    );
+    sendMeetingConfirmationEmail(SUPER_ADMIN_EMAIL, data.name, data.date, data.startTime, data.inviteEmails).catch(
+      (err) => console.error('[meeting] confirmation email (admin) failed:', err),
     );
     sendMeetingNotificationEmail(
       SUPER_ADMIN_EMAIL,
