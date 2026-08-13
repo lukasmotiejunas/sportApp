@@ -12,6 +12,16 @@ export type PublicClub = {
 export const fetchPublicClub = (slug: string) =>
   api.get<PublicClub>(`/public/clubs/${encodeURIComponent(slug)}`);
 
+export type PublicClubListItem = {
+  id: string;
+  name: string;
+  slug: string;
+  logoUrl: string | null;
+};
+
+export const fetchPublicClubs = () =>
+  api.get<PublicClubListItem[]>('/public/clubs');
+
 export type JoinInput = {
   name: string;
   email: string;
