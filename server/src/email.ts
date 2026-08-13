@@ -130,7 +130,7 @@ export async function sendPaymentEmail(
 }
 
 export async function sendMeetingConfirmationEmail(
-  to: string,
+  to: string | string[],
   name: string,
   date: string,
   startTime: string,
