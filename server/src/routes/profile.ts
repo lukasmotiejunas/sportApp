@@ -195,6 +195,9 @@ const updateClubSchema = z.object({
   // Data URL (image/*;base64,...) or empty string / null to clear.
   // ~200KB max — resized on the client to keep DB rows lean.
   logoUrl: z.string().max(300_000).nullable().optional(),
+  city: z.string().max(100).nullable().optional(),
+  country: z.string().max(10).nullable().optional(),
+  address: z.string().max(255).nullable().optional(),
 });
 
 // PUT /club — admin-only, update own club's name and/or logo.
@@ -206,7 +209,13 @@ profileRouter.put(
     if (!clubId) throw new HttpError(403, 'Šiai paskyrai nepriskirtas klubas.');
 
     const data = updateClubSchema.parse(req.body);
-    if (data.name === undefined && data.logoUrl === undefined) {
+    if (
+      data.name === undefined &&
+      data.logoUrl === undefined &&
+      data.city === undefined &&
+      data.country === undefined &&
+      data.address === undefined
+    ) {
       throw new HttpError(400, 'Nėra ką atnaujinti.');
     }
 
@@ -217,6 +226,9 @@ profileRouter.put(
         ...(data.logoUrl !== undefined
           ? { logoUrl: data.logoUrl === '' ? null : data.logoUrl }
           : {}),
+        ...(data.city !== undefined ? { city: data.city } : {}),
+        ...(data.country !== undefined ? { country: data.country } : {}),
+        ...(data.address !== undefined ? { address: data.address } : {}),
       },
     });
 
@@ -225,6 +237,9 @@ profileRouter.put(
       name: updated.name,
       slug: updated.slug,
       logoUrl: updated.logoUrl ?? null,
+      city: updated.city ?? null,
+      country: updated.country ?? null,
+      address: updated.address ?? null,
     });
   }),
 );

@@ -220,9 +220,14 @@ function ClubDirectory() {
                   </span>
                 )}
               </div>
-              <p className="min-w-0 flex-1 truncate text-sm font-semibold text-ink-900">
-                {club.name}
-              </p>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-ink-900">
+                  {club.name}
+                </p>
+                {club.city && (
+                  <p className="truncate text-xs text-ink-500">{club.city}</p>
+                )}
+              </div>
               <Link
                 to={`/join/${club.slug}`}
                 className="flex h-8 shrink-0 items-center gap-1.5 rounded-xl bg-ink-900 px-3 text-xs font-semibold text-white transition-colors hover:bg-ink-700"

@@ -25,6 +25,7 @@ publicRouter.get(
         name: true,
         slug: true,
         logoUrl: true,
+        city: true,
       },
       orderBy: { name: 'asc' },
     });

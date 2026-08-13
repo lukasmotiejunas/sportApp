@@ -20,13 +20,23 @@ export type UpdateClubInput = {
   name?: string;
   // Data URL to set, empty string / null to clear the logo.
   logoUrl?: string | null;
+  city?: string | null;
+  country?: string | null;
+  address?: string | null;
+};
+
+export type UpdateClubResult = {
+  id: string;
+  name: string;
+  slug: string;
+  logoUrl: string | null;
+  city: string | null;
+  country: string | null;
+  address: string | null;
 };
 
 export const updateClubApi = (input: UpdateClubInput) =>
-  api.put<{ id: string; name: string; slug: string; logoUrl: string | null }>(
-    '/profile/club',
-    input,
-  );
+  api.put<UpdateClubResult>('/profile/club', input);
 
 export type UpdateCoachSelfInput = {
   name?: string;

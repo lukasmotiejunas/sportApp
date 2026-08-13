@@ -87,6 +87,9 @@ model Club {
   notifyNewMember      Boolean               @default(false)
   notifyNewTraining    Boolean               @default(false)
   notifyPayment        Boolean               @default(false)
+  country              String?               @default("LT")
+  city                 String?
+  address              String?
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
   users                User[]

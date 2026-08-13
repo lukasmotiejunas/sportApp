@@ -12,6 +12,8 @@ export type AuthUser = {
   clubSlug?: string;
   // Data URL of the club's uploaded logo, or null to fall back to Lumo logo.
   clubLogo?: string | null;
+  clubCity?: string | null;
+  clubAddress?: string | null;
   memberId?: string;
   coachId?: string;
   subscription?: {

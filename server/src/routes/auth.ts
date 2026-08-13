@@ -43,6 +43,8 @@ authRouter.post(
       user: {
         ...serializeUser(user),
         clubLogo: user.club?.logoUrl ?? null,
+        clubCity: user.club?.city ?? null,
+        clubAddress: user.club?.address ?? null,
         subscription: sub
           ? {
               status: sub.status,
@@ -69,6 +71,8 @@ authRouter.get(
     res.json({
       ...serializeUser(user),
       clubLogo: user.club?.logoUrl ?? null,
+      clubCity: user.club?.city ?? null,
+      clubAddress: user.club?.address ?? null,
       subscription: sub
         ? {
             status: sub.status,

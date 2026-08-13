@@ -17,6 +17,7 @@ export type PublicClubListItem = {
   name: string;
   slug: string;
   logoUrl: string | null;
+  city: string | null;
 };
 
 export const fetchPublicClubs = () =>

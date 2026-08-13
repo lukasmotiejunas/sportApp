@@ -17,6 +17,7 @@ import {
   updateSelfApi,
   type NotificationSettings,
 } from "../../api/profile";
+import { LITHUANIAN_CITIES } from "../../utils/lithuanianCities";
 import { resizeImageToDataUrl } from "../../utils/image";
 
 export default function AdminProfile() {
@@ -26,6 +27,8 @@ export default function AdminProfile() {
 
   // Club section
   const [clubName, setClubName] = useState(authUser?.clubName ?? "");
+  const [clubCity, setClubCity] = useState(authUser?.clubCity ?? "");
+  const [clubAddress, setClubAddress] = useState(authUser?.clubAddress ?? "");
   const [clubBusy, setClubBusy] = useState(false);
   const [clubError, setClubError] = useState<string | null>(null);
 
@@ -77,8 +80,17 @@ export default function AdminProfile() {
     }
     setClubBusy(true);
     try {
-      const updated = await updateClubApi({ name: trimmed });
-      patchAuthUser({ clubName: updated.name });
+      const updated = await updateClubApi({
+        name: trimmed,
+        city: clubCity || null,
+        country: 'LT',
+        address: clubAddress.trim() || null,
+      });
+      patchAuthUser({
+        clubName: updated.name,
+        clubCity: updated.city,
+        clubAddress: updated.address,
+      });
       push({ kind: "success", message: "Klubo informacija atnaujinta." });
     } catch (err) {
       setClubError(
@@ -318,8 +330,44 @@ export default function AdminProfile() {
               required
               value={clubName}
               onChange={(e) => setClubName(e.target.value)}
-              placeholder="pvz. SportApp Vilnius"
+              placeholder="pvz. Lumo Vilnius"
             />
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="label">Šalis</label>
+                <select
+                  disabled
+                  className="input cursor-not-allowed opacity-60"
+                  value="LT"
+                >
+                  <option value="LT">Lietuva</option>
+                </select>
+              </div>
+              <div>
+                <label className="label">Miestas</label>
+                <select
+                  className="input"
+                  value={clubCity}
+                  onChange={(e) => setClubCity(e.target.value)}
+                >
+                  <option value="">— Pasirinkite miestą —</option>
+                  {LITHUANIAN_CITIES.map((city) => (
+                    <option key={city} value={city}>
+                      {city}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <FormField
+              label="Adresas"
+              value={clubAddress}
+              onChange={(e) => setClubAddress(e.target.value)}
+              placeholder="pvz. Sporto g. 1, LT-01234"
+            />
+
             {clubError && (
               <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
                 {clubError}
