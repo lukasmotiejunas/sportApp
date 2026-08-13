@@ -60,6 +60,16 @@ function ScrollToTop() {
   return null;
 }
 
+function Analytics() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    if (typeof window.gtag === 'function') {
+      window.gtag('event', 'page_view', { page_path: pathname });
+    }
+  }, [pathname]);
+  return null;
+}
+
 function LoadingScreen() {
   return (
     <div className="grid min-h-screen place-items-center bg-ink-950 text-white">
@@ -108,6 +118,7 @@ export default function App() {
     return (
       <>
         <ScrollToTop />
+        <Analytics />
         <Routes>
           <Route path="/plans" element={<Plans />} />
           <Route path="/terms" element={<Terms />} />
@@ -135,6 +146,7 @@ export default function App() {
   return (
     <>
       <ScrollToTop />
+      <Analytics />
       <Routes>
         <Route path="/" element={<Navigate to={home} replace />} />
         <Route
