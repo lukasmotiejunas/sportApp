@@ -826,3 +826,14 @@ superAdminRouter.get(
     );
   }),
 );
+
+// DELETE /superadmin/meetings/:id — cancel and remove a meeting.
+superAdminRouter.delete(
+  '/meetings/:id',
+  asyncHandler(async (req, res) => {
+    const existing = await prisma.meeting.findUnique({ where: { id: req.params.id } });
+    if (!existing) throw new HttpError(404, 'Meeting not found');
+    await prisma.meeting.delete({ where: { id: req.params.id } });
+    res.status(204).end();
+  }),
+);

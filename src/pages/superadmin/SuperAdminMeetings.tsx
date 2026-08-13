@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { Calendar, Mail, Users } from "lucide-react";
+import { Calendar, Mail, Trash2, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { PageTitle } from "../../components/layout/PageTitle";
-import { fetchSuperAdminMeetings, type MeetingRecord } from "../../api/superadmin";
+import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
+import { fetchSuperAdminMeetings, deleteMeeting, type MeetingRecord } from "../../api/superadmin";
 
 function endTime(startTime: string): string {
   const [h] = startTime.split(":").map(Number);
@@ -23,6 +24,7 @@ export default function SuperAdminMeetings() {
   const { t } = useTranslation();
   const [meetings, setMeetings] = useState<MeetingRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSuperAdminMeetings()
@@ -31,9 +33,17 @@ export default function SuperAdminMeetings() {
       .finally(() => setLoading(false));
   }, []);
 
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    await deleteMeeting(deleteId);
+    setMeetings((prev) => prev.filter((m) => m.id !== deleteId));
+  };
+
   const today = new Date().toISOString().slice(0, 10);
   const upcoming = meetings.filter((m) => m.date >= today);
   const past = meetings.filter((m) => m.date < today);
+
+  const pendingMeeting = meetings.find((m) => m.id === deleteId);
 
   return (
     <div className="max-w-3xl">
@@ -66,7 +76,7 @@ export default function SuperAdminMeetings() {
               </h2>
               <div className="space-y-2">
                 {upcoming.map((m) => (
-                  <MeetingCard key={m.id} meeting={m} />
+                  <MeetingCard key={m.id} meeting={m} onDelete={() => setDeleteId(m.id)} />
                 ))}
               </div>
             </section>
@@ -79,18 +89,38 @@ export default function SuperAdminMeetings() {
               </h2>
               <div className="space-y-2 opacity-60">
                 {[...past].reverse().map((m) => (
-                  <MeetingCard key={m.id} meeting={m} />
+                  <MeetingCard key={m.id} meeting={m} onDelete={() => setDeleteId(m.id)} />
                 ))}
               </div>
             </section>
           )}
         </div>
       )}
+
+      <ConfirmDialog
+        open={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        title="Ištrinti susitikimą?"
+        message={
+          pendingMeeting
+            ? `${pendingMeeting.bookedByName} · ${pendingMeeting.date} ${pendingMeeting.startTime}`
+            : "Ar tikrai norite ištrinti šį susitikimą?"
+        }
+        confirmLabel="Ištrinti"
+        destructive
+      />
     </div>
   );
 }
 
-function MeetingCard({ meeting: m }: { meeting: MeetingRecord }) {
+function MeetingCard({
+  meeting: m,
+  onDelete,
+}: {
+  meeting: MeetingRecord;
+  onDelete: () => void;
+}) {
   const { t } = useTranslation();
   return (
     <div className="surface p-4">
@@ -100,7 +130,7 @@ function MeetingCard({ meeting: m }: { meeting: MeetingRecord }) {
             <Calendar className="h-5 w-5" />
           </div>
           <div>
-            <p className="font-semibold text-ink-900 dark:text-ink-50 capitalize">
+            <p className="font-semibold capitalize text-ink-900 dark:text-ink-50">
               {formatDate(m.date)}
             </p>
             <p className="mt-0.5 text-sm font-bold text-lime-600 dark:text-lime-400">
@@ -109,19 +139,30 @@ function MeetingCard({ meeting: m }: { meeting: MeetingRecord }) {
           </div>
         </div>
 
-        <div className="flex flex-col gap-1.5 text-sm sm:text-right">
-          <div className="flex items-center gap-2 sm:justify-end">
-            <Mail className="h-3.5 w-3.5 shrink-0 text-ink-400" />
-            <span className="font-semibold text-ink-900 dark:text-ink-100">
-              {m.bookedByName}
-            </span>
+        <div className="flex items-start gap-3 sm:items-center">
+          <div className="flex flex-col gap-1 text-sm sm:text-right">
+            <div className="flex items-center gap-2 sm:justify-end">
+              <Mail className="h-3.5 w-3.5 shrink-0 text-ink-400" />
+              <span className="font-semibold text-ink-900 dark:text-ink-100">
+                {m.bookedByName}
+              </span>
+            </div>
+            <a
+              href={`mailto:${m.bookedByEmail}`}
+              className="text-xs text-ink-500 hover:text-ink-700 dark:text-ink-400 dark:hover:text-ink-200"
+            >
+              {m.bookedByEmail}
+            </a>
           </div>
-          <a
-            href={`mailto:${m.bookedByEmail}`}
-            className="text-xs text-ink-500 hover:text-ink-700 dark:text-ink-400 dark:hover:text-ink-200"
+
+          <button
+            type="button"
+            onClick={onDelete}
+            className="ml-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-ink-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+            aria-label="Ištrinti susitikimą"
           >
-            {m.bookedByEmail}
-          </a>
+            <Trash2 className="h-4 w-4" />
+          </button>
         </div>
       </div>
 
