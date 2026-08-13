@@ -50,3 +50,22 @@ export type JoinResult = {
 
 export const joinClubApi = (slug: string, input: JoinInput) =>
   api.post<JoinResult>(`/public/clubs/${encodeURIComponent(slug)}/members`, input);
+
+export type MeetingSlotsResult = {
+  validSlots: string[];
+  bookedSlots: string[];
+};
+
+export const fetchMeetingSlots = (date: string) =>
+  api.get<MeetingSlotsResult>(`/public/meetings/slots?date=${encodeURIComponent(date)}`);
+
+export type BookMeetingInput = {
+  date: string;
+  startTime: string;
+  name: string;
+  email: string;
+  inviteEmails: string[];
+};
+
+export const bookMeeting = (input: BookMeetingInput) =>
+  api.post<{ ok: boolean }>('/public/meetings', input);

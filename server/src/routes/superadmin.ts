@@ -805,3 +805,24 @@ superAdminRouter.delete(
     res.status(204).end();
   }),
 );
+
+// GET /superadmin/meetings — all meetings, newest first.
+superAdminRouter.get(
+  '/meetings',
+  asyncHandler(async (_req, res) => {
+    const meetings = await prisma.meeting.findMany({
+      orderBy: [{ date: 'asc' }, { startTime: 'asc' }],
+    });
+    res.json(
+      meetings.map((m) => ({
+        id: m.id,
+        date: m.date.toISOString().slice(0, 10),
+        startTime: m.startTime,
+        bookedByName: m.bookedByName,
+        bookedByEmail: m.bookedByEmail,
+        inviteEmails: m.inviteEmails,
+        createdAt: m.createdAt.toISOString(),
+      })),
+    );
+  }),
+);

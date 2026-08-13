@@ -98,7 +98,8 @@
     "clubs": "Klubai",
     "finances": "Finansai",
     "main": "Pagrindinis",
-    "help": "Pagalba"
+    "help": "Pagalba",
+    "meetings": "Susitikimai"
   },
   "joyride": {
     "back": "Atgal",
@@ -919,7 +920,31 @@
     "reason_bug_title": "Klaidos",
     "reason_bug_desc": "Pastebėjote, kad kažkas neveikia kaip turėtų? Pranešite — ištaisysime kuo greičiau.",
     "reason_suggest_title": "Pasiūlymai",
-    "reason_suggest_desc": "Turite idėjų, kaip padaryti sistemą geresnę? Labai laukiame jūsų nuomonės."
+    "reason_suggest_desc": "Turite idėjų, kaip padaryti sistemą geresnę? Labai laukiame jūsų nuomonės.",
+    "book_title": "Rezervuoti susitikimą",
+    "book_desc": "Pasirinkite jums patogų laiką darbo dienomis 8:00–22:00.",
+    "book_hint": "Susitikimas gali būti skirtas supažindinti su platforma arba kartu sukonfigūruoti viską nuo pradžių jūsų klubui.",
+    "book_prev_week": "Ankstesnė savaitė",
+    "book_next_week": "Kita savaitė",
+    "book_no_slots": "Šią dieną nėra laisvų laikų",
+    "book_name": "Vardas ir pavardė",
+    "book_email": "El. paštas",
+    "book_invite_emails": "Pakviestų dalyvių el. paštai",
+    "book_invite_placeholder": "el@pastas.lt, kitas@pastas.lt",
+    "book_submit": "Rezervuoti",
+    "book_submitting": "Rezervuojama…",
+    "book_success_title": "Susitikimas užregistruotas!",
+    "book_success_desc": "Išsiųsime patvirtinimą el. paštu. Susisieksime su jumis prieš susitikimą.",
+    "book_taken": "Šis laikas jau užimtas. Pasirinkite kitą.",
+    "book_error": "Nepavyko užregistruoti. Bandykite dar kartą."
+  },
+  "meetings": {
+    "eyebrow": "Kalendorius",
+    "title": "Susitikimai",
+    "description": "Visos rezervuotos konsultacijos su Lumo komanda.",
+    "empty": "Nėra užregistruotų susitikimų.",
+    "booked_by": "Rezervavo",
+    "invited": "Pakviesti"
   },
   "payment_banner": {
     "paid_soon": "Mokėjimas artėja",

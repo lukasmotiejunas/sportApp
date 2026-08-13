@@ -11,6 +11,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { PageTitle } from "../components/layout/PageTitle";
+import { BookingCalendar } from "../components/ui/BookingCalendar";
 
 const EMAIL = "info@lumosport.lt";
 
@@ -113,6 +114,8 @@ export default function Help() {
           desc={t("help.reason_suggest_desc")}
         />
       </div>
+
+      <BookingCalendar />
     </div>
   );
 }

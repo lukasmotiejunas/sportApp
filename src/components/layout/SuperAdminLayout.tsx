@@ -1,7 +1,7 @@
 import { Outlet, NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
-import { Building2, Coins, Sparkles } from "lucide-react";
+import { Building2, CalendarDays, Coins, Sparkles } from "lucide-react";
 import { UserMenu } from "../ui/UserMenu";
 import { LanguageSwitcher } from "../ui/LanguageSwitcher";
 import { ToastContainer } from "../ui/ToastContainer";
@@ -13,6 +13,7 @@ export function SuperAdminLayout() {
   const items = [
     { to: "/superadmin/clubs", label: t("nav.clubs"), icon: Building2, end: false },
     { to: "/superadmin/finances", label: t("nav.finances"), icon: Coins, end: false },
+    { to: "/superadmin/meetings", label: t("nav.meetings"), icon: CalendarDays, end: false },
   ];
 
   return (

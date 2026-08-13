@@ -344,3 +344,16 @@ model LeaderboardResult {
   date       DateTime @db.Date
   note       String?
 }
+
+// Platform-level meeting bookings made via the public /help page.
+model Meeting {
+  id            String   @id @default(cuid())
+  date          DateTime @db.Date
+  startTime     String   // HH:MM, e.g. "09:00"
+  bookedByName  String
+  bookedByEmail String
+  inviteEmails  String[]
+  createdAt     DateTime @default(now())
+
+  @@unique([date, startTime])
+}

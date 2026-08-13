@@ -128,3 +128,64 @@ export async function sendPaymentEmail(
     `),
   });
 }
+
+export async function sendMeetingConfirmationEmail(
+  to: string,
+  name: string,
+  date: string,
+  startTime: string,
+  inviteEmails: string[],
+) {
+  const inviteList = inviteEmails.length
+    ? `<p style="margin:12px 0 0;color:#4b5563;font-size:13px">Pakviesti dalyviai: ${inviteEmails.join(', ')}</p>`
+    : '';
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: `Susitikimas patvirtintas — ${date} ${startTime}`,
+    html: wrapper(`
+      <h2 style="margin:0 0 8px;font-size:20px;color:#0b0e18">Susitikimas užregistruotas!</h2>
+      <p style="margin:0 0 16px;color:#4b5563;font-size:14px">
+        Sveiki, <strong>${name}</strong>! Jūsų susitikimas su Lumo komanda sėkmingai užregistruotas.
+      </p>
+      <div style="background:#fff;border-radius:8px;padding:16px;font-size:14px;color:#0b0e18">
+        <div style="font-weight:700;font-size:16px">${date}</div>
+        <div style="color:#6b7280;margin-top:4px;font-size:13px">${startTime} – ${endTime(startTime)}</div>
+        ${inviteList}
+      </div>
+      <p style="margin:16px 0 0;color:#9ca3af;font-size:12px">Susisieksime su jumis prieš susitikimą.</p>
+    `),
+  });
+}
+
+export async function sendMeetingNotificationEmail(
+  to: string,
+  name: string,
+  email: string,
+  date: string,
+  startTime: string,
+  inviteEmails: string[],
+) {
+  const inviteList = inviteEmails.length
+    ? `<p style="margin:8px 0 0;color:#4b5563;font-size:13px">Pakviesti: ${inviteEmails.join(', ')}</p>`
+    : '';
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: `Naujas susitikimas — ${name} (${date} ${startTime})`,
+    html: wrapper(`
+      <h2 style="margin:0 0 8px;font-size:20px;color:#0b0e18">Naujas susitikimas užregistruotas</h2>
+      <div style="background:#fff;border-radius:8px;padding:16px;font-size:14px;color:#0b0e18;margin-bottom:16px">
+        <div style="font-weight:700">${name}</div>
+        <div style="color:#6b7280;font-size:13px">${email}</div>
+        <div style="margin-top:8px;font-weight:600">${date}, ${startTime} – ${endTime(startTime)}</div>
+        ${inviteList}
+      </div>
+    `),
+  });
+}
+
+function endTime(startTime: string): string {
+  const [h, m] = startTime.split(':').map(Number);
+  return `${String(h + 1).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}

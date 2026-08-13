@@ -98,7 +98,8 @@
     "clubs": "Clubs",
     "finances": "Finances",
     "main": "Main",
-    "help": "Help"
+    "help": "Help",
+    "meetings": "Meetings"
   },
   "joyride": {
     "back": "Back",
@@ -919,7 +920,31 @@
     "reason_bug_title": "Bugs",
     "reason_bug_desc": "Something not working as expected? Let us know and we'll fix it as fast as possible.",
     "reason_suggest_title": "Suggestions",
-    "reason_suggest_desc": "Have ideas on how to make the platform better? We'd love to hear from you."
+    "reason_suggest_desc": "Have ideas on how to make the platform better? We'd love to hear from you.",
+    "book_title": "Book a meeting",
+    "book_desc": "Choose a convenient time on weekdays 8:00–22:00.",
+    "book_hint": "The meeting can be an introduction to the platform or a hands-on session to set everything up for your club from scratch.",
+    "book_prev_week": "Previous week",
+    "book_next_week": "Next week",
+    "book_no_slots": "No available slots on this day",
+    "book_name": "Full name",
+    "book_email": "Email address",
+    "book_invite_emails": "Invite attendees (emails)",
+    "book_invite_placeholder": "email@example.com, other@example.com",
+    "book_submit": "Book meeting",
+    "book_submitting": "Booking…",
+    "book_success_title": "Meeting booked!",
+    "book_success_desc": "We've sent a confirmation to your email. We'll reach out before the meeting.",
+    "book_taken": "This slot is already taken. Please choose another.",
+    "book_error": "Booking failed. Please try again."
+  },
+  "meetings": {
+    "eyebrow": "Calendar",
+    "title": "Meetings",
+    "description": "All booked consultations with the Lumo team.",
+    "empty": "No meetings booked yet.",
+    "booked_by": "Booked by",
+    "invited": "Invited"
   },
   "payment_banner": {
     "paid_soon": "Payment coming up",

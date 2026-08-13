@@ -321,6 +321,12 @@ function LandingPage({ onStart }: { onStart: () => void }) {
         <div className="flex items-center gap-3">
           <LanguageSwitcher />
           <Link
+            to="/help"
+            className="text-sm font-semibold text-white/60 hover:text-white"
+          >
+            {t("nav.help")}
+          </Link>
+          <Link
             to="/login"
             className="text-sm font-semibold text-white/60 hover:text-white"
           >
@@ -592,6 +598,9 @@ function LandingPage({ onStart }: { onStart: () => void }) {
             </Link>
             <Link to="/privacy" className="hover:text-white">
               {t("plans.footer_privacy")}
+            </Link>
+            <Link to="/help" className="hover:text-white">
+              {t("nav.help")}
             </Link>
             <Link to="/login" className="hover:text-white">
               {t("plans.footer_login")}
