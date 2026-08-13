@@ -60,3 +60,6 @@ export type MeetingRecord = {
 
 export const fetchSuperAdminMeetings = () =>
   api.get<MeetingRecord[]>('/superadmin/meetings');
+
+export const deleteMeeting = (id: string) =>
+  api.del<void>(`/superadmin/meetings/${id}`);
