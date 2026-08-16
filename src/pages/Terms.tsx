@@ -45,10 +45,10 @@ export default function Terms() {
               platformą. Paslaugų teikėjas — fizinis asmuo, vykdantis
               individualią veiklą Lietuvos Respublikoje. Kontaktinis el. paštas:{" "}
               <a
-                href="mailto:hello@lumo.lt"
+                href="mailto:info@lumosport.lt"
                 className="text-lime-300 hover:underline"
               >
-                hello@lumo.lt
+                info@lumosport.lt
               </a>
               .
             </p>
@@ -97,8 +97,8 @@ export default function Terms() {
             </p>
             <p className="mt-3">
               <strong>Pinigų grąžinimo politika:</strong> jau apmokėti
-              laikotarpiai nėra grąžinami. Prenumeratą galite bet kada
-              atšaukti, kad ateityje mokesčiai nebūtų nurašomi.
+              laikotarpiai nėra grąžinami. Prenumeratą galite bet kada atšaukti,
+              kad ateityje mokesčiai nebūtų nurašomi.
             </p>
           </Section>
 
@@ -128,8 +128,8 @@ export default function Terms() {
             <p>
               Paslaugos programinė įranga, dizainas, prekės ženklai ir
               dokumentacija priklauso Paslaugos teikėjui. Kliento duomenys
-              (narių, treniruočių ir kt. įrašai) priklauso klientui, ir jis
-              gali juos bet kada eksportuoti ar ištrinti.
+              (narių, treniruočių ir kt. įrašai) priklauso klientui, ir jis gali
+              juos bet kada eksportuoti ar ištrinti.
             </p>
           </Section>
 
@@ -154,8 +154,8 @@ export default function Terms() {
           <Section title="9. Taikoma teisė ir ginčai">
             <p>
               Šioms sąlygoms taikoma Lietuvos Respublikos teisė. Ginčai
-              sprendžiami Lietuvos Respublikos teismuose pagal Paslaugos
-              teikėjo buveinės vietą.
+              sprendžiami Lietuvos Respublikos teismuose pagal Paslaugos teikėjo
+              buveinės vietą.
             </p>
           </Section>
 
@@ -163,10 +163,10 @@ export default function Terms() {
             <p>
               Klausimai dėl šių sąlygų:{" "}
               <a
-                href="mailto:hello@lumo.lt"
+                href="mailto:info@lumosport.lt"
                 className="text-lime-300 hover:underline"
               >
-                hello@lumo.lt
+                info@lumosport.lt
               </a>
               .
             </p>

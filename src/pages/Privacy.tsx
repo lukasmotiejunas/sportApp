@@ -41,13 +41,13 @@ export default function Privacy() {
             <p>
               Lumo (toliau — „Paslauga") tvarko asmens duomenis kaip duomenų
               valdytojas savo klientų (klubų administratorių) atžvilgiu ir kaip
-              duomenų tvarkytojas — klubo narių ir trenerių atžvilgiu, kuriuos
-              į sistemą įrašo klubo administratorius. Kontaktai:{" "}
+              duomenų tvarkytojas — klubo narių ir trenerių atžvilgiu, kuriuos į
+              sistemą įrašo klubo administratorius. Kontaktai:{" "}
               <a
-                href="mailto:hello@lumo.lt"
+                href="mailto:info@lumosport.lt"
                 className="text-lime-300 hover:underline"
               >
-                hello@lumo.lt
+                info@lumosport.lt
               </a>
               .
             </p>
@@ -105,8 +105,8 @@ export default function Privacy() {
 
           <Section title="4. Kam perduodame duomenis (subtvarkytojai)">
             <p className="mb-2">
-              Naudojame šiuos technologijų paslaugų teikėjus, kurie veikia
-              pagal ES BDAR reikalavimus:
+              Naudojame šiuos technologijų paslaugų teikėjus, kurie veikia pagal
+              ES BDAR reikalavimus:
             </p>
             <ul className="list-disc space-y-2 pl-5">
               <li>
@@ -149,9 +149,7 @@ export default function Privacy() {
           <Section title="6. Jūsų teisės pagal BDAR">
             <p className="mb-2">Turite šias teises:</p>
             <ul className="list-disc space-y-2 pl-5">
-              <li>
-                Susipažinti su savo asmens duomenimis ir gauti jų kopiją.
-              </li>
+              <li>Susipažinti su savo asmens duomenimis ir gauti jų kopiją.</li>
               <li>Ištaisyti neteisingus ar nepilnus duomenis.</li>
               <li>
                 Reikalauti duomenų ištrynimo („teisė būti pamirštam") — su
@@ -176,12 +174,12 @@ export default function Privacy() {
             <p className="mt-3">
               Teisėms įgyvendinti rašykite{" "}
               <a
-                href="mailto:hello@lumo.lt"
+                href="mailto:info@lumosport.lt"
                 className="text-lime-300 hover:underline"
               >
-                hello@lumo.lt
+                info@lumosport.lt
               </a>
-              . Atsakysime per 30 dienų.
+              . Atsakysime per 1 dieną.
             </p>
           </Section>
 
