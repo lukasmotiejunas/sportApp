@@ -32,7 +32,10 @@ function formatTime(iso: string) {
     d.getMonth() === now.getMonth() &&
     d.getFullYear() === now.getFullYear();
   if (sameDay) {
-    return d.toLocaleTimeString("lt-LT", { hour: "2-digit", minute: "2-digit" });
+    return d.toLocaleTimeString("lt-LT", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   }
   return d.toLocaleString("lt-LT", {
     month: "short",
@@ -70,7 +73,8 @@ export default function ClubChat() {
           scrollToBottom(silent ? "smooth" : "instant");
         }
       } catch {
-        if (!silent) push({ kind: "error", message: "Nepavyko įkelti žinučių." });
+        if (!silent)
+          push({ kind: "error", message: "Nepavyko įkelti žinučių." });
       } finally {
         setLoading(false);
       }
@@ -153,12 +157,23 @@ export default function ClubChat() {
                     key={m.id}
                     className={`flex gap-3 ${isMe ? "flex-row-reverse" : ""}`}
                   >
-                    <div className="shrink-0"><Avatar name={m.authorName} size="sm" photoUrl={m.authorPhoto ?? undefined} color={m.authorColor ?? undefined} /></div>
+                    <div className="shrink-0">
+                      <Avatar
+                        name={m.authorName}
+                        size="sm"
+                        photoUrl={m.authorPhoto ?? undefined}
+                        color={m.authorColor ?? undefined}
+                      />
+                    </div>
                     <div
                       className={`group flex max-w-[75%] flex-col gap-1 ${isMe ? "items-end" : "items-start"}`}
                     >
-                      <div className={`flex flex-wrap items-center gap-2 ${isMe ? "flex-row-reverse" : ""}`}>
-                        <span className="text-sm font-semibold">{m.authorName}</span>
+                      <div
+                        className={`flex flex-wrap items-center gap-2 ${isMe ? "flex-row-reverse" : ""}`}
+                      >
+                        <span className="text-sm font-semibold">
+                          {m.authorName}
+                        </span>
                         <span
                           className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${roleTone[m.authorType]}`}
                         >
@@ -204,10 +219,12 @@ export default function ClubChat() {
               value={body}
               onChange={(e) => setBody(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && (e.metaKey || e.ctrlKey))
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
                   handleSubmit(e as any);
+                }
               }}
-              placeholder="Rašykite žinutę… (⌘Enter siųsti)"
+              placeholder="Rašykite žinutę… (Enter siųsti)"
               rows={1}
               className="input flex-1 resize-none py-2 text-sm"
             />
