@@ -5,6 +5,7 @@ import {
   BarChart3,
   CalendarDays,
   ClipboardList,
+  MessageCircle,
   Trophy,
   Users2,
   UserCog,
@@ -24,6 +25,7 @@ export function CoachLayout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const clubName = useStore((s) => s.authUser?.clubName ?? "");
   const clubLogo = useStore((s) => s.authUser?.clubLogo ?? null);
+  const hasUnreadChat = useStore((s) => s.hasUnreadChat);
   const logoSrc = clubLogo || "/lumo-logo.png";
 
   const items = [
@@ -32,6 +34,7 @@ export function CoachLayout() {
     { to: "/coach/schedule", label: t("nav.my_calendar"), icon: CalendarDays },
     { to: "/coach/members", label: t("nav.members"), icon: Users2 },
     { to: "/coach/leaderboards", label: t("nav.results"), icon: Trophy },
+    { to: "/coach/chat", label: t("nav.chat"), icon: MessageCircle, dot: hasUnreadChat },
     { to: "/coach/profile", label: t("nav.profile"), icon: UserCog },
     { to: "/coach/help", label: t("nav.help"), icon: HelpCircle },
   ];
@@ -111,7 +114,7 @@ function SidebarNav({
   items,
   onNavigate,
 }: {
-  items: { to: string; label: string; icon: React.ComponentType<{ className?: string }>; end?: boolean }[];
+  items: { to: string; label: string; icon: React.ComponentType<{ className?: string }>; end?: boolean; dot?: boolean }[];
   onNavigate?: () => void;
 }) {
   return (
@@ -131,7 +134,12 @@ function SidebarNav({
             )
           }
         >
-          <it.icon className="h-4 w-4" />
+          <span className="relative">
+            <it.icon className="h-4 w-4" />
+            {it.dot && (
+              <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-lime-500" />
+            )}
+          </span>
           {it.label}
         </NavLink>
       ))}

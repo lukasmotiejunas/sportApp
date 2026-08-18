@@ -22,6 +22,7 @@ import { webhooksConnectRouter } from './routes/webhooksConnect.js';
 import { publicRouter } from './routes/public.js';
 import { connectRouter } from './routes/connect.js';
 import { meRouter } from './routes/me.js';
+import { chatRouter } from './routes/chat.js';
 
 const app = express();
 
@@ -95,6 +96,7 @@ app.use(
   requireActiveSubscription,
   leaderboardsRouter,
 );
+app.use('/chat', requireAuth, requireActiveSubscription, chatRouter);
 
 app.use(notFound);
 app.use(errorHandler);

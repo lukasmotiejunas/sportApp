@@ -1,6 +1,7 @@
 import { api } from './client';
 import type {
   AuthUser,
+  ClubMessage,
   CoachStaff,
   LeaderboardCategory,
   LeaderboardResult,
@@ -172,6 +173,11 @@ export const registerForTrainingApi = (trainingId: string, memberId: string) =>
   api.post<TrainingSession>(`/trainings/${trainingId}/registrations`, { memberId });
 export const cancelRegistrationApi = (trainingId: string, memberId: string) =>
   api.del<TrainingSession>(`/trainings/${trainingId}/registrations/${memberId}`);
+
+// --- Club chat ---
+export const fetchChatMessages = () => api.get<ClubMessage[]>('/chat');
+export const sendChatMessage = (body: string) => api.post<ClubMessage>('/chat', { body });
+export const deleteChatMessage = (id: string) => api.del<void>(`/chat/${id}`);
 
 // --- Training comments ---
 export const fetchTrainingComments = (trainingId: string) =>

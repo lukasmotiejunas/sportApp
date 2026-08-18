@@ -342,6 +342,17 @@ export type Payment = {
   method?: string;
 };
 
+export type ClubMessage = {
+  id: string;
+  authorId: string;
+  authorType: 'member' | 'coach' | 'admin';
+  authorName: string;
+  authorPhoto: string | null;
+  authorColor: string | null;
+  body: string;
+  createdAt: string;
+};
+
 export type TrainingComment = {
   id: string;
   trainingSessionId: string;
