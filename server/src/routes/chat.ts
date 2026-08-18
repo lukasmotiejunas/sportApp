@@ -1,12 +1,83 @@
+import { EventEmitter } from 'events';
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../prisma.js';
 import { asyncHandler, HttpError } from '../middleware/errorHandler.js';
 import { requireClubId } from '../middleware/auth.js';
+import { verifyToken } from '../auth/jwt.js';
 
 export const chatRouter = Router();
 
 const MESSAGE_LIMIT = 100;
+
+// Per-club event emitter. Lives for the lifetime of the process — works
+// perfectly on a single server. On Vercel multi-instance deployments the
+// 5-second polling fallback in the client catches anything that slips through.
+const emitters = new Map<string, EventEmitter>();
+function getEmitter(clubId: string): EventEmitter {
+  let em = emitters.get(clubId);
+  if (!em) {
+    em = new EventEmitter();
+    em.setMaxListeners(200);
+    emitters.set(clubId, em);
+  }
+  return em;
+}
+
+function serializeMsg(m: {
+  id: string; clubId: string; authorId: string; authorType: string;
+  authorName: string; authorPhoto: string | null; authorColor: string | null;
+  body: string; createdAt: Date;
+}) {
+  return { ...m, createdAt: m.createdAt.toISOString() };
+}
+
+// SSE stream — auth via ?token= because EventSource can't set headers.
+chatRouter.get('/stream', (req, res) => {
+  const raw = req.query.token;
+  if (typeof raw !== 'string') {
+    res.status(401).json({ error: 'Reikalinga autentifikacija.' });
+    return;
+  }
+  let payload;
+  try {
+    payload = verifyToken(raw);
+  } catch {
+    res.status(401).json({ error: 'Neteisingas prisijungimas.' });
+    return;
+  }
+
+  // Resolve clubId the same way requireClubId does.
+  let clubId: string;
+  if (payload.role === 'super_admin') {
+    const q = typeof req.query.clubId === 'string' ? req.query.clubId : undefined;
+    if (!q) { res.status(400).json({ error: 'clubId required.' }); return; }
+    clubId = q;
+  } else {
+    if (!payload.clubId) { res.status(403).json({ error: 'Nėra klubo.' }); return; }
+    clubId = payload.clubId;
+  }
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders();
+
+  const keepAlive = setInterval(() => res.write(':ping\n\n'), 20000);
+
+  const onMessage = (data: object) => {
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+  };
+
+  const em = getEmitter(clubId);
+  em.on('message', onMessage);
+
+  req.on('close', () => {
+    clearInterval(keepAlive);
+    em.off('message', onMessage);
+  });
+});
 
 chatRouter.get(
   '/',
@@ -17,9 +88,7 @@ chatRouter.get(
       orderBy: { createdAt: 'asc' },
       take: MESSAGE_LIMIT,
     });
-    res.json(
-      messages.map((m) => ({ ...m, createdAt: m.createdAt.toISOString() })),
-    );
+    res.json(messages.map(serializeMsg));
   }),
 );
 
@@ -48,7 +117,11 @@ chatRouter.post(
     const msg = await prisma.clubMessage.create({
       data: { clubId, authorId: userId, authorType, authorName, authorPhoto, authorColor, body },
     });
-    res.status(201).json({ ...msg, createdAt: msg.createdAt.toISOString() });
+
+    const serialized = serializeMsg(msg);
+    getEmitter(clubId).emit('message', serialized);
+
+    res.status(201).json(serialized);
   }),
 );
 

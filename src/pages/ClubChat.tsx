@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MessageCircle, Send, Trash2 } from "lucide-react";
 import { useStore } from "../store/useStore";
 import { Avatar } from "../components/ui/Avatar";
 import { PageTitle } from "../components/layout/PageTitle";
+import { BASE_URL } from "../api/client";
 import {
   fetchChatMessages,
   sendChatMessage,
@@ -32,10 +33,7 @@ function formatTime(iso: string) {
     d.getMonth() === now.getMonth() &&
     d.getFullYear() === now.getFullYear();
   if (sameDay) {
-    return d.toLocaleTimeString("lt-LT", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return d.toLocaleTimeString("lt-LT", { hour: "2-digit", minute: "2-digit" });
   }
   return d.toLocaleString("lt-LT", {
     month: "short",
@@ -47,6 +45,7 @@ function formatTime(iso: string) {
 
 export default function ClubChat() {
   const authUser = useStore((s) => s.authUser);
+  const token = useStore((s) => s.token);
   const push = useStore((s) => s.pushToast);
 
   const [messages, setMessages] = useState<ClubMessage[]>([]);
@@ -56,37 +55,85 @@ export default function ClubChat() {
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const latestIdRef = useRef<string | null>(null);
+  const seenIds = useRef(new Set<string>());
 
-  const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
+  const scrollToBottom = (behavior: ScrollBehavior = "smooth") =>
     bottomRef.current?.scrollIntoView({ behavior });
+
+  const addMessages = (incoming: ClubMessage[], scroll = true) => {
+    const fresh = incoming.filter((m) => !seenIds.current.has(m.id));
+    if (fresh.length === 0) return;
+    fresh.forEach((m) => seenIds.current.add(m.id));
+    setMessages((prev) => [...prev, ...fresh]);
+    if (scroll) setTimeout(() => scrollToBottom(), 50);
   };
 
-  const loadMessages = useCallback(
-    async (silent = false) => {
-      try {
-        const data = await fetchChatMessages();
-        setMessages(data);
-        const newest = data[data.length - 1]?.id ?? null;
-        if (newest && newest !== latestIdRef.current) {
-          latestIdRef.current = newest;
-          scrollToBottom(silent ? "smooth" : "instant");
-        }
-      } catch {
-        if (!silent)
-          push({ kind: "error", message: "Nepavyko įkelti žinučių." });
-      } finally {
-        setLoading(false);
-      }
-    },
-    [push],
-  );
-
+  // Initial load
   useEffect(() => {
-    void loadMessages(false);
-    const timer = setInterval(() => void loadMessages(true), POLL_INTERVAL);
-    return () => clearInterval(timer);
-  }, [loadMessages]);
+    fetchChatMessages()
+      .then((data) => {
+        data.forEach((m) => seenIds.current.add(m.id));
+        setMessages(data);
+        setTimeout(() => scrollToBottom("instant"), 50);
+      })
+      .catch(() => push({ kind: "error", message: "Nepavyko įkelti žinučių." }))
+      .finally(() => setLoading(false));
+  }, []);
+
+  // SSE subscription with polling fallback
+  useEffect(() => {
+    if (!token) return;
+
+    let es: EventSource | null = null;
+    let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+    const startPolling = () => {
+      if (pollTimer) return;
+      pollTimer = setInterval(async () => {
+        try {
+          const data = await fetchChatMessages();
+          addMessages(data);
+        } catch {
+          // silent
+        }
+      }, POLL_INTERVAL);
+    };
+
+    const connect = () => {
+      const url = `${BASE_URL}/chat/stream?token=${encodeURIComponent(token)}`;
+      es = new EventSource(url);
+
+      es.onmessage = (e) => {
+        try {
+          const msg = JSON.parse(e.data) as ClubMessage;
+          addMessages([msg]);
+        } catch {
+          // ignore malformed
+        }
+      };
+
+      es.onopen = () => {
+        // SSE connected — stop polling if it was running
+        if (pollTimer) {
+          clearInterval(pollTimer);
+          pollTimer = null;
+        }
+      };
+
+      es.onerror = () => {
+        es?.close();
+        // Fall back to polling until EventSource reconnects on its own
+        startPolling();
+      };
+    };
+
+    connect();
+
+    return () => {
+      es?.close();
+      if (pollTimer) clearInterval(pollTimer);
+    };
+  }, [token]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,11 +142,10 @@ export default function ClubChat() {
     setSubmitting(true);
     try {
       const msg = await sendChatMessage(trimmed);
-      setMessages((prev) => [...prev, msg]);
-      latestIdRef.current = msg.id;
+      // Optimistically add own message (SSE will also deliver it, dedup handles it)
+      addMessages([msg]);
       setBody("");
       textareaRef.current?.focus();
-      scrollToBottom();
     } catch {
       push({ kind: "error", message: "Nepavyko išsiųsti žinutės." });
     } finally {
@@ -110,6 +156,7 @@ export default function ClubChat() {
   const handleDelete = async (id: string) => {
     try {
       await deleteChatMessage(id);
+      seenIds.current.delete(id);
       setMessages((prev) => prev.filter((m) => m.id !== id));
     } catch {
       push({ kind: "error", message: "Nepavyko ištrinti žinutės." });
@@ -171,9 +218,7 @@ export default function ClubChat() {
                       <div
                         className={`flex flex-wrap items-center gap-2 ${isMe ? "flex-row-reverse" : ""}`}
                       >
-                        <span className="text-sm font-semibold">
-                          {m.authorName}
-                        </span>
+                        <span className="text-sm font-semibold">{m.authorName}</span>
                         <span
                           className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${roleTone[m.authorType]}`}
                         >
@@ -224,7 +269,7 @@ export default function ClubChat() {
                   handleSubmit(e as any);
                 }
               }}
-              placeholder="Rašykite žinutę… (Enter siųsti)"
+              placeholder="Rašykite žinutę… (Enter siųsti, Shift+Enter naujai eilutei)"
               rows={1}
               className="input flex-1 resize-none py-2 text-sm"
             />
