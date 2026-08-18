@@ -14,6 +14,7 @@ import * as apiEndpoints from '../api/endpoints';
 import { loginApi, fetchMe } from '../api/auth';
 import type {
   AuthUser,
+  ClubMessage,
   CoachStaff,
   LeaderboardCategory,
   LeaderboardResult,
@@ -120,6 +121,12 @@ type State = {
   hasUnreadChat: boolean;
   markChatSeen: () => void;
   checkUnreadChat: () => Promise<void>;
+  // Callback registered by ClubChat while it is mounted. GlobalChatStream
+  // calls it with each incoming SSE message so ClubChat receives messages
+  // without opening its own SSE connection.
+  chatMessageCallback: ((msg: ClubMessage) => void) | null;
+  registerChatCallback: (cb: (msg: ClubMessage) => void) => void;
+  unregisterChatCallback: () => void;
 
   // Membership plan actions (admin)
   addMembershipPlan: (input: {
@@ -187,6 +194,9 @@ export const useStore = create<State>()(
         dismissToast: (id) => set({ toasts: get().toasts.filter((t) => t.id !== id) }),
 
         hasUnreadChat: false,
+        chatMessageCallback: null,
+        registerChatCallback: (cb) => set({ chatMessageCallback: cb }),
+        unregisterChatCallback: () => set({ chatMessageCallback: null }),
         markChatSeen: () => {
           const userId = get().authUser?.id ?? '';
           try { localStorage.setItem(`chat_seen:${userId}`, new Date().toISOString()); } catch { /* ignore */ }

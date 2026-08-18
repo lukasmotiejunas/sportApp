@@ -1,7 +1,40 @@
 import { useEffect } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useStore } from './store/useStore';
+import { BASE_URL } from './api/client';
+import type { ClubMessage } from './types';
 
+function GlobalChatStream() {
+  const token = useStore((s) => s.token);
+  const loaded = useStore((s) => s.loaded);
+
+  useEffect(() => {
+    if (!token || !loaded) return;
+
+    const url = `${BASE_URL}/chat/stream?token=${encodeURIComponent(token)}`;
+    const es = new EventSource(url);
+
+    es.onmessage = (e) => {
+      try {
+        const msg = JSON.parse(e.data) as ClubMessage;
+        const { chatMessageCallback } = useStore.getState();
+        if (chatMessageCallback) {
+          chatMessageCallback(msg);
+        } else {
+          useStore.setState({ hasUnreadChat: true });
+        }
+      } catch { /* ignore malformed */ }
+    };
+
+    // EventSource auto-reconnects on error — no manual handling needed.
+
+    return () => es.close();
+  }, [token, loaded]);
+
+  return null;
+}
+
+// Fallback: re-check unread every 30s in case SSE missed something.
 function ChatUnreadWatcher() {
   const location = useLocation();
   const checkUnreadChat = useStore((s) => s.checkUnreadChat);
@@ -166,6 +199,7 @@ export default function App() {
     <>
       <ScrollToTop />
       <Analytics />
+      <GlobalChatStream />
       <ChatUnreadWatcher />
       <Routes>
         <Route path="/" element={<Navigate to={home} replace />} />

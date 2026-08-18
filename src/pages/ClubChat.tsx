@@ -1,17 +1,14 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { MessageCircle, Send, Trash2 } from "lucide-react";
 import { useStore } from "../store/useStore";
 import { Avatar } from "../components/ui/Avatar";
 import { PageTitle } from "../components/layout/PageTitle";
-import { BASE_URL } from "../api/client";
 import {
   fetchChatMessages,
   sendChatMessage,
   deleteChatMessage,
 } from "../api/endpoints";
 import type { ClubMessage } from "../types";
-
-const POLL_INTERVAL = 5000;
 
 const roleLabel: Record<ClubMessage["authorType"], string> = {
   member: "Narys",
@@ -45,9 +42,10 @@ function formatTime(iso: string) {
 
 export default function ClubChat() {
   const authUser = useStore((s) => s.authUser);
-  const token = useStore((s) => s.token);
   const push = useStore((s) => s.pushToast);
   const markChatSeen = useStore((s) => s.markChatSeen);
+  const registerChatCallback = useStore((s) => s.registerChatCallback);
+  const unregisterChatCallback = useStore((s) => s.unregisterChatCallback);
 
   const [messages, setMessages] = useState<ClubMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,18 +59,20 @@ export default function ClubChat() {
   const scrollToBottom = (behavior: ScrollBehavior = "smooth") =>
     bottomRef.current?.scrollIntoView({ behavior });
 
-  const addMessages = (incoming: ClubMessage[], scroll = true) => {
+  const addMessages = useCallback((incoming: ClubMessage[], scroll = true) => {
     const fresh = incoming.filter((m) => !seenIds.current.has(m.id));
     if (fresh.length === 0) return;
     fresh.forEach((m) => seenIds.current.add(m.id));
     setMessages((prev) => [...prev, ...fresh]);
     if (scroll) setTimeout(() => scrollToBottom(), 50);
-  };
+  }, []);
 
-  // Mark messages seen as soon as the page opens
-  useEffect(() => { markChatSeen(); }, []);
+  // Mark seen immediately and on every new incoming message.
+  useEffect(() => {
+    markChatSeen();
+  }, []);
 
-  // Initial load
+  // Initial load.
   useEffect(() => {
     fetchChatMessages()
       .then((data) => {
@@ -84,61 +84,14 @@ export default function ClubChat() {
       .finally(() => setLoading(false));
   }, []);
 
-  // SSE subscription with polling fallback
+  // Register with the global SSE stream so incoming messages are routed here.
   useEffect(() => {
-    if (!token) return;
-
-    let es: EventSource | null = null;
-    let pollTimer: ReturnType<typeof setInterval> | null = null;
-
-    const startPolling = () => {
-      if (pollTimer) return;
-      pollTimer = setInterval(async () => {
-        try {
-          const data = await fetchChatMessages();
-          addMessages(data);
-        } catch {
-          // silent
-        }
-      }, POLL_INTERVAL);
-    };
-
-    const connect = () => {
-      const url = `${BASE_URL}/chat/stream?token=${encodeURIComponent(token)}`;
-      es = new EventSource(url);
-
-      es.onmessage = (e) => {
-        try {
-          const msg = JSON.parse(e.data) as ClubMessage;
-          addMessages([msg]);
-          markChatSeen();
-        } catch {
-          // ignore malformed
-        }
-      };
-
-      es.onopen = () => {
-        // SSE connected — stop polling if it was running
-        if (pollTimer) {
-          clearInterval(pollTimer);
-          pollTimer = null;
-        }
-      };
-
-      es.onerror = () => {
-        es?.close();
-        // Fall back to polling until EventSource reconnects on its own
-        startPolling();
-      };
-    };
-
-    connect();
-
-    return () => {
-      es?.close();
-      if (pollTimer) clearInterval(pollTimer);
-    };
-  }, [token]);
+    registerChatCallback((msg) => {
+      addMessages([msg]);
+      markChatSeen();
+    });
+    return () => unregisterChatCallback();
+  }, [registerChatCallback, unregisterChatCallback, addMessages, markChatSeen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -147,7 +100,6 @@ export default function ClubChat() {
     setSubmitting(true);
     try {
       const msg = await sendChatMessage(trimmed);
-      // Optimistically add own message (SSE will also deliver it, dedup handles it)
       addMessages([msg]);
       setBody("");
       textareaRef.current?.focus();
