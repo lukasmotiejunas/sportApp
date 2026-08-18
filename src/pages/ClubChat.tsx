@@ -47,6 +47,7 @@ export default function ClubChat() {
   const authUser = useStore((s) => s.authUser);
   const token = useStore((s) => s.token);
   const push = useStore((s) => s.pushToast);
+  const markChatSeen = useStore((s) => s.markChatSeen);
 
   const [messages, setMessages] = useState<ClubMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,6 +68,9 @@ export default function ClubChat() {
     setMessages((prev) => [...prev, ...fresh]);
     if (scroll) setTimeout(() => scrollToBottom(), 50);
   };
+
+  // Mark messages seen as soon as the page opens
+  useEffect(() => { markChatSeen(); }, []);
 
   // Initial load
   useEffect(() => {
@@ -107,6 +111,7 @@ export default function ClubChat() {
         try {
           const msg = JSON.parse(e.data) as ClubMessage;
           addMessages([msg]);
+          markChatSeen();
         } catch {
           // ignore malformed
         }

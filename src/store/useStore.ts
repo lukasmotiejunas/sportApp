@@ -10,6 +10,7 @@ import {
   setOnSubscriptionSuspended,
 } from '../api/client';
 import * as apiEndpoints from '../api/endpoints';
+// fetchChatMessages is used via apiEndpoints.fetchChatMessages in checkUnreadChat
 import { loginApi, fetchMe } from '../api/auth';
 import type {
   AuthUser,
@@ -115,6 +116,11 @@ type State = {
   addCoach: (coach: CoachStaff) => void;
   setCurrentCoachId: (id: string) => void;
 
+  // Chat unread indicator
+  hasUnreadChat: boolean;
+  markChatSeen: () => void;
+  checkUnreadChat: () => Promise<void>;
+
   // Membership plan actions (admin)
   addMembershipPlan: (input: {
     name: string;
@@ -180,6 +186,27 @@ export const useStore = create<State>()(
         },
         dismissToast: (id) => set({ toasts: get().toasts.filter((t) => t.id !== id) }),
 
+        hasUnreadChat: false,
+        markChatSeen: () => {
+          const userId = get().authUser?.id ?? '';
+          try { localStorage.setItem(`chat_seen:${userId}`, new Date().toISOString()); } catch { /* ignore */ }
+          set({ hasUnreadChat: false });
+        },
+        checkUnreadChat: async () => {
+          const userId = get().authUser?.id ?? '';
+          let seenAt: Date | null = null;
+          try {
+            const v = localStorage.getItem(`chat_seen:${userId}`);
+            if (v) seenAt = new Date(v);
+          } catch { /* ignore */ }
+          try {
+            const msgs = await apiEndpoints.fetchChatMessages();
+            if (!msgs.length) { set({ hasUnreadChat: false }); return; }
+            const lastTime = new Date(msgs[msgs.length - 1].createdAt);
+            set({ hasUnreadChat: !seenAt || lastTime > seenAt });
+          } catch { /* ignore */ }
+        },
+
         loadInitialData: async (roleOverride) => {
           // Super-admin has no club context; every tenant-scoped endpoint
           // requires a clubId. The super-admin dashboard fetches its own data.
@@ -219,6 +246,7 @@ export const useStore = create<State>()(
               leaderboardResults,
               loaded: true,
             });
+            void get().checkUnreadChat();
           } catch (err) {
             const message =
               err instanceof ApiError

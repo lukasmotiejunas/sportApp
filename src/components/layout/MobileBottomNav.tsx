@@ -1,10 +1,12 @@
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
-import { CalendarCheck2, CreditCard, Home, MessageCircle, Trophy, User } from 'lucide-react';
+import { CalendarCheck2, Home, MessageCircle, Trophy, User } from 'lucide-react';
+import { useStore } from '../../store/useStore';
 
 export function MobileBottomNav() {
   const { t } = useTranslation();
+  const hasUnreadChat = useStore((s) => s.hasUnreadChat);
 
   const items = [
     { to: '/member', label: t('nav.home'), icon: Home, end: true, tourId: 'nav-home' },
@@ -39,11 +41,14 @@ export function MobileBottomNav() {
               <>
                 <span
                   className={clsx(
-                    'grid h-8 w-8 place-items-center rounded-xl transition-all',
+                    'relative grid h-8 w-8 place-items-center rounded-xl transition-all',
                     isActive && 'bg-ink-900/5 dark:bg-lime-400/15',
                   )}
                 >
                   <it.icon className="h-5 w-5" />
+                  {it.to.endsWith('/chat') && hasUnreadChat && (
+                    <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-lime-500" />
+                  )}
                 </span>
                 {it.label}
               </>

@@ -29,6 +29,7 @@ export function AdminLayout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const clubName = useStore((s) => s.authUser?.clubName ?? "");
   const clubLogo = useStore((s) => s.authUser?.clubLogo ?? null);
+  const hasUnreadChat = useStore((s) => s.hasUnreadChat);
   const logoSrc = clubLogo || "/lumo-logo.png";
 
   const items = [
@@ -38,7 +39,7 @@ export function AdminLayout() {
     { to: "/admin/training-templates", label: t("nav.training_plans"), icon: ClipboardList, end: false },
     { to: "/admin/leaderboards", label: t("nav.results"), icon: Trophy, end: false },
     { to: "/admin/payments", label: t("nav.payments"), icon: Wallet, end: false },
-    { to: "/admin/chat", label: t("nav.chat"), icon: MessageCircle, end: false },
+    { to: "/admin/chat", label: t("nav.chat"), icon: MessageCircle, end: false, dot: hasUnreadChat },
     { to: "/admin/plans", label: t("nav.membership_plans"), icon: CreditCard, end: false },
     { to: "/admin/subscription", label: t("nav.subscription"), icon: Receipt, end: false },
     { to: "/admin/profile", label: t("nav.profile"), icon: UserCog, end: false },
@@ -120,7 +121,7 @@ function SidebarNav({
   items,
   onNavigate,
 }: {
-  items: { to: string; label: string; icon: React.ComponentType<{ className?: string }>; end?: boolean }[];
+  items: { to: string; label: string; icon: React.ComponentType<{ className?: string }>; end?: boolean; dot?: boolean }[];
   onNavigate?: () => void;
 }) {
   return (
@@ -140,7 +141,12 @@ function SidebarNav({
             )
           }
         >
-          <it.icon className="h-4 w-4" />
+          <span className="relative">
+            <it.icon className="h-4 w-4" />
+            {it.dot && (
+              <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-lime-500" />
+            )}
+          </span>
           {it.label}
         </NavLink>
       ))}

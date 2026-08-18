@@ -2,6 +2,21 @@ import { useEffect } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useStore } from './store/useStore';
 
+function ChatUnreadWatcher() {
+  const location = useLocation();
+  const checkUnreadChat = useStore((s) => s.checkUnreadChat);
+  const loaded = useStore((s) => s.loaded);
+  const onChat = location.pathname.endsWith('/chat');
+
+  useEffect(() => {
+    if (!loaded || onChat) return;
+    const timer = setInterval(() => void checkUnreadChat(), 30_000);
+    return () => clearInterval(timer);
+  }, [loaded, onChat, checkUnreadChat]);
+
+  return null;
+}
+
 import { MemberLayout } from './components/layout/MemberLayout';
 import { CoachLayout } from './components/layout/CoachLayout';
 import { AdminLayout } from './components/layout/AdminLayout';
@@ -151,6 +166,7 @@ export default function App() {
     <>
       <ScrollToTop />
       <Analytics />
+      <ChatUnreadWatcher />
       <Routes>
         <Route path="/" element={<Navigate to={home} replace />} />
         <Route
