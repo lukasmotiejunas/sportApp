@@ -106,6 +106,7 @@ model Club {
   membershipPlans      MembershipPlan[]
   leaderboardCategories LeaderboardCategory[]
   trainingComments     TrainingComment[]
+  clubMessages         ClubMessage[]
   subscription         ClubSubscription?
 }
 
@@ -368,6 +369,19 @@ model TrainingComment {
 
   @@index([trainingSessionId])
   @@index([clubId])
+}
+
+model ClubMessage {
+  id         String            @id @default(cuid())
+  clubId     String
+  club       Club              @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  authorId   String
+  authorType CommentAuthorType
+  authorName String
+  body       String
+  createdAt  DateTime          @default(now())
+
+  @@index([clubId, createdAt])
 }
 
 // Platform-level meeting bookings made via the public /help page.

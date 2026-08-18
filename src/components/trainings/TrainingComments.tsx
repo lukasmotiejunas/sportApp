@@ -43,7 +43,9 @@ export function TrainingComments({ trainingId }: { trainingId: string }) {
   useEffect(() => {
     fetchTrainingComments(trainingId)
       .then(setComments)
-      .catch(() => push({ kind: "error", message: "Nepavyko įkelti komentarų." }))
+      .catch(() =>
+        push({ kind: "error", message: "Nepavyko įkelti komentarų." }),
+      )
       .finally(() => setLoading(false));
   }, [trainingId]);
 
@@ -75,24 +77,33 @@ export function TrainingComments({ trainingId }: { trainingId: string }) {
 
   const canDelete = (comment: TrainingComment) => {
     if (!authUser) return false;
-    if (authUser.role === "admin" || authUser.role === "coach" || authUser.role === "super_admin") return true;
+    if (
+      authUser.role === "admin" ||
+      authUser.role === "coach" ||
+      authUser.role === "super_admin"
+    )
+      return true;
     return comment.authorId === authUser.id;
   };
 
   return (
-    <section className="surface p-4 md:col-span-2">
+    <section className="surface p-4 md:col-span-2 mt-4">
       <h3 className="mb-4 flex items-center gap-2 font-display text-base font-bold">
         <MessageSquare className="h-4 w-4 text-lime-600" />
         Komentarai
         {comments.length > 0 && (
-          <span className="text-xs font-medium text-ink-500">· {comments.length}</span>
+          <span className="text-xs font-medium text-ink-500">
+            · {comments.length}
+          </span>
         )}
       </h3>
 
       {loading ? (
         <p className="text-sm text-ink-500">Kraunama…</p>
       ) : comments.length === 0 ? (
-        <p className="mb-4 text-sm text-ink-500">Komentarų dar nėra. Būkite pirmas!</p>
+        <p className="mb-4 text-sm text-ink-500">
+          Komentarų dar nėra. Būkite pirmas!
+        </p>
       ) : (
         <ul className="mb-4 space-y-3">
           {comments.map((c) => (
@@ -106,7 +117,9 @@ export function TrainingComments({ trainingId }: { trainingId: string }) {
                   >
                     {roleLabel[c.authorType]}
                   </span>
-                  <span className="text-xs text-ink-400">{formatTime(c.createdAt)}</span>
+                  <span className="text-xs text-ink-400">
+                    {formatTime(c.createdAt)}
+                  </span>
                   {canDelete(c) && (
                     <button
                       type="button"
@@ -118,7 +131,9 @@ export function TrainingComments({ trainingId }: { trainingId: string }) {
                     </button>
                   )}
                 </div>
-                <p className="mt-1 text-sm text-ink-700 dark:text-ink-200">{c.body}</p>
+                <p className="mt-1 text-sm text-ink-700 dark:text-ink-200">
+                  {c.body}
+                </p>
               </div>
             </li>
           ))}
@@ -131,7 +146,8 @@ export function TrainingComments({ trainingId }: { trainingId: string }) {
           value={body}
           onChange={(e) => setBody(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSubmit(e as any);
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey))
+              handleSubmit(e as any);
           }}
           placeholder="Parašykite komentarą…"
           rows={2}

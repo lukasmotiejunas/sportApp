@@ -5,6 +5,7 @@ import {
   BarChart3,
   CalendarDays,
   ClipboardList,
+  MessageCircle,
   Trophy,
   Users2,
   UserCog,
@@ -32,6 +33,7 @@ export function CoachLayout() {
     { to: "/coach/schedule", label: t("nav.my_calendar"), icon: CalendarDays },
     { to: "/coach/members", label: t("nav.members"), icon: Users2 },
     { to: "/coach/leaderboards", label: t("nav.results"), icon: Trophy },
+    { to: "/coach/chat", label: t("nav.chat"), icon: MessageCircle },
     { to: "/coach/profile", label: t("nav.profile"), icon: UserCog },
     { to: "/coach/help", label: t("nav.help"), icon: HelpCircle },
   ];

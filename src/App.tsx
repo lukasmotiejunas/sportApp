@@ -53,6 +53,7 @@ import SuperAdminFinances from './pages/superadmin/SuperAdminFinances';
 import SuperAdminMeetings from './pages/superadmin/SuperAdminMeetings';
 import Help from './pages/Help';
 import PublicHelp from './pages/PublicHelp';
+import ClubChat from './pages/ClubChat';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -179,6 +180,7 @@ export default function App() {
           <Route path="leaderboards" element={<MemberLeaderboards />} />
           <Route path="leaderboards/:id" element={<MemberLeaderboardDetail />} />
           <Route path="payments" element={<MemberPayments />} />
+          <Route path="chat" element={<ClubChat />} />
           <Route path="profile" element={<MemberProfile />} />
           <Route path="help" element={<Help />} />
         </Route>
@@ -203,6 +205,7 @@ export default function App() {
           <Route path="leaderboards" element={<CoachLeaderboards />} />
           <Route path="leaderboards/:id" element={<CoachLeaderboardDetail />} />
           <Route path="schedule" element={<CoachSchedule />} />
+          <Route path="chat" element={<ClubChat />} />
           <Route path="profile" element={<CoachProfile />} />
           <Route path="help" element={<Help />} />
         </Route>
@@ -229,6 +232,7 @@ export default function App() {
           />
           <Route path="leaderboards" element={<CoachLeaderboards />} />
           <Route path="leaderboards/:id" element={<CoachLeaderboardDetail />} />
+          <Route path="chat" element={<ClubChat />} />
           <Route path="plans" element={<AdminPlans />} />
           <Route path="subscription" element={<AdminSubscription />} />
           <Route path="profile" element={<AdminProfile />} />
