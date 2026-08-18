@@ -25,6 +25,7 @@ import { formatDateLong, relativeDay } from "../../utils/dates";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { Avatar } from "../../components/ui/Avatar";
 import type { TrainingPlan } from "../../types";
+import { TrainingComments } from "../../components/trainings/TrainingComments";
 
 export default function MemberTrainingDetail() {
   const { t } = useTranslation();
@@ -390,6 +391,8 @@ export default function MemberTrainingDetail() {
             </ul>
           )}
         </section>
+
+        <TrainingComments trainingId={id} />
 
         {waitlisted.length > 0 && (
           <section className="surface p-4 md:col-span-2">

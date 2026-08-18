@@ -6,6 +6,7 @@ import type {
   LeaderboardResult,
   Member,
   MembershipPlan,
+  TrainingComment,
   TrainingPlan,
   TrainingSession,
   TrainingTemplate,
@@ -171,6 +172,14 @@ export const registerForTrainingApi = (trainingId: string, memberId: string) =>
   api.post<TrainingSession>(`/trainings/${trainingId}/registrations`, { memberId });
 export const cancelRegistrationApi = (trainingId: string, memberId: string) =>
   api.del<TrainingSession>(`/trainings/${trainingId}/registrations/${memberId}`);
+
+// --- Training comments ---
+export const fetchTrainingComments = (trainingId: string) =>
+  api.get<TrainingComment[]>(`/trainings/${trainingId}/comments`);
+export const createTrainingCommentApi = (trainingId: string, body: string) =>
+  api.post<TrainingComment>(`/trainings/${trainingId}/comments`, { body });
+export const deleteTrainingCommentApi = (trainingId: string, commentId: string) =>
+  api.del<void>(`/trainings/${trainingId}/comments/${commentId}`);
 
 // --- Training plans ---
 export const upsertPlanApi = (plan: TrainingPlan) =>
