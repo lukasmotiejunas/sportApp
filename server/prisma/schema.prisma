@@ -372,14 +372,16 @@ model TrainingComment {
 }
 
 model ClubMessage {
-  id         String            @id @default(cuid())
-  clubId     String
-  club       Club              @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  authorId   String
-  authorType CommentAuthorType
-  authorName String
-  body       String
-  createdAt  DateTime          @default(now())
+  id            String            @id @default(cuid())
+  clubId        String
+  club          Club              @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  authorId      String
+  authorType    CommentAuthorType
+  authorName    String
+  authorPhoto   String?
+  authorColor   String?
+  body          String
+  createdAt     DateTime          @default(now())
 
   @@index([clubId, createdAt])
 }

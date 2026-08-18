@@ -347,6 +347,8 @@ export type ClubMessage = {
   authorId: string;
   authorType: 'member' | 'coach' | 'admin';
   authorName: string;
+  authorPhoto: string | null;
+  authorColor: string | null;
   body: string;
   createdAt: string;
 };

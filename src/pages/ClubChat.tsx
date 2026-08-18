@@ -153,7 +153,7 @@ export default function ClubChat() {
                     key={m.id}
                     className={`flex gap-3 ${isMe ? "flex-row-reverse" : ""}`}
                   >
-                    <div className="shrink-0"><Avatar name={m.authorName} size="sm" /></div>
+                    <div className="shrink-0"><Avatar name={m.authorName} size="sm" photoUrl={m.authorPhoto ?? undefined} color={m.authorColor ?? undefined} /></div>
                     <div
                       className={`group flex max-w-[75%] flex-col gap-1 ${isMe ? "items-end" : "items-start"}`}
                     >

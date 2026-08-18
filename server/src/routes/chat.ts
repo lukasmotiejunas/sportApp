@@ -42,9 +42,11 @@ chatRouter.post(
       user?.name ?? user?.member?.name ?? user?.coach?.name ?? 'Naudotojas';
     const authorType =
       role === 'member' ? 'member' : role === 'coach' ? 'coach' : 'admin';
+    const authorPhoto = user?.member?.photoUrl ?? user?.coach?.photoUrl ?? null;
+    const authorColor = user?.member?.avatarColor ?? user?.coach?.avatarColor ?? null;
 
     const msg = await prisma.clubMessage.create({
-      data: { clubId, authorId: userId, authorType, authorName, body },
+      data: { clubId, authorId: userId, authorType, authorName, authorPhoto, authorColor, body },
     });
     res.status(201).json({ ...msg, createdAt: msg.createdAt.toISOString() });
   }),
