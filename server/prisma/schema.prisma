@@ -72,6 +72,12 @@ enum PlanType {
   credits
 }
 
+enum CommentAuthorType {
+  member
+  coach
+  admin
+}
+
 model Club {
   id                   String                @id @default(cuid())
   name                 String
@@ -99,6 +105,7 @@ model Club {
   trainingTemplates    TrainingTemplate[]
   membershipPlans      MembershipPlan[]
   leaderboardCategories LeaderboardCategory[]
+  trainingComments     TrainingComment[]
   subscription         ClubSubscription?
 }
 
@@ -263,6 +270,7 @@ model TrainingSession {
   status               TrainingStatus @default(open)
   registrations        TrainingRegistration[]
   trainingPlans        TrainingPlan[]
+  comments             TrainingComment[]
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 
@@ -343,6 +351,23 @@ model LeaderboardResult {
   value      Decimal  @db.Decimal(12, 3)
   date       DateTime @db.Date
   note       String?
+}
+
+model TrainingComment {
+  id                String            @id @default(cuid())
+  clubId            String
+  club              Club              @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  trainingSessionId String
+  session           TrainingSession   @relation(fields: [trainingSessionId], references: [id], onDelete: Cascade)
+  authorId          String
+  authorType        CommentAuthorType
+  authorName        String
+  body              String
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@index([trainingSessionId])
+  @@index([clubId])
 }
 
 // Platform-level meeting bookings made via the public /help page.

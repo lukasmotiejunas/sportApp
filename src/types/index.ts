@@ -342,6 +342,16 @@ export type Payment = {
   method?: string;
 };
 
+export type TrainingComment = {
+  id: string;
+  trainingSessionId: string;
+  authorId: string;
+  authorType: 'member' | 'coach' | 'admin';
+  authorName: string;
+  body: string;
+  createdAt: string;
+};
+
 export type ToastKind = 'success' | 'error' | 'info' | 'warning';
 
 export type ToastRecord = {

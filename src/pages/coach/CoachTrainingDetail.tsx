@@ -19,6 +19,7 @@ import { Avatar } from "../../components/ui/Avatar";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { formatDateLong } from "../../utils/dates";
 import { useTrainingsBase } from "../../utils/roleContext";
+import { TrainingComments } from "../../components/trainings/TrainingComments";
 
 const paymentTone = {
   paid: "success",
@@ -304,6 +305,8 @@ export default function CoachTrainingDetail() {
           </ul>
         )}
       </section>
+
+      <TrainingComments trainingId={id} />
 
       <ConfirmDialog
         open={toDelete}

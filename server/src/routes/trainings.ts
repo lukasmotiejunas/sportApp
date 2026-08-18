@@ -211,6 +211,87 @@ trainingsRouter.delete(
   }),
 );
 
+// --- Comments ---
+
+const commentBodySchema = z.object({ body: z.string().min(1).max(2000) });
+
+trainingsRouter.get(
+  '/:id/comments',
+  asyncHandler(async (req, res) => {
+    const clubId = requireClubId(req);
+    const training = await prisma.trainingSession.findFirst({
+      where: { id: req.params.id, clubId },
+    });
+    if (!training) throw new HttpError(404, 'Treniruotė nerasta');
+    const comments = await prisma.trainingComment.findMany({
+      where: { trainingSessionId: req.params.id, clubId },
+      orderBy: { createdAt: 'asc' },
+    });
+    res.json(
+      comments.map((c) => ({
+        ...c,
+        createdAt: c.createdAt.toISOString(),
+        updatedAt: c.updatedAt.toISOString(),
+      })),
+    );
+  }),
+);
+
+trainingsRouter.post(
+  '/:id/comments',
+  asyncHandler(async (req, res) => {
+    const clubId = requireClubId(req);
+    const training = await prisma.trainingSession.findFirst({
+      where: { id: req.params.id, clubId },
+    });
+    if (!training) throw new HttpError(404, 'Treniruotė nerasta');
+    const { body } = commentBodySchema.parse(req.body);
+
+    const userId = req.user!.userId;
+    const role = req.user!.role;
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { member: true, coach: true },
+    });
+    const authorName =
+      user?.name ?? user?.member?.name ?? user?.coach?.name ?? 'Naudotojas';
+    const authorType =
+      role === 'member' ? 'member' : role === 'coach' ? 'coach' : 'admin';
+
+    const comment = await prisma.trainingComment.create({
+      data: { clubId, trainingSessionId: req.params.id, authorId: userId, authorType, authorName, body },
+    });
+    res.status(201).json({
+      ...comment,
+      createdAt: comment.createdAt.toISOString(),
+      updatedAt: comment.updatedAt.toISOString(),
+    });
+  }),
+);
+
+trainingsRouter.delete(
+  '/:id/comments/:commentId',
+  asyncHandler(async (req, res) => {
+    const clubId = requireClubId(req);
+    const comment = await prisma.trainingComment.findFirst({
+      where: { id: req.params.commentId, trainingSessionId: req.params.id, clubId },
+    });
+    if (!comment) throw new HttpError(404, 'Komentaras nerastas');
+
+    const role = req.user!.role;
+    const userId = req.user!.userId;
+    const isOwner = comment.authorId === userId;
+    const isAdminOrCoach = role === 'admin' || role === 'coach' || role === 'super_admin';
+    if (!isOwner && !isAdminOrCoach) {
+      throw new HttpError(403, 'Neturite teisių ištrinti šį komentarą.');
+    }
+
+    await prisma.trainingComment.delete({ where: { id: req.params.commentId } });
+    res.status(204).end();
+  }),
+);
+
 // --- Registrations (business rules moved from the FE store) ---
 
 const registerSchema = z.object({ memberId: z.string() });
