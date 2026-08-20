@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { CalendarPlus, ClipboardList, Save } from 'lucide-react';
+import { BookOpen, CalendarPlus, ClipboardList, Save } from 'lucide-react';
 import Joyride, { STATUS, type CallBackProps, type Step } from 'react-joyride';
 import { useTranslation } from 'react-i18next';
 import { PageTitle } from '../../components/layout/PageTitle';
@@ -24,7 +24,6 @@ export default function CoachTrainingForm({ mode }: Props) {
   const update = useStore((s) => s.updateTraining);
   const push = useStore((s) => s.pushToast);
 
-  const authUserId = useStore((s) => s.authUser?.id ?? '');
   const currentCoachId = useStore((s) => s.currentCoachId);
   const setCurrentCoachId = useStore((s) => s.setCurrentCoachId);
   const addCoach = useStore((s) => s.addCoach);
@@ -120,7 +119,6 @@ export default function CoachTrainingForm({ mode }: Props) {
   };
 
   const tourEnabled = mode === 'create';
-  const tourStorageKey = `trainings_new_tour_seen:${authUserId || 'anon'}`;
   const [runTour, setRunTour] = useState(false);
   const tourSteps: Step[] = [
     {
@@ -181,27 +179,10 @@ export default function CoachTrainingForm({ mode }: Props) {
     },
   ];
 
-  useEffect(() => {
-    if (!tourEnabled) return;
-    try {
-      if (!localStorage.getItem(tourStorageKey)) {
-        setRunTour(true);
-      }
-    } catch {
-      // localStorage blocked — skip silently.
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tourEnabled]);
-
   const handleTourCallback = (data: CallBackProps) => {
     const done: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
     if (done.includes(data.status)) {
       setRunTour(false);
-      try {
-        localStorage.setItem(tourStorageKey, '1');
-      } catch {
-        // ignore
-      }
     }
   };
 
@@ -244,6 +225,18 @@ export default function CoachTrainingForm({ mode }: Props) {
           title={mode === 'create' ? t('coach_training_form.title_create') : t('coach_training_form.title_edit')}
           eyebrow={eyebrow}
           backTo={mode === 'create' ? base : `${base}/${existing?.id}`}
+          action={
+            tourEnabled ? (
+              <button
+                type="button"
+                className="btn-ghost h-9 px-3 text-xs"
+                onClick={() => setRunTour(true)}
+              >
+                <BookOpen className="h-4 w-4" />
+                Interaktyvus vadovas
+              </button>
+            ) : undefined
+          }
         />
       </div>
 

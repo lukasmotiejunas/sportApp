@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
-import { CalendarCheck2, Home, MessageCircle, Trophy, User } from 'lucide-react';
+import { CalendarCheck2, Home, MessageCircle, Trophy, User, Wallet } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 
 export function MobileBottomNav() {
@@ -13,6 +13,7 @@ export function MobileBottomNav() {
     { to: '/member/trainings', label: t('nav.trainings'), icon: CalendarCheck2, tourId: 'nav-trainings' },
     { to: '/member/chat', label: t('nav.chat'), icon: MessageCircle, tourId: 'nav-chat' },
     { to: '/member/leaderboards', label: t('nav.results'), icon: Trophy, tourId: 'nav-leaderboards' },
+    { to: '/member/payments', label: t('nav.payments'), icon: Wallet, tourId: 'nav-payments' },
     { to: '/member/profile', label: t('nav.profile'), icon: User, tourId: 'nav-profile' },
   ];
 
@@ -21,7 +22,7 @@ export function MobileBottomNav() {
       className="fixed inset-x-0 bottom-0 z-30 border-t border-ink-100 bg-white/95 backdrop-blur dark:border-ink-800 dark:bg-ink-950/95"
       aria-label={t('nav.main')}
     >
-      <div className="mx-auto grid max-w-4xl grid-cols-5 safe-bottom">
+      <div className="mx-auto grid max-w-4xl grid-cols-6 safe-bottom">
         {items.map((it) => (
           <NavLink
             key={it.to}

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
+  BookOpen,
   Check,
   Clock,
   CreditCard,
@@ -23,7 +24,6 @@ export default function AdminPlans() {
   const addMembershipPlan = useStore((s) => s.addMembershipPlan);
   const removeMembershipPlan = useStore((s) => s.removeMembershipPlan);
   const push = useStore((s) => s.pushToast);
-  const authUserId = useStore((s) => s.authUser?.id ?? "");
   const [syncing, setSyncing] = useState(false);
   const [runTour, setRunTour] = useState(false);
 
@@ -130,7 +130,6 @@ export default function AdminPlans() {
 
   const priceLabel = planType === "credits" ? "Paketo kaina" : "Kaina / mėn.";
 
-  const tourStorageKey = `admin_plans_tour_seen:${authUserId || "anon"}`;
   const tourSteps: Step[] = [
     {
       target: '[data-tour="page-title"]',
@@ -167,26 +166,10 @@ export default function AdminPlans() {
     },
   ];
 
-  useEffect(() => {
-    try {
-      if (!localStorage.getItem(tourStorageKey)) {
-        setRunTour(true);
-      }
-    } catch {
-      // localStorage blocked — skip silently.
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const handleTourCallback = (data: CallBackProps) => {
     const done: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
     if (done.includes(data.status)) {
       setRunTour(false);
-      try {
-        localStorage.setItem(tourStorageKey, "1");
-      } catch {
-        // ignore
-      }
     }
   };
 
@@ -219,6 +202,16 @@ export default function AdminPlans() {
           eyebrow="Administratorius"
           title="Narystės planai"
           description="Kurkite mėnesinius planus arba treniruočių paketus (nuperkate kartą, gaunate iš anksto nustatytą kiekį treniruočių)."
+          action={
+            <button
+              type="button"
+              className="btn-ghost h-9 px-3 text-xs"
+              onClick={() => setRunTour(true)}
+            >
+              <BookOpen className="h-4 w-4" />
+              Interaktyvus vadovas
+            </button>
+          }
         />
       </div>
 

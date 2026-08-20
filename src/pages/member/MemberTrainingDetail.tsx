@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
+  BookOpen,
   ClipboardList,
   Clock,
   Info,
@@ -42,20 +43,6 @@ export default function MemberTrainingDetail() {
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [confirmLateRegister, setConfirmLateRegister] = useState(false);
   const [runTour, setRunTour] = useState(false);
-  const authUserId = useStore((s) => s.authUser?.id ?? "");
-  const tourStorageKey = `member_training_detail_tour_seen:${authUserId || "anon"}`;
-
-  useEffect(() => {
-    if (!training) return;
-    try {
-      if (!localStorage.getItem(tourStorageKey)) {
-        setRunTour(true);
-      }
-    } catch {
-      // localStorage blocked — skip silently.
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [Boolean(training)]);
 
   const plan = useMemo(
     () =>
@@ -249,11 +236,6 @@ export default function MemberTrainingDetail() {
     const done: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
     if (done.includes(data.status)) {
       setRunTour(false);
-      try {
-        localStorage.setItem(tourStorageKey, "1");
-      } catch {
-        // ignore
-      }
     }
   };
 
@@ -286,6 +268,16 @@ export default function MemberTrainingDetail() {
           title={training.title}
           eyebrow={`${relativeDay(training.date)} · ${training.startTime}`}
           backTo="/member/trainings"
+          action={
+            <button
+              type="button"
+              className="btn-ghost h-9 px-3 text-xs"
+              onClick={() => setRunTour(true)}
+            >
+              <BookOpen className="h-4 w-4" />
+              Interaktyvus vadovas
+            </button>
+          }
         />
       </div>
 

@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { CalendarX } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { BookOpen, CalendarX } from 'lucide-react';
 import Joyride, {
   STATUS,
   type CallBackProps,
@@ -18,7 +18,6 @@ export default function MemberTrainings() {
   const trainings = useStore((s) => s.trainingSessions);
   const coaches = useStore((s) => s.coaches);
   const members = useStore((s) => s.members);
-  const authUserId = useStore((s) => s.authUser?.id ?? '');
 
   const today = todayIso();
   const [selectedDate, setSelectedDate] = useState<string>(today);
@@ -30,7 +29,6 @@ export default function MemberTrainings() {
     .filter((t) => t.date === selectedDate)
     .sort((a, b) => a.startTime.localeCompare(b.startTime));
 
-  const tourStorageKey = `member_trainings_tour_seen:${authUserId || 'anon'}`;
   const tourSteps: Step[] = [
     {
       target: '[data-tour="page-title"]',
@@ -52,26 +50,10 @@ export default function MemberTrainings() {
     },
   ];
 
-  useEffect(() => {
-    try {
-      if (!localStorage.getItem(tourStorageKey)) {
-        setRunTour(true);
-      }
-    } catch {
-      // localStorage blocked — skip silently.
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const handleTourCallback = (data: CallBackProps) => {
     const done: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
     if (done.includes(data.status)) {
       setRunTour(false);
-      try {
-        localStorage.setItem(tourStorageKey, '1');
-      } catch {
-        // ignore
-      }
     }
   };
 
@@ -104,6 +86,16 @@ export default function MemberTrainings() {
           title={t('member_trainings.title')}
           description={formatDateLong(selectedDate)}
           eyebrow={t('coach_schedule.title')}
+          action={
+            <button
+              type="button"
+              className="btn-ghost h-9 px-3 text-xs"
+              onClick={() => setRunTour(true)}
+            >
+              <BookOpen className="h-4 w-4" />
+              Interaktyvus vadovas
+            </button>
+          }
         />
       </div>
 

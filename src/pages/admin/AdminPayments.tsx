@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
-import { CircleDollarSign, ExternalLink, Search } from "lucide-react";
+import { BookOpen, CircleDollarSign, ExternalLink, Search } from "lucide-react";
 import Joyride, {
   STATUS,
   type CallBackProps,
@@ -48,7 +48,6 @@ const invoiceLabel: Record<string, string> = {
 
 export default function AdminPayments() {
   const members = useStore((s) => s.members);
-  const authUserId = useStore((s) => s.authUser?.id ?? "");
   const [data, setData] = useState<ClubPaymentsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -123,7 +122,6 @@ export default function AdminPayments() {
 
   const notConnected = !loading && data && !data.connected;
 
-  const tourStorageKey = `admin_payments_tour_seen:${authUserId || "anon"}`;
   const tourSteps: Step[] = [
     {
       target: '[data-tour="page-title"]',
@@ -171,27 +169,10 @@ export default function AdminPayments() {
     },
   ];
 
-  useEffect(() => {
-    if (loading) return;
-    try {
-      if (!localStorage.getItem(tourStorageKey)) {
-        setRunTour(true);
-      }
-    } catch {
-      // localStorage blocked — skip silently.
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading]);
-
   const handleTourCallback = (data: CallBackProps) => {
     const done: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
     if (done.includes(data.status)) {
       setRunTour(false);
-      try {
-        localStorage.setItem(tourStorageKey, "1");
-      } catch {
-        // ignore
-      }
     }
   };
 
@@ -224,6 +205,16 @@ export default function AdminPayments() {
           eyebrow="Administratorius"
           title="Mokėjimai"
           description="Sumos atskaičius Stripe ir platformos mokesčius — tiek klubas realiai gauna."
+          action={
+            <button
+              type="button"
+              className="btn-ghost h-9 px-3 text-xs"
+              onClick={() => setRunTour(true)}
+            >
+              <BookOpen className="h-4 w-4" />
+              Interaktyvus vadovas
+            </button>
+          }
         />
       </div>
 

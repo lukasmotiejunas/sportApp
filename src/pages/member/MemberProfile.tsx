@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Bell,
+  BookOpen,
   Calendar,
   Camera,
   KeyRound,
@@ -36,7 +37,6 @@ export default function MemberProfile() {
   const logout = useStore((s) => s.logout);
   const push = useStore((s) => s.pushToast);
   const navigate = useNavigate();
-  const authUserId = useStore((s) => s.authUser?.id ?? "");
   const [confirmLogout, setConfirmLogout] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -113,7 +113,6 @@ export default function MemberProfile() {
     }
   };
 
-  const tourStorageKey = `member_profile_tour_seen:${authUserId || "anon"}`;
   const tourSteps: Step[] = [
     {
       target: '[data-tour="page-title"]',
@@ -151,26 +150,10 @@ export default function MemberProfile() {
     },
   ];
 
-  useEffect(() => {
-    try {
-      if (!localStorage.getItem(tourStorageKey)) {
-        setRunTour(true);
-      }
-    } catch {
-      // localStorage blocked — skip silently.
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const handleTourCallback = (data: CallBackProps) => {
     const done: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
     if (done.includes(data.status)) {
       setRunTour(false);
-      try {
-        localStorage.setItem(tourStorageKey, "1");
-      } catch {
-        // ignore
-      }
     }
   };
 
@@ -203,6 +186,16 @@ export default function MemberProfile() {
           title="Profilis"
           description="Jūsų duomenys ir nustatymai."
           eyebrow="Narys"
+          action={
+            <button
+              type="button"
+              className="btn-ghost h-9 px-3 text-xs"
+              onClick={() => setRunTour(true)}
+            >
+              <BookOpen className="h-4 w-4" />
+              Interaktyvus vadovas
+            </button>
+          }
         />
       </div>
 
