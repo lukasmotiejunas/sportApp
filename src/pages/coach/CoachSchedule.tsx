@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import clsx from "clsx";
 import {
   ArrowRight,
+  BookOpen,
   CalendarDays,
   ChevronLeft,
   ChevronRight,
@@ -27,7 +28,6 @@ export default function CoachSchedule() {
   const { t } = useTranslation();
   const coach = useCurrentCoach();
   const trainings = useStore((s) => s.trainingSessions);
-  const authUserId = useStore((s) => s.authUser?.id ?? "");
 
   const today = todayIso();
   const now = new Date(today + "T00:00:00");
@@ -115,7 +115,6 @@ export default function CoachSchedule() {
     ? sessionsByDate.get(selectedDate) ?? []
     : [];
 
-  const tourStorageKey = `coach_schedule_tour_seen:${authUserId || "anon"}`;
   const tourSteps: Step[] = [
     {
       target: '[data-tour="page-title"]',
@@ -148,26 +147,10 @@ export default function CoachSchedule() {
     },
   ];
 
-  useEffect(() => {
-    try {
-      if (!localStorage.getItem(tourStorageKey)) {
-        setRunTour(true);
-      }
-    } catch {
-      // localStorage blocked — skip silently.
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const handleTourCallback = (data: CallBackProps) => {
     const done: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
     if (done.includes(data.status)) {
       setRunTour(false);
-      try {
-        localStorage.setItem(tourStorageKey, "1");
-      } catch {
-        // ignore
-      }
     }
   };
 
@@ -200,6 +183,16 @@ export default function CoachSchedule() {
           eyebrow={t("coach_schedule.eyebrow")}
           title={t("coach_schedule.title")}
           description={t("coach_schedule.description")}
+          action={
+            <button
+              type="button"
+              className="btn-ghost h-9 px-3 text-xs"
+              onClick={() => setRunTour(true)}
+            >
+              <BookOpen className="h-4 w-4" />
+              Interaktyvus vadovas
+            </button>
+          }
         />
       </div>
 

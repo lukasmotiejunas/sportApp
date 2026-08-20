@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import clsx from "clsx";
 import {
   ArrowRight,
+  BookOpen,
   CalendarCheck2,
   CalendarDays,
   Check,
@@ -35,7 +36,6 @@ export default function MemberHome() {
   const coaches = useStore((s) => s.coaches);
   const membershipPlans = useStore((s) => s.membershipPlans);
   const refreshMyBilling = useStore((s) => s.refreshMyBilling);
-  const authUserId = useStore((s) => s.authUser?.id ?? "");
   const plan = membershipPlans.find((p) => p.id === member.membershipPlanId);
   const [runTour, setRunTour] = useState(false);
 
@@ -89,7 +89,6 @@ export default function MemberHome() {
   const showPaymentBanner =
     member.paymentStatus !== "paid" || daysUntil(member.paymentDueDate) <= 7;
 
-  const tourStorageKey = `member_home_tour_seen:${authUserId || "anon"}`;
   const tourSteps: Step[] = [
     {
       target: '[data-tour="hero"]',
@@ -158,26 +157,10 @@ export default function MemberHome() {
     },
   ];
 
-  useEffect(() => {
-    try {
-      if (!localStorage.getItem(tourStorageKey)) {
-        setRunTour(true);
-      }
-    } catch {
-      // localStorage blocked — skip silently.
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const handleTourCallback = (data: CallBackProps) => {
     const done: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
     if (done.includes(data.status)) {
       setRunTour(false);
-      try {
-        localStorage.setItem(tourStorageKey, "1");
-      } catch {
-        // ignore
-      }
     }
   };
 
@@ -205,6 +188,16 @@ export default function MemberHome() {
           },
         }}
       />
+      <div className="flex justify-end">
+        <button
+          type="button"
+          className="btn-ghost h-9 px-3 text-xs"
+          onClick={() => setRunTour(true)}
+        >
+          <BookOpen className="h-4 w-4" />
+          Interaktyvus vadovas
+        </button>
+      </div>
       {/* Hero */}
       <section
         className="hero-gradient rounded-3xl p-5 text-white shadow-pop"

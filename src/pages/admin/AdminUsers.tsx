@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Copy, ExternalLink, LinkIcon, RefreshCw, Trash2, UserPlus } from "lucide-react";
+import { BookOpen, Copy, ExternalLink, LinkIcon, RefreshCw, Trash2, UserPlus } from "lucide-react";
 import Joyride, { STATUS, type CallBackProps, type Step } from "react-joyride";
 import { PageTitle } from "../../components/layout/PageTitle";
 import { StatusBadge } from "../../components/ui/StatusBadge";
@@ -158,7 +158,6 @@ export default function AdminUsers() {
   const canDelete = (u: AuthUser) =>
     u.id !== currentUserId && (u.role === "member" || u.role === "coach");
 
-  const tourStorageKey = `admin_users_tour_seen:${currentUserId || "anon"}`;
   const tourSteps: Step[] = [
     {
       target: '[data-tour="page-title"]',
@@ -201,28 +200,10 @@ export default function AdminUsers() {
     },
   ];
 
-  useEffect(() => {
-    if (loading) return;
-    try {
-      if (!localStorage.getItem(tourStorageKey)) {
-        setRunTour(true);
-      }
-    } catch {
-      // localStorage may be blocked (private mode) — skip silently.
-    }
-    // Only run once per (user × page) after the list has loaded so targets exist.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading]);
-
   const handleTourCallback = (data: CallBackProps) => {
     const finished: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
     if (finished.includes(data.status)) {
       setRunTour(false);
-      try {
-        localStorage.setItem(tourStorageKey, "1");
-      } catch {
-        // ignore
-      }
     }
   };
 
@@ -255,6 +236,16 @@ export default function AdminUsers() {
           eyebrow="Administratorius"
           title="Paskyros"
           description="Valdykite trenerių ir narių prisijungimus."
+          action={
+            <button
+              type="button"
+              className="btn-ghost h-9 px-3 text-xs"
+              onClick={() => setRunTour(true)}
+            >
+              <BookOpen className="h-4 w-4" />
+              Interaktyvus vadovas
+            </button>
+          }
         />
       </div>
 

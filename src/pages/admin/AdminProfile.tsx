@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Bell, Building2, ImageIcon, KeyRound, Trash2, Upload, User } from "lucide-react";
+import { Bell, BookOpen, Building2, ImageIcon, KeyRound, Trash2, Upload, User } from "lucide-react";
 import Joyride, {
   STATUS,
   type CallBackProps,
@@ -57,7 +57,6 @@ export default function AdminProfile() {
   const [logoBusy, setLogoBusy] = useState(false);
   const currentLogo = authUser?.clubLogo ?? null;
 
-  const authUserId = authUser?.id ?? "";
   const [runTour, setRunTour] = useState(false);
 
   // Re-sync local state when authUser refreshes (e.g. after bootstrap).
@@ -216,7 +215,6 @@ export default function AdminProfile() {
     }
   };
 
-  const tourStorageKey = `admin_profile_tour_seen:${authUserId || "anon"}`;
   const tourSteps: Step[] = [
     {
       target: '[data-tour="page-title"]',
@@ -254,26 +252,10 @@ export default function AdminProfile() {
     },
   ];
 
-  useEffect(() => {
-    try {
-      if (!localStorage.getItem(tourStorageKey)) {
-        setRunTour(true);
-      }
-    } catch {
-      // localStorage blocked — skip silently.
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const handleTourCallback = (data: CallBackProps) => {
     const done: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
     if (done.includes(data.status)) {
       setRunTour(false);
-      try {
-        localStorage.setItem(tourStorageKey, "1");
-      } catch {
-        // ignore
-      }
     }
   };
 
@@ -306,6 +288,16 @@ export default function AdminProfile() {
           eyebrow="Administratorius"
           title="Profilis"
           description="Redaguokite klubo informaciją, savo duomenis ir keiskite slaptažodį."
+          action={
+            <button
+              type="button"
+              className="btn-ghost h-9 px-3 text-xs"
+              onClick={() => setRunTour(true)}
+            >
+              <BookOpen className="h-4 w-4" />
+              Interaktyvus vadovas
+            </button>
+          }
         />
       </div>
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   AlertTriangle,
   ArrowRight,
+  BookOpen,
   CalendarClock,
   CreditCard,
   ExternalLink,
@@ -77,7 +78,6 @@ export default function MemberPayments() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const allPlans = useStore((s) => s.membershipPlans);
   const creditPlans = allPlans.filter((p) => p.planType === "credits");
-  const authUserId = useStore((s) => s.authUser?.id ?? "");
   const [runTour, setRunTour] = useState(false);
 
   useEffect(() => {
@@ -223,7 +223,6 @@ export default function MemberPayments() {
   const creditsRemaining =
     billing?.member?.creditsRemaining ?? member.creditsRemaining ?? 0;
 
-  const tourStorageKey = `member_payments_tour_seen:${authUserId || "anon"}`;
   const tourSteps: Step[] = isCreditsPlan
     ? [
         {
@@ -281,27 +280,10 @@ export default function MemberPayments() {
         },
       ];
 
-  useEffect(() => {
-    if (loading) return;
-    try {
-      if (!localStorage.getItem(tourStorageKey)) {
-        setRunTour(true);
-      }
-    } catch {
-      // localStorage blocked — skip silently.
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading]);
-
   const handleTourCallback = (data: CallBackProps) => {
     const done: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
     if (done.includes(data.status)) {
       setRunTour(false);
-      try {
-        localStorage.setItem(tourStorageKey, "1");
-      } catch {
-        // ignore
-      }
     }
   };
 
@@ -334,6 +316,16 @@ export default function MemberPayments() {
           title="Mokėjimai"
           description="Jūsų narystės planas ir mokėjimų istorija."
           eyebrow="Narystė"
+          action={
+            <button
+              type="button"
+              className="btn-ghost h-9 px-3 text-xs"
+              onClick={() => setRunTour(true)}
+            >
+              <BookOpen className="h-4 w-4" />
+              Interaktyvus vadovas
+            </button>
+          }
         />
       </div>
 

@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ClipboardList, Plus, Save, Sparkles, Trash2, X } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { BookOpen, ClipboardList, Plus, Save, Sparkles, Trash2, X } from 'lucide-react';
 import Joyride, { STATUS, type CallBackProps, type Step } from 'react-joyride';
 import { useTranslation } from 'react-i18next';
 import { PageTitle } from '../../components/layout/PageTitle';
@@ -67,7 +67,6 @@ export default function CoachTrainingTemplates() {
   const updateTemplate = useStore((s) => s.updateTrainingTemplate);
   const removeTemplate = useStore((s) => s.deleteTrainingTemplate);
   const push = useStore((s) => s.pushToast);
-  const authUserId = useStore((s) => s.authUser?.id ?? '');
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -178,8 +177,6 @@ export default function CoachTrainingTemplates() {
 
   const formOpen = creating || editingId !== null;
 
-  const tourEnabled = true;
-  const tourStorageKey = `training_templates_tour_seen:${authUserId || 'anon'}`;
   const [runTour, setRunTour] = useState(false);
   const tourSteps: Step[] = [
     {
@@ -245,71 +242,57 @@ export default function CoachTrainingTemplates() {
     },
   ];
 
-  useEffect(() => {
-    if (!tourEnabled) return;
-    try {
-      if (localStorage.getItem(tourStorageKey)) return;
-    } catch {
-      return;
-    }
-    // Open the form so the field targets exist, then start the tour.
-    if (!formOpen) {
-      setCreating(true);
-      setForm(emptyForm);
-    }
-    const timer = setTimeout(() => setRunTour(true), 100);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tourEnabled]);
-
   const handleTourCallback = (data: CallBackProps) => {
     const done: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
     if (done.includes(data.status)) {
       setRunTour(false);
-      try {
-        localStorage.setItem(tourStorageKey, '1');
-      } catch {
-        // ignore
-      }
     }
   };
 
   return (
     <div>
-      {tourEnabled && (
-        <Joyride
-          steps={tourSteps}
-          run={runTour}
-          continuous
-          showProgress
-          showSkipButton
-          disableScrolling={false}
-          callback={handleTourCallback}
-          locale={{
-            back: t('joyride.back'),
-            close: t('joyride.close'),
-            last: t('joyride.last'),
-            next: t('joyride.next'),
-            skip: t('joyride.skip'),
-          }}
-          styles={{
-            options: {
-              primaryColor: '#5da004',
-              zIndex: 10000,
-            },
-          }}
-        />
-      )}
+      <Joyride
+        steps={tourSteps}
+        run={runTour}
+        continuous
+        showProgress
+        showSkipButton
+        disableScrolling={false}
+        callback={handleTourCallback}
+        locale={{
+          back: t('joyride.back'),
+          close: t('joyride.close'),
+          last: t('joyride.last'),
+          next: t('joyride.next'),
+          skip: t('joyride.skip'),
+        }}
+        styles={{
+          options: {
+            primaryColor: '#5da004',
+            zIndex: 10000,
+          },
+        }}
+      />
       <div data-tour="page-title">
         <PageTitle
           title={t('coach_templates.title')}
           description={t('coach_templates.description')}
           action={
-            !formOpen ? (
-              <button type="button" className="btn-primary" onClick={startCreate}>
-                <Plus className="h-4 w-4" /> {t('coach_templates.new')}
+            <div className="flex gap-2">
+              {!formOpen && (
+                <button type="button" className="btn-primary" onClick={startCreate}>
+                  <Plus className="h-4 w-4" /> {t('coach_templates.new')}
+                </button>
+              )}
+              <button
+                type="button"
+                className="btn-ghost h-9 px-3 text-xs"
+                onClick={() => setRunTour(true)}
+              >
+                <BookOpen className="h-4 w-4" />
+                Interaktyvus vadovas
               </button>
-            ) : undefined
+            </div>
           }
         />
       </div>

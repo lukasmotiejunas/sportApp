@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Archive, ChevronRight, Plus, Trophy } from "lucide-react";
+import { Archive, BookOpen, ChevronRight, Plus, Trophy } from "lucide-react";
 import Joyride, {
   ACTIONS,
   EVENTS,
@@ -26,7 +26,6 @@ export default function CoachLeaderboards() {
   const addCategory = useStore((s) => s.addLeaderboardCategory);
   const archive = useStore((s) => s.archiveLeaderboardCategory);
   const push = useStore((s) => s.pushToast);
-  const authUserId = useStore((s) => s.authUser?.id ?? "");
 
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<Omit<LeaderboardCategory, "id">>({
@@ -61,8 +60,6 @@ export default function CoachLeaderboards() {
     });
   };
 
-  const tourEnabled = true;
-  const tourStorageKey = `leaderboards_tour_seen:${authUserId || "anon"}`;
   const [runTour, setRunTour] = useState(false);
   const MODAL_FIRST_STEP = 3;
   const tourSteps: Step[] = [
@@ -116,39 +113,20 @@ export default function CoachLeaderboards() {
     },
   ];
 
-  useEffect(() => {
-    if (!tourEnabled) return;
-    try {
-      if (localStorage.getItem(tourStorageKey)) return;
-    } catch {
-      return;
-    }
-    const timer = setTimeout(() => setRunTour(true), 100);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tourEnabled]);
-
   const handleTourCallback = (data: CallBackProps) => {
     const done: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
     if (done.includes(data.status)) {
       setRunTour(false);
       setOpen(false);
-      try {
-        localStorage.setItem(tourStorageKey, "1");
-      } catch {
-        // ignore
-      }
       return;
     }
     if (data.type === EVENTS.STEP_AFTER) {
-      // Advancing into the modal: open it so the form fields exist.
       if (
         data.action === ACTIONS.NEXT &&
         data.index === MODAL_FIRST_STEP - 1
       ) {
         setOpen(true);
       }
-      // Stepping back out of the modal: close it again.
       if (
         data.action === ACTIONS.PREV &&
         data.index === MODAL_FIRST_STEP
@@ -160,8 +138,7 @@ export default function CoachLeaderboards() {
 
   return (
     <div>
-      {tourEnabled && (
-        <Joyride
+      <Joyride
           steps={tourSteps}
           run={runTour}
           continuous
@@ -183,20 +160,29 @@ export default function CoachLeaderboards() {
             },
           }}
         />
-      )}
       <div data-tour="page-title">
         <PageTitle
           eyebrow={eyebrow}
           title={t("coach_leaderboards.title")}
           description={t("coach_leaderboards.description")}
           action={
-            <button
-              className="btn-primary"
-              onClick={() => setOpen(true)}
-              data-tour="new-btn"
-            >
-              <Plus className="h-4 w-4" /> {t("coach_leaderboards.new_category")}
-            </button>
+            <div className="flex gap-2">
+              <button
+                className="btn-primary"
+                onClick={() => setOpen(true)}
+                data-tour="new-btn"
+              >
+                <Plus className="h-4 w-4" /> {t("coach_leaderboards.new_category")}
+              </button>
+              <button
+                type="button"
+                className="btn-ghost h-9 px-3 text-xs"
+                onClick={() => setRunTour(true)}
+              >
+                <BookOpen className="h-4 w-4" />
+                Interaktyvus vadovas
+              </button>
+            </div>
           }
         />
       </div>

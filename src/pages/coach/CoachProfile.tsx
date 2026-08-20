@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Camera, KeyRound, Trash2, User } from "lucide-react";
+import { BookOpen, Camera, KeyRound, Trash2, User } from "lucide-react";
 import Joyride, {
   STATUS,
   type CallBackProps,
@@ -40,26 +40,12 @@ export default function CoachProfile() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [photoBusy, setPhotoBusy] = useState(false);
   const [runTour, setRunTour] = useState(false);
-  const authUserId = authUser?.id ?? "";
-  const tourStorageKey = `coach_profile_tour_seen:${authUserId || "anon"}`;
 
   useEffect(() => {
     setName(coach?.name ?? "");
     setSpecialty(coach?.specialty ?? "");
     setPhone(coach?.phone ?? "");
   }, [coach?.name, coach?.specialty, coach?.phone]);
-
-  useEffect(() => {
-    if (!coach) return;
-    try {
-      if (!localStorage.getItem(tourStorageKey)) {
-        setRunTour(true);
-      }
-    } catch {
-      // localStorage blocked — skip silently.
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [coach]);
 
   if (!coach) {
     return (
@@ -215,11 +201,6 @@ export default function CoachProfile() {
     const done: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
     if (done.includes(data.status)) {
       setRunTour(false);
-      try {
-        localStorage.setItem(tourStorageKey, "1");
-      } catch {
-        // ignore
-      }
     }
   };
 
@@ -252,6 +233,16 @@ export default function CoachProfile() {
           eyebrow={t("coach_profile.eyebrow")}
           title={t("coach_profile.title")}
           description={t("coach_profile.description")}
+          action={
+            <button
+              type="button"
+              className="btn-ghost h-9 px-3 text-xs"
+              onClick={() => setRunTour(true)}
+            >
+              <BookOpen className="h-4 w-4" />
+              Interaktyvus vadovas
+            </button>
+          }
         />
       </div>
 

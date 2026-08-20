@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarPlus, Copy, Pencil, Plus, Trash2 } from 'lucide-react';
+import { BookOpen, CalendarPlus, Copy, Pencil, Plus, Trash2 } from 'lucide-react';
 import Joyride, {
   STATUS,
   type CallBackProps,
@@ -24,7 +24,6 @@ export default function CoachTrainings() {
   const duplicate = useStore((s) => s.duplicateTraining);
   const remove = useStore((s) => s.deleteTraining);
   const push = useStore((s) => s.pushToast);
-  const authUserId = useStore((s) => s.authUser?.id ?? '');
 
   const timeFilters = [
     { id: 'upcoming' as const, label: t('coach_trainings.filter_upcoming') },
@@ -55,7 +54,6 @@ export default function CoachTrainings() {
   }, [trainings, time, today]);
 
   const tourEnabled = !isAdmin;
-  const tourStorageKey = `coach_trainings_tour_seen:${authUserId || 'anon'}`;
   const tourSteps: Step[] = [
     {
       target: '[data-tour="page-title"]',
@@ -88,27 +86,10 @@ export default function CoachTrainings() {
     },
   ];
 
-  useEffect(() => {
-    if (!tourEnabled) return;
-    try {
-      if (!localStorage.getItem(tourStorageKey)) {
-        setRunTour(true);
-      }
-    } catch {
-      // localStorage blocked — skip silently.
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tourEnabled]);
-
   const handleTourCallback = (data: CallBackProps) => {
     const done: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
     if (done.includes(data.status)) {
       setRunTour(false);
-      try {
-        localStorage.setItem(tourStorageKey, '1');
-      } catch {
-        // ignore
-      }
     }
   };
 
@@ -144,9 +125,21 @@ export default function CoachTrainings() {
           description={t('coach_trainings.empty')}
           eyebrow={eyebrow}
           action={
-            <Link to={`${base}/new`} className="btn-primary" data-tour="create">
-              <Plus className="h-4 w-4" /> {t('coach_trainings.new')}
-            </Link>
+            <div className="flex gap-2">
+              <Link to={`${base}/new`} className="btn-primary" data-tour="create">
+                <Plus className="h-4 w-4" /> {t('coach_trainings.new')}
+              </Link>
+              {tourEnabled && (
+                <button
+                  type="button"
+                  className="btn-ghost h-9 px-3 text-xs"
+                  onClick={() => setRunTour(true)}
+                >
+                  <BookOpen className="h-4 w-4" />
+                  Interaktyvus vadovas
+                </button>
+              )}
+            </div>
           }
         />
       </div>

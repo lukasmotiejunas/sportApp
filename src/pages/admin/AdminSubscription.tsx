@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {
   AlertTriangle,
   Ban,
+  BookOpen,
   CheckCircle2,
   CreditCard,
   ExternalLink,
@@ -88,7 +89,6 @@ export default function AdminSubscription() {
   const setSubscriptionStatus = useStore((s) => s.setSubscriptionStatus);
   const logout = useStore((s) => s.logout);
   const clubName = useStore((s) => s.authUser?.clubName ?? "");
-  const authUserId = useStore((s) => s.authUser?.id ?? "");
   const navigate = useNavigate();
 
   const [sub, setSub] = useState<ClubSubscription | null>(null);
@@ -229,7 +229,6 @@ export default function AdminSubscription() {
     }
   };
 
-  const tourStorageKey = `admin_subscription_tour_seen:${authUserId || "anon"}`;
   const tourSteps: Step[] = [
     {
       target: '[data-tour="page-title"]',
@@ -262,27 +261,10 @@ export default function AdminSubscription() {
     },
   ];
 
-  useEffect(() => {
-    if (loading) return;
-    try {
-      if (!localStorage.getItem(tourStorageKey)) {
-        setRunTour(true);
-      }
-    } catch {
-      // localStorage blocked — skip silently.
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading]);
-
   const handleTourCallback = (data: CallBackProps) => {
     const done: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
     if (done.includes(data.status)) {
       setRunTour(false);
-      try {
-        localStorage.setItem(tourStorageKey, "1");
-      } catch {
-        // ignore
-      }
     }
   };
 
@@ -315,6 +297,16 @@ export default function AdminSubscription() {
           eyebrow="Administratorius"
           title="Prenumerata ir mokėjimai"
           description="Valdykite savo klubo Lumo prenumeratą, peržiūrėkite mokėjimų istoriją."
+          action={
+            <button
+              type="button"
+              className="btn-ghost h-9 px-3 text-xs"
+              onClick={() => setRunTour(true)}
+            >
+              <BookOpen className="h-4 w-4" />
+              Interaktyvus vadovas
+            </button>
+          }
         />
       </div>
 
